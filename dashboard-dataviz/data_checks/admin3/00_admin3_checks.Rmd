@@ -1,0 +1,257 @@
+---
+title: "ADMIN 3 Checks"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+Three checks were done:
+
+1. *Checking Zeros:* The number of missing (zero) observations in each region was computed. 
+2. *Checking Outliers:* For each region, the values were standardized ((x-mean)/sd). Within regions, I check the standardized value with the largest absoltue value.
+3. *Example Outliers:* I plot example regions with possible outliers.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r master-setup, echo=FALSE, warning=F, message = FALSE}
+source("../_master_data_Checks.R")
+
+# *** By Region Function =======================================================
+by_region_checks_i <- function(region, df, values_var, dates_var){
+  
+  values <- df[[values_var]][df$region %in% region]
+  dates  <- df[[dates_var]][df$region %in% region]
+  
+  deviation <- values %>% scale() %>% abs()
+  
+  out_df <- data.frame(region = region,
+                       max_dev = deviation %>% max(),
+                       N_zeros = sum(values == 0),
+                       dates_zero = dates[values == 0] %>% paste(collapse=";"),
+                       dates_high_deviation = dates[deviation > 4] %>% paste(collapse=";"))
+  return(out_df)
+}
+
+by_region_checks <- function(df, values_var, dates_var){
+  lapply(unique(df$region), by_region_checks_i, df, values_var, dates_var) %>% bind_rows()
+}
+
+region_output <- function(original_df, values_var, dates_var, region_var){
+  
+  original_df$values_var <- original_df[[values_var]]
+  original_df$dates_var <- original_df[[dates_var]]
+  original_df$region <- original_df[[region_var]]
+  
+  original_df <- original_df[,c("region", "dates_var", "values_var")]
+  
+  #### Date Variable
+  original_df$dates_var <- original_df$dates_var %>% as.character() %>% substring(1,10) %>% as.Date()
+  
+  #### Complete
+  original_df <- original_df %>%
+    complete(dates_var, region,
+             fill = list(values_var = 0))
+  
+  #### Region DF
+  region_df <- by_region_checks(original_df, "values_var", "dates_var")
+  
+  #### Number of Regions with Zeros
+  zeros_table <- region_df$N_zeros %>% 
+    table() %>%
+    as.data.frame() %>%
+    mutate(Proportion = (Freq/sum(Freq)) %>% round(4)) %>%
+    dplyr::rename("Number of Zeros" = ".",
+                  "Number of Regions" = "Freq") %>%
+    mutate(`Number of Zeros` = `Number of Zeros` %>% as.character() %>% as.numeric(),
+           `Number of Regions` = `Number of Regions` %>% as.character() %>% as.numeric())
+  
+  zeros_table <- zeros_table[zeros_table$`Number of Zeros` > 0,]
+  
+  zeros_table <- ggplot() +
+    geom_col(data=zeros_table, aes(x=`Number of Zeros`, y=`Proportion`),
+             color="black", fill="firebrick3") +
+    theme_minimal() +
+    labs(y="Proportion of Regions",
+         caption = "Excluding Regions Without Missing Data") +
+    labs(title = "Number Observations of Zero per Region") +
+        theme(plot.title = element_text(size=10))
+  
+  #### Deviation Histogram
+  dev_hist <- ggplot() +
+    geom_histogram(data=region_df, aes(x=max_dev), color="black", fill="dodgerblue2") +
+    labs(x="Maximum Standardized Value", y="Number of Regions",
+         title = "Within Each Region,\nMaximum Standardized Value") +
+    theme_minimal() +
+    theme(plot.title = element_text(size=10))
+  
+  #### Examples
+  region_high_devs <- region_df$region[(region_df$N_zeros %in% 0) & (region_df$max_dev > 4)] %>% as.character()
+  #region_high_devs <- region_high_devs[order(region_df$max_dev[(region_df$N_zeros %in% 0) & (region_df$max_dev > 4)], decreasing=T)]
+  
+  example_outliers <- ggplot() +
+    geom_line(data=original_df %>%
+                filter(region %in% region_high_devs[1:6]), 
+              aes(x=dates_var, y=values_var, group=region, color=region)) +
+    labs(x="",
+         y="",
+         title = "Example regions with High Deviations") +
+    theme_minimal() 
+  
+  return(list(zeros_table=zeros_table,
+              dev_hist=dev_hist,
+              example_outliers=example_outliers,
+              region_df=region_df))
+}
+```
+
+## Unique Active Residents Per Day
+#### count_unique_active_residents_per_region_per_day.csv
+```{r out1, echo=FALSE, warning=F, message = FALSE, fig.show='hold'}
+df <- read.csv(file.path(zw_admin3_data_file_path, "count_unique_active_residents_per_region_per_day.csv"))
+df_out <- region_output(df, "subscriber_count", "visit_date", "region")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+
+rm(df)
+```
+
+## Unique Active Subscribers Per Day
+#### count_unique_subscribers_per_region_per_day.csv
+```{r out2, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "count_unique_subscribers_per_region_per_day.csv"))
+df_out <- region_output(df, "subscriber_count", "visit_date", "region")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+
+rm(df)
+```
+
+## Unique Visitors Per Day
+#### total_calls_per_region_per_day.csv
+```{r out3, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "count_unique_visitors_per_region_per_day.csv"))
+df_out <- region_output(df, "subscriber_count", "visit_date", "region")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+rm(df)
+```
+
+## Calls per Day
+#### total_calls_per_region_per_day.csv
+```{r out4, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "total_calls_per_region_per_day.csv"))
+df_out <- region_output(df, "total_calls", "call_date", "region")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+
+rm(df)
+```
+
+## Directed Regional Pair Connections per Day: Totals From Region
+#### directed_regional_pair_connections_per_day.csv
+```{r out5, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "directed_regional_pair_connections_per_day.csv"))
+df <- df %>%
+  group_by(connection_date, region_from) %>%
+  summarise(subscriber_count = sum(subscriber_count)) 
+df_out <- region_output(df, "subscriber_count", "connection_date", "region_from")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+
+rm(df)
+```
+
+## Directed Regional Pair Connections per Day: Totals To Region
+#### directed_regional_pair_connections_per_day.csv
+```{r out6, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "directed_regional_pair_connections_per_day.csv"))
+df <- df %>%
+  group_by(connection_date, region_to) %>%
+  summarise(subscriber_count = sum(subscriber_count)) 
+df_out <- region_output(df, "subscriber_count", "connection_date", "region_to")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+
+rm(df)
+```
+
+
+## Regional Pair Connections per Day: Totals From Region
+#### regional_pair_connections_per_day.csv
+```{r out7, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "regional_pair_connections_per_day.csv"))
+df <- df %>%
+  group_by(connection_date, region1) %>%
+  summarise(subscriber_count = sum(subscriber_count)) 
+df_out <- region_output(df, "subscriber_count", "connection_date", "region1")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+
+rm(df)
+```
+
+## Regional Pair Connections per Day: Totals To Region
+#### regional_pair_connections_per_day.csv
+```{r out8, echo=FALSE, warning=F, message = FALSE}
+df <- read.csv(file.path(zw_admin3_data_file_path, "regional_pair_connections_per_day.csv"))
+df <- df %>%
+  group_by(connection_date, region2) %>%
+  summarise(subscriber_count = sum(subscriber_count)) 
+df_out <- region_output(df, "subscriber_count", "connection_date", "region2")
+
+ggarrange(
+  ggarrange(df_out$zeros_table,
+          df_out$dev_hist,
+          nrow=1),
+  df_out$example_outliers,
+  nrow=2
+)
+rm(df)
+```
+
