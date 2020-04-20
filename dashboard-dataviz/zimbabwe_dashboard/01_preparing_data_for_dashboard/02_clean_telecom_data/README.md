@@ -60,16 +60,18 @@ A number of indicators are cleaned. To facilitate further processing for the dat
 to be used in the dashboard, all cleaned datasets have the following standardized
 variables:
 
-* __region__: Unique identifier of the unit
-* __name__: Unit name
-* __date__: Either day (e.g., `2020-02-01`), or week (e.g., `Feb 01 - Feb 07`)
-* __value__: Value (e.g., number of subscribers, number of trips, distance traveled)
-* __value_lag__: Value from the previous time period
-* __value_base__: Baseline value.
-* __value_perchange_base__: Percent change from baseline.
-* __value_zscore_base__: Z-score change since baseline.
-* __label_level__: Label for when level of variable is shown
-* __label_base__: Label for when change since baseline value is shown.
+| variable | format | example | description |
+|---|---|---|---|
+| region | string | ZW123456 | Unique identifier of the spatial unit |
+| name | string | harare | Spatial unit name |
+| date | date or string | 2020-02-01 or Feb 01 - Feb 07 | The day or the week range |
+| value | numeric | 1000 | Value (e.g., number of subscribers, number of trips, distance traveled) |
+| value_lag | numeric | 1000 | Value from the previous time period |
+| value_base | numeric | 1000 | Baseline value |
+| value_perchange_base | numeric | 50 | Percent change from baseline |
+| value_zscore_base | numeric | 50 | Z-score change since baseline |
+| label_level | string | Harare 6<br>This day's value: 1000<br>...  | Label for when level of variable is shown |
+| label_base| string | Harare 6<br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
 
 ## Example cleaning
 

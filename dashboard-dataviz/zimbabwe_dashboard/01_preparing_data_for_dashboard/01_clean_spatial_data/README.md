@@ -15,6 +15,13 @@ easily switched in the dashboard
 * __area:__ Are of the unit in kilometers squared
 * __province:__ Name of the province that the unit is in
 
+| variable | format | example | description |
+|---|---|---|---|
+| region | string | ZW123456 | Unique identifier of the spatial unit |
+| name | string | harare | Spatial unit name |
+| area | numeric | 1234 | Area of the spatial unit in kilometers squared |
+| province | string | Bulawayo | Name of the province |
+
 ### Order Spatial Data
 Spatial datasets are ordered by region. When cleaning other datasets at the
 region level, we also order by region and ensure all regions are present. This

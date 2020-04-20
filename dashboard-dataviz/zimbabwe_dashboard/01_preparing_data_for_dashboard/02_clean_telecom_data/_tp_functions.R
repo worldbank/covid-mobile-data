@@ -7,6 +7,7 @@
 #           some (eg, complete) return dataframe always with standardized
 #           var names. Fix so output the origin names entered in to make this
 #           more general.
+#       
 
 tp_standardize_vars <- function(data,
                                  date_var,
@@ -529,6 +530,8 @@ tp_interpolate_outliers <- function(data,
       # item contains original scaled values
   
   # Create dataframe with variables needed for identifying and replacing outliers
+  data <- data[order(data[[date_var]]),]
+  
   data_orig <- data
   
   data <- data.frame(value = data[[value_var]], 
@@ -623,6 +626,8 @@ tp_add_baseline_comp_stats <- function(data,
     # Adds baseline values
   
   # TODO: Assumes baseline comes from same year, could generalize
+  
+  data <- data[order(data[[date_var]]),]
   
   #### Create dataframe for tranformations
   data_sub <- data.frame(value = data[[value_var]],
