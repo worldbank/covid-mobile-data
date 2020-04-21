@@ -1,10 +1,6 @@
 # Clean Subscribers Data
 
-# REQUIRES RUNNING clean_movement_inout_data.R BEFOREHAND.
-
-# Clean Subscribers Data
-
-# REQUIRES RUNNING clean_movement_inout_data.R BEFOREHAND.
+# Depends on: clean_movement_inout_data.R
 
 EXPORT <- T
 
