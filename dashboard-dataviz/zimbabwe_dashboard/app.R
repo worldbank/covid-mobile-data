@@ -46,7 +46,7 @@ library(scales)
 library(lubridate)
 
 #### Logged; make false to enable password
-Logged = F
+Logged = T
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
@@ -840,11 +840,13 @@ server = (function(input, output, session) {
             if(!is.null(input$select_variable)){
               if(!(input$select_variable %in% "Net Movement")){
                 map_values <- log_neg(map_values)
-              }
+              } 
             }
             
           }
         }
+        
+        #print(summary(map_values))
         
         
         #print(map_values)
@@ -1050,6 +1052,9 @@ server = (function(input, output, session) {
         }
         
         if (input$select_timeunit %in% "Weekly") {
+          
+          data_line <- data_line[!grepl("Mar 28", data_line$Date),]
+          
           p <- ggplot(data_line,
                       aes(
                         x = Date %>% substring(1,6),

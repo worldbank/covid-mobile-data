@@ -10,10 +10,6 @@ Cleans spatial datasets:
 Each spatial dataset should have standardized variable names. Standardizing
 variable names helps ensure different units (eg, admin2, admin3) can be
 easily switched in the dashboard
-* __name:__ Name of the unit
-* __region:__ Unique unit identifier id
-* __area:__ Are of the unit in kilometers squared
-* __province:__ Name of the province that the unit is in
 
 | variable | format | example | description |
 |---|---|---|---|
