@@ -22,7 +22,7 @@ class custom_aggregator(aggregator):
     def __init__(self,
                  sites_handler,
                  result_stub,
-                 datasource = ds,
+                 datasource,
                  re_use_home_locations = False,
                  dates = {'start_date' : dt.datetime(2020,2,1),
                          'end_date' : dt.datetime(2020,3,31),
