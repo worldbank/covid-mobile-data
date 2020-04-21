@@ -46,7 +46,7 @@ library(scales)
 library(lubridate)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
@@ -127,7 +127,7 @@ ui = (htmlOutput("page"))
 
 # * Main UI -------------------------------------------------------------------
 ui_main <- fluidPage(
-  tags$head(includeHTML(("google-analytics.html"))),
+  #tags$head(includeHTML(("google-analytics.html"))),
   h4("WBG - COVID Mobility Analytics Task Force", align="center"),
   #HTML("<h4> 
   #      WBG - COVID Mobility Analytics Task Force 
