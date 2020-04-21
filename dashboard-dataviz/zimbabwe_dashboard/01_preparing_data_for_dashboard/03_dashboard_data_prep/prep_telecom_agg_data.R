@@ -16,10 +16,10 @@ N_CORES <- 1
 # Non-OD
 PROCESS_DENSITY_DATA      <- T
 PROCESS_DISTANCE_DATA     <- F
-PROCESS_MOVEMENT_NET_DATA <- F
+PROCESS_MOVEMENT_NET_DATA <- T
 
 # OD
-PROCESS_MOVEMENT_DATA     <- F
+PROCESS_MOVEMENT_DATA     <- T
 
 #### Delete previous files before running? Useful if change naming conventions
 # of files, so need to get rid of old files. Otherwise will just add or overwrite.

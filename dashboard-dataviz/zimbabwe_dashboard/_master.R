@@ -2,9 +2,9 @@
 
 rm(list = ls())
 
-CLEAN_SPATIAL_DATA <- F
-CLEAN_TELECOM_DATA <- F
-PREP_DATA_FOR_DASH <- F
+CLEAN_SPATIAL_DATA <- T
+CLEAN_TELECOM_DATA <- T
+PREP_DATA_FOR_DASH <- T
 
 #### Packages #### =============================================================
 library(tidyverse)
@@ -53,9 +53,9 @@ GEO_ADM3_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-
 
 DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard")
 DASHBOARD_DATA_PATH     <- file.path(DASHBOARD_PATH, "data_inputs_for_dashboard")
-DASHBOARD_CLEAN_SPATIAL_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "01_clean_spatial_data")
-DASHBOARD_CLEAN_TELECOM_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "02_clean_telecom_data")
-DASHBOARD_PREP_DASHBOARD_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "03_dashboard_data_prep")
+DASHBOARD_CLEAN_SPATIAL_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "01_clean_spatial_data")
+DASHBOARD_CLEAN_TELECOM_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "02_clean_telecom_data")
+DASHBOARD_PREP_DASHBOARD_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "03_dashboard_data_prep")
 
 #### Functions #### ============================================================
 source(file.path(DASHBOARD_CLEAN_TELECOM_PATH,
@@ -69,14 +69,14 @@ source(file.path(DASHBOARD_PREP_DASHBOARD_PATH,
 # 1. Prepare Spatial Data ------------------------------------------------------
 if(CLEAN_SPATIAL_DATA){
   source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_districts.R"))
-  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_districts.R"))
+  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_wards.R"))
 }
 
 # 2. Prepare Spatial Data ------------------------------------------------------
 if(CLEAN_TELECOM_DATA){
   # Clean Initial Datasets
-  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_movement_inout_data.R"))
   source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_subscribers_data.R"))
+  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_movement_inout_data.R"))
   
   # Clean datasets that depend on previous ones
   source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_net_movement_data.R"))
