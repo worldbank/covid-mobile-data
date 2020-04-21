@@ -3,6 +3,25 @@
 These scripts clean and standardize aggregated telecom data. This is a necessary
 part of the process towards preparing datasets for the dashboard.
 
+## Dataset
+
+A number of indicators are cleaned. To facilitate further processing for the datasets
+to be used in the dashboard, all cleaned datasets have the following standardized
+variables:
+
+| variable | format | example | description |
+|---|---|---|---|
+| region | string | ZW123456 | Unique identifier of the spatial unit |
+| name | string | harare | Spatial unit name |
+| date | date or string | 2020-02-01 or Feb 01 - Feb 07 | The day or the week range |
+| value | numeric | 1000 | Value (e.g., number of subscribers, number of trips, distance traveled) |
+| value_lag | numeric | 1000 | Value from the previous time period |
+| value_base | numeric | 1000 | Baseline value |
+| value_perchange_base | numeric | 50 | Percent change from baseline |
+| value_zscore_base | numeric | 50 | Z-score change since baseline |
+| label_level | string | Harare 6<br>This day's value: 1000<br>...  | Label for when level of variable is shown |
+| label_base| string | Harare 6<br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
+
 ## telecom prep [tp] functions
 
 The `_tp_functions.R` file defines a number of functions to help standardize
@@ -54,24 +73,6 @@ leaflet in the dashboard.
 * __tp_add_label_baseline:__ Adds label for change metrics since baseline to be used
 in leaflet in the dashboard.
 
-## Dataset
-
-A number of indicators are cleaned. To facilitate further processing for the datasets
-to be used in the dashboard, all cleaned datasets have the following standardized
-variables:
-
-| variable | format | example | description |
-|---|---|---|---|
-| region | string | ZW123456 | Unique identifier of the spatial unit |
-| name | string | harare | Spatial unit name |
-| date | date or string | 2020-02-01 or Feb 01 - Feb 07 | The day or the week range |
-| value | numeric | 1000 | Value (e.g., number of subscribers, number of trips, distance traveled) |
-| value_lag | numeric | 1000 | Value from the previous time period |
-| value_base | numeric | 1000 | Baseline value |
-| value_perchange_base | numeric | 50 | Percent change from baseline |
-| value_zscore_base | numeric | 50 | Z-score change since baseline |
-| label_level | string | Harare 6<br>This day's value: 1000<br>...  | Label for when level of variable is shown |
-| label_base| string | Harare 6<br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
 
 ## Example cleaning
 
