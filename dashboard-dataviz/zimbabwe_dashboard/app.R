@@ -46,7 +46,7 @@ library(scales)
 library(lubridate)
 
 #### Logged; make false to enable password
-Logged = F
+Logged = T
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
@@ -61,8 +61,8 @@ if (Sys.info()[["user"]] == "WB521633") {
 
 # LOAD/PREP DATA ===============================================================
 
-ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "ward_shp.Rds"))
-district_sp <- readRDS(file.path("data_inputs_for_dashboard", "district_shp.Rds"))
+ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
+district_sp <- readRDS(file.path("data_inputs_for_dashboard", "districts.Rds"))
 district_sp$province <- district_sp$province %>% as.character()
 
 #### Province List for Select Input
@@ -78,6 +78,7 @@ variable_i <- "Density"
 timeunit_i <- "Daily"
 date_i <- "2020-02-01"
 previous_zoom_selection <- ""
+metric_i <- "Count"
 
 #### Totals
 obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
@@ -333,7 +334,7 @@ server = (function(input, output, session) {
           Password <- isolate(input$passwd)
           
           passwords_df <- read.csv("passwords.csv")
-
+          
           passwords_df$username <-
             passwords_df$username %>% as.character()
           passwords_df$password <-
@@ -433,13 +434,13 @@ server = (function(input, output, session) {
         
         #### Switch default admin_unit if switch to wards/districts
         if(unit_i %in% "Wards"){
-          if(!(ward_i %in% ward_sp$name_id)){
+          if(!(ward_i %in% ward_sp$name)){
             ward_i <- "Harare 6"
           }
         }
         
         if(unit_i %in% "Districts"){
-          if(!(ward_i %in% district_sp$name_id)){
+          if(!(ward_i %in% district_sp$name)){
             ward_i <- "Harare"
           }
         }
@@ -466,7 +467,6 @@ server = (function(input, output, session) {
             #if(date_i > "2020-02-29") date_i <- "2020-02-01"
           }
           
-          
           ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
@@ -483,44 +483,40 @@ server = (function(input, output, session) {
           if(metric_i %in% "Count"){
             
             map_data <- ward_level_df %>%
-              dplyr::select(density, label_count) %>%
-              dplyr::rename(value = density,
-                            html_label = label_count)
+              dplyr::mutate(value = density,
+                            html_label = label_level) %>%
+              dplyr::select(value, html_label)
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_count) %>%
-              dplyr::rename(value = value_count)
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           } else if (metric_i %in% "% Change"){
             
             map_data <- ward_level_df %>%
-              dplyr::select(value_perchange_feb, label_change) %>%
-              dplyr::rename(value = value_perchange_feb,
-                            html_label = label_change)
+              dplyr::mutate(value = value_perchange_base,
+                            html_label = label_base) %>%
+              dplyr::select(value, html_label)
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_perchange_feb) %>%
-              dplyr::rename(value = value_perchange_feb)
+              dplyr::mutate(value = value_perchange_base) %>%
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           } else if (metric_i %in% "Z-Score"){
             
             map_data <- ward_level_df %>%
-              dplyr::select(value_zscore_feb, label_change) %>%
-              dplyr::rename(value = value_zscore_feb,
-                            html_label = label_change)
+              dplyr::mutate(value = value_zscore_base,
+                            html_label = label_base) %>%
+              dplyr::select(value, html_label)
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_zscore_feb) %>%
-              dplyr::rename(value = value_zscore_feb)
+              dplyr::mutate(value = value_zscore_base) %>%
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>%
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           }
           
@@ -570,44 +566,39 @@ server = (function(input, output, session) {
           if(metric_i %in% "Count"){
             
             map_data <- ward_level_df %>%
-              dplyr::select(value_count, label_count) %>%
-              dplyr::rename(value = value_count,
-                            html_label = label_count)
+              dplyr::select(value, label_level) %>%
+              dplyr::rename(html_label = label_level)
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_count) %>%
-              dplyr::rename(value = value_count)
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df
             
           } else if (metric_i %in% "% Change"){
             
             map_data <- ward_level_df %>%
-              dplyr::select(value_perchange_feb, label_change) %>%
-              dplyr::rename(value = value_perchange_feb,
-                            html_label = label_change)
+              dplyr::select(value_perchange_base, label_base) %>%
+              dplyr::rename(value = value_perchange_base,
+                            html_label = label_base)
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_perchange_feb) %>%
-              dplyr::rename(value = value_perchange_feb)
+              dplyr::select(name, value_perchange_base) %>%
+              dplyr::rename(value = value_perchange_base)
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           } else if (metric_i %in% "Z-Score"){
             
             map_data <- ward_level_df %>%
-              dplyr::select(value_zscore_feb, label_change) %>%
-              dplyr::rename(value = value_zscore_feb,
-                            html_label = label_change)
+              dplyr::select(value_zscore_base, label_base) %>%
+              dplyr::rename(value = value_zscore_base,
+                            html_label = label_base)
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_zscore_feb) %>%
-              dplyr::rename(value = value_zscore_feb)
+              dplyr::select(name, value_zscore_base) %>%
+              dplyr::rename(value = value_zscore_base)
             
-            line_data <- time_level_df %>%
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           }
           
@@ -653,54 +644,44 @@ server = (function(input, output, session) {
                                                          date_i, ".Rds")))
           
           
-          
-          
           if(metric_i %in% "Count"){
             
             map_data <- ward_time_level_df %>%
-              dplyr::select(value_count, label_count) %>%
-              dplyr::rename(value = value_count,
-                            html_label = label_count)
+              dplyr::mutate(html_label = label_level) %>%
+              dplyr::select(value, html_label) 
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_count) %>%
-              dplyr::rename(value = value_count)
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           } else if (metric_i %in% "% Change"){
             
             map_data <- ward_time_level_df %>%
-              dplyr::select(value_perchange_feb, label_change) %>%
-              dplyr::rename(value = value_perchange_feb,
-                            html_label = label_change)
+              dplyr::mutate(value = value_perchange_base,
+                            html_label = label_base) %>%
+              dplyr::select(value, html_label) 
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_perchange_feb) %>%
-              dplyr::rename(value = value_perchange_feb)
+              dplyr::mutate(value = value_perchange_base) %>%
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           } else if (metric_i %in% "Z-Score"){
             
             map_data <- ward_time_level_df %>%
-              dplyr::select(value_zscore_feb, label_change) %>%
-              dplyr::rename(value = value_zscore_feb,
-                            html_label = label_change)
+              dplyr::mutate(value = value_zscore_base,
+                            html_label = label_base) %>%
+              dplyr::select(value, html_label) 
             
             table_data <- ward_level_df %>%
-              dplyr::select(name, value_zscore_feb) %>%
-              dplyr::rename(value = value_zscore_feb)
+              dplyr::mutate(value = value_zscore_base) %>%
+              dplyr::select(name, value) 
             
-            line_data <- time_level_df %>% 
-              dplyr::rename(value = value_count)
+            line_data <- time_level_df 
             
           }
-          
-          
-          
           
           out <- list(
             map_data = map_data,
@@ -745,7 +726,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Ward Map ------------------------------------------------------------
+      # ** Map -----------------------------------------------------------------
       legend_colors <- rev(viridis(5))
       legend_labels <- c("High", "", "", "", "Low")
       
@@ -801,18 +782,32 @@ server = (function(input, output, session) {
                                           "Movement Out of Wards",
                                           "Movement Into Districts",
                                           "Movement Out of Districts")){
-            od_index <- which(is.na(map_values))
+            #od_index <- which(is.na(map_values))
             
-            print(od_index)
+            od_index <- which(grepl("Origin|Destination", map_labels))
+            
+            #print(od_index)
           }
         }
         
+        # For values with label of 15 or less to be NA. \
         if(!is.null(input$select_metric)){
           if(input$select_metric %in% c("% Change", "Z-Score")){
+            
             map_values[grepl("information", map_labels)] <- NA
+            
+          } else{
+            
+            if(!is.null(input$select_variable)){
+              if(input$select_variable %in% c("Density")){
+                map_values[grepl("information", map_labels)] <- 0
+                
+              }
+            }
+            
+            
           }
         }
-        
         
         map_data <- ward_sp_filter()
         
@@ -879,7 +874,7 @@ server = (function(input, output, session) {
         if (nrow(map_data) > 700) {
           alpha = 1
         } else{
-          alpha = 0.75
+          alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
         # 
@@ -888,7 +883,7 @@ server = (function(input, output, session) {
             label = ~ lapply(map_labels, htmltools::HTML),
             color = ~ pal_ward(map_values),
             
-            layerId = ~ name_id,
+            layerId = ~ name,
             
             stroke = TRUE,
             weight = 1,
@@ -953,11 +948,11 @@ server = (function(input, output, session) {
         # Only change if choose something different
         if(!is.null(input$select_region_zoom)){
           if(previous_zoom_selection != input$select_region_zoom){
-            if(input$select_region_zoom %in% map_data$name_id){
+            if(input$select_region_zoom %in% map_data$name){
               
               #print(input$select_region_zoom %in% map_data$name_id)
               
-              loc_i <- which(map_data$name_id %in% input$select_region_zoom)
+              loc_i <- which(map_data$name %in% input$select_region_zoom)
               #map_labels_zoom <- map_labels[loc_i]
               map_data_zoom <- map_data[loc_i,] 
               
@@ -992,7 +987,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Ward Line Graph: In/Out ---------------------------------------------
+      # ** Line Graph: ---------------------------------------------------------
       output$ward_line_time <- renderPlotly({
         
         ward_data_sp_react <- ward_data_sp_filtered()
@@ -1096,7 +1091,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Ward Table Top 20 ---------------------------------------------
+      # ** Table ---------------------------------------------------------------
       output$ward_top_5_in <- renderFormattable({
         
         #### Define Colors
@@ -1333,7 +1328,7 @@ server = (function(input, output, session) {
         if(input$select_unit %in% "Wards"){
           out <- selectizeInput("select_region_zoom",
                                 h5("Zoom to Ward"), 
-                                choices = sort(ward_sp$name_id), 
+                                choices = sort(ward_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
                                 options = list(
@@ -1346,7 +1341,7 @@ server = (function(input, output, session) {
         if(input$select_unit %in% "Districts"){
           out <- selectizeInput("select_region_zoom",
                                 h5("Zoom to District"), 
-                                choices = sort(district_sp$name_id), 
+                                choices = sort(district_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
                                 options = list(
@@ -1378,6 +1373,7 @@ server = (function(input, output, session) {
         
         if (input$select_timeunit %in% "Daily") {
           
+          # If a change since baseline metric (not count), then only see March
           if(input$select_metric %in% c("Count")){
             out <- dateInput(
               "date_ward",
@@ -1400,6 +1396,7 @@ server = (function(input, output, session) {
         
         if (input$select_timeunit %in% "Weekly") {
           
+          # If a change since baseline metric (not count), then only see March
           if(input$select_metric %in% c("Count")){
             out <-   selectInput(
               "date_ward",
@@ -1418,11 +1415,7 @@ server = (function(input, output, session) {
             out <-   selectInput(
               "date_ward",
               label = NULL,
-              choices = c("Feb 01 - Feb 07",
-                          "Feb 08 - Feb 14",
-                          "Feb 15 - Feb 21",
-                          "Feb 22 - Feb 28",
-                          "Feb 29 - Mar 06",
+              choices = c("Feb 29 - Mar 06",
                           "Mar 07 - Mar 13",
                           "Mar 14 - Mar 20",
                           "Mar 21 - Mar 27"),

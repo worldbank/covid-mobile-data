@@ -93,11 +93,13 @@ ward_agg_sp$area <- geosphere::areaPolygon(ward_agg_sp) / 1000^2
 ward_agg_sp <- rmapshaper::ms_simplify(ward_agg_sp)
 
 #### Order by region
+ward_agg_sp$region <- ward_agg_sp$region %>% as.character()
 ward_agg_sp <- ward_agg_sp[order(ward_agg_sp$region),]
 
 # Export -----------------------------------------------------------------------
 saveRDS(ward_agg_sp, file.path(CLEAN_DATA_ADM3_PATH, 
                                "wards_aggregated.Rds"))
 
-
+saveRDS(ward_agg_sp, file.path(DASHBOARD_DATA_PATH, 
+                               "wards_aggregated.Rds"))
 

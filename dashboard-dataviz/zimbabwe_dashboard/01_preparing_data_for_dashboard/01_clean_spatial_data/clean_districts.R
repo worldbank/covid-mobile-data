@@ -23,8 +23,9 @@ district_sp@data <- district_sp@data %>%
 district_sp$area <- geosphere::areaPolygon(district_sp) / 1000^2
 
 #### Order by region
+district_sp$region <- district_sp$region %>% as.character()
 district_sp <- district_sp[order(district_sp$region),]
 
 # Export -----------------------------------------------------------------------
 saveRDS(district_sp, file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
-
+saveRDS(district_sp, file.path(DASHBOARD_DATA_PATH, "districts.Rds"))

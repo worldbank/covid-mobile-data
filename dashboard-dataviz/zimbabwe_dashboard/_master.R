@@ -21,6 +21,7 @@ library(rmapshaper)
 library(raster)
 library(geosphere)
 library(lubridate)
+library(data.table)
 
 
 #### File paths #### ===========================================================
