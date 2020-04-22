@@ -204,7 +204,7 @@ class custom_aggregator(aggregator):
         .withColumn('region_to', F.when(F.col('region_to').isNotNull(), F.col('region_to')).otherwise(F.col('region')))\
         .withColumn('region_from', F.when(F.col('region_from').isNotNull(), F.col('region_from')).otherwise(F.col('region_lag')))\
         .withColumn('connection_date', F.when(F.col('connection_date').isNotNull(), F.col('connection_date')).otherwise(F.col('day')))\
-        .na.fill(0)\
+        .na.fill({'od_count' : 0, 'subscriber_count' : 0})\
         .withColumn('total_count', F.col('subscriber_count') + F.col('od_count'))\
         .drop('region').drop('region_lag').drop('day')
       return result
