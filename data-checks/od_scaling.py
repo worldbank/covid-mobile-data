@@ -145,39 +145,99 @@ od['total_count_w1'] = od['total_count']*od['w1']
 # Set origin region
 od1 = od[od['region_from'] == 'ZW192105']
 
-od1_top_dest = ['ZW120435','ZW142513','ZW192205',
-                #'ZW130720',
-                'ZW170530' ]
+# Select a set of destinations
+# od1_top_dest = ['ZW120435','ZW142513','ZW192205',
+#                 'ZW130720','ZW170530' ]
 
+od1_top_dest = od1['region_to'].value_counts().head(9).index
 
+# Create plot df
 # p1_df = od1[od1['region_to'] == 'ZW120435']
 p1_df = od1[od1['region_to'].isin(od1_top_dest)]
 p1_df.index = p1_df['connection_date']
 
-# foo = p1_df.groupby('region_to').plot(x='connection_date', y='subscriber_count')
 
-fig, ax = plt.subplots(nrows=2,ncols=2,figsize=(12,6))
+
+# Plot function that already adds it to the grid
+def add_plts(dest_value,
+             grid_pos,
+             df = p1_df,
+             dest_var = 'region_to',
+             x_axis = 'connection_date',
+             y_axis = 'total_count'):
+    df[df[dest_var] == dest_value].\
+    plot(x= x_axis, 
+         y= y_axis,
+         legend= False,
+         ax = fig.add_subplot(grid_pos))
+
+
+# Run plots
+# # Gambiarra da porra. Fazer isso melhor se tiver tempo
+# def plots_together(var):
+#     fig, ax = plt.subplots(nrows=3,ncols=3)
+#     fig = plt.figure()
+#     gs = fig.add_gridspec(3, 3)
+    
+#     add_plts(od1_top_dest[0], gs[0, 0], y_axis = var)
+#     add_plts(od1_top_dest[1], gs[0, 1], y_axis = var)
+#     add_plts(od1_top_dest[2], gs[0, 2], y_axis = var)
+#     add_plts(od1_top_dest[3], gs[1, 0], y_axis = var)
+#     add_plts(od1_top_dest[4], gs[1, 1], y_axis = var)
+#     add_plts(od1_top_dest[5], gs[1, 2], y_axis = var)
+#     add_plts(od1_top_dest[6], gs[2, 0], y_axis = var)
+#     add_plts(od1_top_dest[7], gs[2, 1], y_axis = var)
+#     add_plts(od1_top_dest[8], gs[2, 2], y_axis = var)
+    
+#     return(fig)
+#     # fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
+
+
+
+plots_together('total_count')
+
+var = 'total_count'
+
+# Set plot parameters
+fig, ax = plt.subplots(nrows=3,ncols=3)
 fig = plt.figure()
-gs = fig.add_gridspec(2, 2)
+gs = fig.add_gridspec(3, 3)
 
-p1_df[p1_df['region_to'] == od1_top_dest[0]].\
-    plot(x='connection_date', 
-         y='subscriber_count', 
-         ax = fig.add_subplot(gs[0, 0]))
 
-p1_df[p1_df['region_to'] == od1_top_dest[1]].\
-    plot(x='connection_date', 
-         y='subscriber_count', 
-         ax = fig.add_subplot(gs[0, 1]))
+add_plts(od1_top_dest[0], gs[0, 0], y_axis = var)
+add_plts(od1_top_dest[1], gs[0, 1], y_axis = var)
+add_plts(od1_top_dest[2], gs[0, 2], y_axis = var)
+add_plts(od1_top_dest[3], gs[1, 0], y_axis = var)
+add_plts(od1_top_dest[4], gs[1, 1], y_axis = var)
+add_plts(od1_top_dest[5], gs[1, 2], y_axis = var)
+add_plts(od1_top_dest[6], gs[2, 0], y_axis = var)
+add_plts(od1_top_dest[7], gs[2, 1], y_axis = var)
+add_plts(od1_top_dest[8], gs[2, 2], y_axis = var)
 
-p1_df[p1_df['region_to'] == od1_top_dest[2]].\
-    plot(x='connection_date', 
-         y='subscriber_count', 
-         ax = fig.add_subplot(gs[1, 0]))
+# Export
+fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
 
-p1_df[p1_df['region_to'] == od1_top_dest[3]].\
-    plot(x='connection_date', 
-         y='subscriber_count', 
-         ax = fig.add_subplot(gs[1, 1]))
 
-fig.savefig('C:/Users/wb519128/Desktop/full_figure.png')
+var = 'total_count_w1'
+
+# Set plot parameters
+fig, ax = plt.subplots(nrows=3,ncols=3)
+fig = plt.figure()
+gs = fig.add_gridspec(3, 3)
+
+
+add_plts(od1_top_dest[0], gs[0, 0], y_axis = var)
+add_plts(od1_top_dest[1], gs[0, 1], y_axis = var)
+add_plts(od1_top_dest[2], gs[0, 2], y_axis = var)
+add_plts(od1_top_dest[3], gs[1, 0], y_axis = var)
+add_plts(od1_top_dest[4], gs[1, 1], y_axis = var)
+add_plts(od1_top_dest[5], gs[1, 2], y_axis = var)
+add_plts(od1_top_dest[6], gs[2, 0], y_axis = var)
+add_plts(od1_top_dest[7], gs[2, 1], y_axis = var)
+add_plts(od1_top_dest[8], gs[2, 2], y_axis = var)
+
+# Export
+fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
+
+
+
