@@ -98,7 +98,4 @@ passwords/
 # including in case change.
 data_methods.txt
 data_source_description.txt
-
-#######################
-temp fix for Zimbabwe code
-cdr-aggregation/zimbabwe2020
+/**/data*

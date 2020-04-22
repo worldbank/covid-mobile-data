@@ -1,11 +1,16 @@
 # Databricks notebook source
+import os
+if os.environ['HOME'] != '/root':
+    from modules.flowminder_aggregations import *
+    from modules.import_packages import *
+
 class custom_aggregator(aggregator):
     """Class to handle custom aggregations
 
     Attributes
     ----------
     calls : a dataframe. This should hold the CDR data to be processed
-    sites_handler : instance of tower_clusterer. 
+    sites_handler : instance of tower_clusterer.
     result_path : a string. Where to save results
     dates_sql : a dictionary. From when to when to run the queries
     intermediate_tables : a list. Tables that we don't want written to csv
@@ -56,16 +61,12 @@ class custom_aggregator(aggregator):
                              (F.col('call_datetime') <= self.dates['end_date'])
         self.weeks_filter = (F.col('call_datetime') >= self.dates['start_date_weeks']) &\
                             (F.col('call_datetime') <= self.dates['end_date_weeks'])
-        self.dates_sql = {'start_date' : "\'" + dates['start_date'].isoformat('-')[:10] +  "\'",
-                         'end_date' :  "\'" + dates['end_date'].isoformat('-')[:10] +  "\'",
-                         'start_date_weeks' :  "\'" + dates['start_date_weeks'].isoformat('-')[:10] +  "\'",
-                         'end_date_weeks' : "\'" + dates['end_date_weeks'].isoformat('-')[:10] +  "\'"}
         self.sql_code = write_sql_code(calls = 'calls',
-                                       start_date = self.dates_sql['start_date'], 
-                                       end_date = self.dates_sql['end_date'], 
-                                       start_date_weeks = self.dates_sql['start_date_weeks'], 
+                                       start_date = self.dates_sql['start_date'],
+                                       end_date = self.dates_sql['end_date'],
+                                       start_date_weeks = self.dates_sql['start_date_weeks'],
                                        end_date_weeks = self.dates_sql['end_date_weeks'])
-        if re_use_home_locations: 
+        if re_use_home_locations:
           self.df_with_home_locations = self.spark.read.format("parquet").load(self.tempfile)
         else:
           self.df_with_home_locations = save_and_load_parquet(
@@ -74,18 +75,18 @@ class custom_aggregator(aggregator):
                 .withColumnRenamed('region', 'home_region'),
             'msisdn', 'left'),
           self.tempfile)
-          
+
         self.incidence = spark.read.format("csv")\
           .option("header", "true")\
           .option("delimiter", ",")\
           .option("inferSchema", "true")\
           .option("mode", "DROPMALFORMED")\
           .load(self.incidence_file)
-          
+
     def save_df(self, df, table_name):
       df.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv') \
         .save(os.path.join(self.result_path, table_name), header = 'true')
-        
+
     def save_and_report(self, df, table_name):
       if self.check_if_file_exists(table_name):
         print('Skipped: ' + table_name)
@@ -93,9 +94,9 @@ class custom_aggregator(aggregator):
         print('--> File does not exist. Saving: ' + table_name)
         self.save_df(df, table_name)
       return table_name
-        
+
     def run_and_save_all(self, time_filter, frequency):
-      if frequency == 'hour':        
+      if frequency == 'hour':
         self.table_names.append(self.save_and_report(self.transactions(time_filter, frequency), 'transactions_per_' + frequency))
         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
       elif frequency == 'day':
@@ -104,8 +105,8 @@ class custom_aggregator(aggregator):
         self.table_names.append(self.save_and_report(self.percent_of_all_subscribers_active(time_filter, frequency), 'percent_of_all_subscribers_active_per_' + frequency))
         self.table_names.append(self.save_and_report(self.origin_destination_connection_matrix(time_filter, frequency), 'origin_destination_connection_matrix_per_' + frequency))
         self.table_names.append(self.save_and_report(self.mean_distance(time_filter, frequency), 'mean_distance_per_' + frequency))
-        self.table_names.append(self.save_and_report(self.origin_destination_matrix_time_longest_only(time_filter, frequency), 'origin_destination_matrix_time_longest_only_per_' + frequency))
         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time(time_filter, frequency), 'origin_destination_matrix_time_per_' + frequency))
+#         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time_longest_only(time_filter, frequency), 'origin_destination_matrix_time_longest_only_per_' + frequency))
 #         self.table_names.append(self.save_and_report(self.origin_destination_unique_users_matrix(time_filter, frequency), 'origin_destination_unique_users_matrix_per_' + frequency))
 #         self.table_names.append(self.save_and_report(self.origin_destination_matrix(time_filter, frequency), 'origin_destination_matrix_per_' + frequency))
 #         self.table_names.append(self.save_and_report(self.percent_residents_day_equal_night_location(time_filter, frequency), 'percent_residents_day_equal_night_location_per_' + frequency))
@@ -125,35 +126,75 @@ class custom_aggregator(aggregator):
 #         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
       else:
         print('What is the frequency')
-      
+
     def run_and_save_all_frequencies(self):
       self.run_and_save_all(self.period_filter, 'day')
       self.run_and_save_all(self.period_filter, 'hour')
-      self.run_and_save_all(self.weeks_filter, 'week') 
-      self.run_and_save_all(self.weeks_filter, 'month') 
-   
+      self.run_and_save_all(self.weeks_filter, 'week')
+      self.run_and_save_all(self.weeks_filter, 'month')
+
     def run_save_and_rename_all(self):
       self.run_and_save_all_frequencies()
       self.rename_all_csvs()
-      
+
     def save_and_rename_one(self, table):
       self.rename_csv(self.save_and_report(table))
-      
+
     def rename_all_csvs(self):
       for table in self.table_names:
-        try:
-        # does the csv already exist
-          dbutils.fs.ls(self.result_path + '/' + table + '.csv')
-        except Exception as e:
-        # the csv doesn't exist yet, move the file and delete the folder
-          if 'java.io.FileNotFoundException' in str(e):
-            print('--> Renaming: ' + table)
-            self.rename_csv(table)
-          else:
-            raise
-            
+          self.rename_if_not_existing(table)
+
+    def attempt_aggregation(self, indicators_to_produce = 'all', no_of_attempts = 4):
+        attempts = 0
+        while attempts < no_of_attempts:
+            try:
+                # all indicators
+                if indicators_to_produce == 'all':
+                  aggregation_instance.run_save_and_rename_all()
+
+                # single indicator
+                else:
+                    for table in indicators_to_produce.keys():
+                        table_name = indicators_to_produce[table][0]
+                        frequency = indicators_to_produce[table][1]
+
+                        # more than the standard arguments
+                        if isinstance(frequency, list):
+                          other_args = frequency[1]
+                          frequency = frequency[0]
+                          if frequency == 'week':
+                            filter_var = self.weeks_filter
+                          else:
+                            filter_var = self.period_filter
+
+                          result = getattr(self, table_name)(filter_var, frequency, **other_args)
+                          try:
+                            table_name = other_args['home_location_frequency'] + '_' + table_name
+                          except:
+                            pass
+
+                        # only the standard arguments
+                        else:
+                          if frequency == 'week':
+                            filter_var = self.weeks_filter
+                          else:
+                            filter_var = self.period_filter
+                          result = getattr(self, table_name)(filter_var, frequency)
+
+                        # save and rename
+                        table_name = table_name  + '_per_' + frequency
+                        table_name = self.save_and_rename_one(result, table_name)
+                print('Custom indicators saved.')
+                break
+            except Exception as e:
+                attempts += 1
+                print(e)
+                print('Try number {} failed. Trying again.'.format(attempts))
+                if attempts == 4:
+                    print('Tried creating and saving indicators 4 times, but failed.')
+
     ##### Priority Indicators
-    
+
     ## Indicator 1
     def transactions(self, time_filter, frequency):
       result = self.df.where(time_filter)\
@@ -161,7 +202,7 @@ class custom_aggregator(aggregator):
         .count()\
         .where(F.col('count') > 15)
       return result
-    
+
     ## Indicator 2 + 3
     def unique_subscribers(self, time_filter, frequency):
       result = self.df.where(time_filter)\
@@ -169,7 +210,7 @@ class custom_aggregator(aggregator):
         .agg(F.countDistinct('msisdn').alias('count'))\
         .where(F.col('count') > 15)
       return result
-    
+
     ## Indicator 3
     def unique_subscribers_country(self, time_filter, frequency):
       result = self.df.where(time_filter)\
@@ -177,7 +218,7 @@ class custom_aggregator(aggregator):
         .agg(F.countDistinct('msisdn').alias('count'))\
         .where(F.col('count') > 15)
       return result
-    
+
     ## Indicator 4
     def percent_of_all_subscribers_active(self, time_filter, frequency):
       prep = self.df.where(time_filter)\
@@ -187,7 +228,7 @@ class custom_aggregator(aggregator):
         .where(F.col('count') > 15)
       result = self.unique_subscribers_country(time_filter, frequency).withColumn('percent_active', F.col('count') / prep)
       return result
-    
+
     ## Indicator 5
     def origin_destination_connection_matrix(self, time_filter, frequency):
       assert frequency == 'day', 'This indicator is only defined for daily frequency'
@@ -208,7 +249,7 @@ class custom_aggregator(aggregator):
         .withColumn('total_count', F.col('subscriber_count') + F.col('od_count'))\
         .drop('region').drop('region_lag').drop('day')
       return result
-    
+
     ## Indicator 6 helper method
     def assign_home_locations(self, time_filter, frequency):
       user_day = Window\
@@ -228,7 +269,7 @@ class custom_aggregator(aggregator):
         .groupby('msisdn', frequency)\
         .agg(F.last('region').alias('home_region'))
       return result
-    
+
     ## Indicator 6
     def unique_subscriber_home_locations(self, time_filter, frequency):
       result = self.assign_home_locations(time_filter, frequency)\
@@ -236,22 +277,22 @@ class custom_aggregator(aggregator):
         .count()\
         .where(F.col('count') > 15)
       return result
-    
+
     ## Indicator 7 + 8
     def mean_distance(self, time_filter, frequency):
       prep = self.df_with_home_locations.where(time_filter)\
         .withColumn('location_id_lag', F.lag('location_id').over(user_window))
-      result = prep.join(self.distances_df, 
+      result = prep.join(self.distances_df,
              (prep.location_id==self.distances_df.destination) &\
-             (prep.location_id_lag==self.distances_df.origin), 
+             (prep.location_id_lag==self.distances_df.origin),
              'left')\
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.sum('distance').alias('distance'))\
         .groupby('home_region', frequency)\
         .agg(F.mean('distance').alias('mean_distance'), F.stddev_pop('distance').alias('stdev_distance'))
       return result
-  
-   ## Indicator 9 
+
+   ## Indicator 9
     def home_vs_day_location(self, time_filter, frequency, home_location_frequency = 'week', **kwargs):
       user_window_day_location = Window\
         .orderBy(F.desc('total_duration'))\
@@ -271,7 +312,7 @@ class custom_aggregator(aggregator):
         .count()\
         .where(F.col('count') > 15)
       return result
-    
+
     ## Indicator10
     def origin_destination_matrix_time(self, time_filter, frequency):
       user_frequency_window = Window.partitionBy('msisdn').orderBy('call_datetime')
@@ -285,36 +326,36 @@ class custom_aggregator(aggregator):
         .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))\
        .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
-        .agg(F.sum(F.col('duration_change_only')).alias('total_duration_destination'), 
-           F.avg(F.col('duration_change_only')).alias('avg_duration_destination'), 
+        .agg(F.sum(F.col('duration_change_only')).alias('total_duration_destination'),
+           F.avg(F.col('duration_change_only')).alias('avg_duration_destination'),
            F.count(F.col('duration_change_only')).alias('count_destination'),
            F.stddev_pop(F.col('duration_change_only')).alias('stddev_duration_destination'),
-           F.sum(F.col('duration_change_only_lag')).alias('total_duration_origin'), 
-           F.avg(F.col('duration_change_only_lag')).alias('avg_duration_origin'), 
+           F.sum(F.col('duration_change_only_lag')).alias('total_duration_origin'),
+           F.avg(F.col('duration_change_only_lag')).alias('avg_duration_origin'),
            F.count(F.col('duration_change_only_lag')).alias('count_origin'),
            F.stddev_pop(F.col('duration_change_only_lag')).alias('stddev_duration_origin'))
       return result
-    
+
     ##### Non-priority Indicators
-    
+
     def origin_destination_matrix(self, time_filter, frequency):
       result = self.df.where(time_filter)\
         .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.count(F.col('msisdn')).alias('count'))
       return result
-        
+
     def origin_destination_unique_users_matrix(self, time_filter, frequency):
       result = self.df.where(time_filter)\
         .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.countDistinct(F.col('msisdn')).alias('count'))
       return result
-    
-    def percent_residents_day_equal_night_location(self, time_filter, frequency):  
+
+    def percent_residents_day_equal_night_location(self, time_filter, frequency):
       user_day_window = Window.partitionBy('msisdn', 'call_date')
       user_day_night_window = Window.partitionBy('msisdn', 'home_region', 'call_date', frequency)\
-        .orderBy('day_night') 
+        .orderBy('day_night')
       result = self.df_with_home_locations.where(time_filter)\
         .withColumn('day_night', F.when((F.col('hour_of_day') < 9) | (F.col('hour_of_day') > 17), 1).otherwise(0))\
         .withColumn('night_day', F.when((F.col('hour_of_day') > 9) & (F.col('hour_of_day') < 17), 1).otherwise(0))\
@@ -331,21 +372,21 @@ class custom_aggregator(aggregator):
         .groupby('home_region', frequency)\
         .agg(F.sum('day_equal_night').alias('day_equal_night_count'), F.count('day_equal_night').alias('total'))\
         .withColumn('pct_day_is_night', F.col('day_equal_night_count') / F.col('total'))
-      return result  
-  
+      return result
+
     def median_distance(self, time_filter, frequency):
       prep = self.df_with_home_locations.where(time_filter)
       prep = prep.withColumn('location_id_lag', F.lag('location_id').over(user_window))
-      prep = prep.join(self.distances_df, 
+      prep = prep.join(self.distances_df,
              (prep.location_id==self.distances_df.destination) &\
-             (prep.location_id_lag==self.distances_df.origin), 
+             (prep.location_id_lag==self.distances_df.origin),
              'left')\
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.sum('distance').alias('distance'))
       prep.createOrReplaceTempView("df")
       result = self.spark.sql("select {}, home_region, percentile_approx(distance,0.5) as median_distance from df group by home_region, {}".format(frequency, frequency))
       return result
-      
+
     def different_areas_visited(self, time_filter, frequency):
       result = self.df_with_home_locations.where(time_filter)\
         .groupby('msisdn', 'home_region', frequency)\
@@ -353,7 +394,7 @@ class custom_aggregator(aggregator):
         .groupby('home_region', frequency)\
         .agg(F.avg('distinct_regions_visited').alias('count'))
       return result
-    
+
     def only_in_one_region(self, time_filter, frequency):
       result = self.df_with_home_locations.where(time_filter)\
         .groupby('msisdn', 'home_region', frequency)\
@@ -362,7 +403,7 @@ class custom_aggregator(aggregator):
         .groupby('home_region', frequency)\
         .agg(F.countDistinct('msisdn').alias('count'))
       return result
-    
+
     def new_sim(self, time_filter, frequency):
       assert frequency == 'day', 'This indicator is only defined for daily frequency'
       region_month_window = Window.orderBy(F.col('frequency_sec'))\
@@ -380,7 +421,7 @@ class custom_aggregator(aggregator):
         .withColumn('new_sims_month', F.sum('new_sims').over(region_month_window))\
         .drop('frequency_sec')
       return result
-    
+
     def accumulated_incidence(self, time_filter, incubation_period_end = dt.datetime(2020,3,30), incubation_period_start = dt.datetime(2020,3,8), **kwargs):
       user_window_incidence = Window\
         .partitionBy('msisdn').orderBy('stop_number')
@@ -397,12 +438,12 @@ class custom_aggregator(aggregator):
         .join(self.incidence, 'region', 'left')\
         .withColumn('accumulated_incidence', F.col('incidence') * F.col('total_duration') / (21 * 24 * 60 * 60))\
         .withColumn('last_stop', F.when(F.col('stop_number') == F.max('stop_number').over(user_window_incidence_rev), 1).otherwise(0))\
-        .withColumn('imported_incidence', 
+        .withColumn('imported_incidence',
                     F.when(F.col('last_stop') == 1, F.sum(F.col('accumulated_incidence')).over(user_window_incidence)).otherwise(0))\
         .groupby('region')\
         .agg(F.sum('imported_incidence').alias('imported_incidence'))
       return result
-    
+
     def accumulated_incidence_imported_only(self, time_filter, incubation_period_end = dt.datetime(2020,3,30), incubation_period_start = dt.datetime(2020,3,8), **kwargs):
       user_window_prep = Window\
         .partitionBy('msisdn').orderBy('call_datetime')
@@ -429,12 +470,12 @@ class custom_aggregator(aggregator):
         .withColumn('cutoff_indicator', F.when((F.col('cutoff') == 0) &\
                                                (F.sum('same_region_as_last_stop_without_break').over(user_window_incidence) < F.max('stop_number_filtered').over(user_window_incidence)), 1).otherwise(0))\
         .withColumn('accumulated_incidence_cutoff', F.when((F.col('cutoff_indicator') == 1) & (F.col('same_region_as_last_stop_without_break') == 0), F.col('accumulated_incidence')).otherwise(0))\
-        .withColumn('imported_incidence', 
+        .withColumn('imported_incidence',
                     F.when(F.col('last_stop') == 1, F.sum(F.col('accumulated_incidence_cutoff')).over(user_window_incidence)).otherwise(0))\
         .groupby('region')\
         .agg(F.sum('imported_incidence').alias('imported_incidence'))
       return result
-    
+
     def origin_destination_matrix_time_longest_only(self, time_filter, frequency):
       user_frequency_window = Window.partitionBy('msisdn', frequency).orderBy('call_datetime')
       result = self.df.where(time_filter)\
@@ -447,9 +488,8 @@ class custom_aggregator(aggregator):
         .withColumn('max_duration', F.when(F.col('duration_change_only') == F.max(F.col('duration_change_only')).over(user_frequency_window), 1).otherwise(0))\
         .where(F.col('max_duration') == 1)\
         .groupby(frequency, 'region', 'region_lag')\
-        .agg(F.sum(F.col('duration_change_only')).alias('total_duration'), 
-           F.avg(F.col('duration_change_only')).alias('avg_duration'), 
+        .agg(F.sum(F.col('duration_change_only')).alias('total_duration'),
+           F.avg(F.col('duration_change_only')).alias('avg_duration'),
            F.count(F.col('duration_change_only')).alias('count'),
            F.stddev_pop(F.col('duration_change_only')).alias('stddev_duration'))
       return result
-                    
