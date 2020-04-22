@@ -6,7 +6,6 @@ if os.environ['HOME'] != '/root':
 
 from pyspark.sql.functions import to_timestamp
 from pyspark.sql.types import *
-
 from random import sample, seed
 
 import datetime as dt
@@ -38,6 +37,8 @@ class DataSource:
     self.parquetfile = self.filestub + ".parquet"
     self.parquetfile_path = self.standardize_path +"/"+ self.parquetfile
 
+    self.spark = spark
+
   ######################################
   # Setup Methods
 
@@ -56,6 +57,7 @@ class DataSource:
       "filestub":[str,None],
       "data_paths":[list,["*csv.gz","*csv"]],
       "geofiles":[dict,{}],
+      "shapefiles":[list,None],
       "load_seperator":[str,","],
       "load_header":[str,"false"],
       "load_mode":[str,"PERMISSIVE"],
@@ -193,3 +195,11 @@ class DataSource:
            .load(os.path.join(self.geofiles_path, self.geofiles[file]))
         setattr(self, file, df)
         setattr(self, file + '_pd', df.toPandas())
+
+  def create_gpds(self):
+      import geopandas as gpd
+      for file in self.shapefiles:
+        shape = getattr(self, file + '_pd')
+        shape['geometry'] = shape['geometry'].apply(wkt.loads)
+        shape_gpd = gpd.GeoDataFrame(shape, geometry = 'geometry', crs = 'epsg:4326')
+        setattr(self, file + '_gpd', shape_gpd)

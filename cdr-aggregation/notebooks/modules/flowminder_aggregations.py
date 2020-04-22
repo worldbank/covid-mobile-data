@@ -55,6 +55,7 @@ class aggregator:
     def __init__(self,
                  result_stub,
                  datasource,
+                 regions,
                  dates = {'start_date' : dt.datetime(2020,2,1),
                          'end_date' : dt.datetime(2020,3,31),
                          'start_date_weeks' : dt.datetime(2020,2,3),
@@ -67,7 +68,9 @@ class aggregator:
         self.result_path = datasource.results_path + result_stub
         self.calls = datasource.parquet_df
         self.calls.createOrReplaceTempView('calls')
-        self.spark = spark
+        self.cells = getattr(datasource, regions)
+        self.cells.createOrReplaceTempView("cells")
+        self.spark = datasource.spark
         self.dates = dates
         self.create_sql_dates()
         self.sql_code = write_sql_code(calls = self.calls,
