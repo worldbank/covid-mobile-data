@@ -70,6 +70,10 @@
 # CSS
 !/**/*.css
 
+# Docker
+!/**/*.yml
+!/**/docker/*
+
 #######################
 # Include some additional file formats in any output folder. You might have
 # to change the name of the Output folder to whatever it is called in your
@@ -98,7 +102,4 @@ passwords/
 # including in case change.
 data_methods.txt
 data_source_description.txt
-
-#######################
-temp fix for Zimbabwe code
-cdr-aggregation/zimbabwe2020
+/**/data*

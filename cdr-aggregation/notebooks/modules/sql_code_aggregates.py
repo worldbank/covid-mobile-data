@@ -7,7 +7,7 @@ def write_sql_code(calls = 'calls',
 
   sql_code = {
     # Aggregate 1 (April 1 version)
-    'count_unique_subscribers_per_region_per_day' : 
+    'count_unique_subscribers_per_region_per_day' :
     """
       SELECT * FROM (
           SELECT calls.call_date AS visit_date,
@@ -24,7 +24,7 @@ def write_sql_code(calls = 'calls',
       """.format(start_date),
 
     # Intermediate Result - Home location
-    'home_locations' : 
+    'home_locations' :
     """
       SELECT msisdn, region FROM (
           SELECT
@@ -81,7 +81,7 @@ def write_sql_code(calls = 'calls',
       ) AS grouped
       WHERE grouped.subscriber_count >= 15""",
 
-    'count_unique_visitors_per_region_per_day' : 
+    'count_unique_visitors_per_region_per_day' :
     """
       SELECT * FROM (
           SELECT all_visits.visit_date,
@@ -95,7 +95,7 @@ def write_sql_code(calls = 'calls',
       WHERE visitors.subscriber_count >= 15""",
 
     # Aggregate 3 (April 1 version)
-    'count_unique_subscribers_per_region_per_week' : 
+    'count_unique_subscribers_per_region_per_week' :
     """
       SELECT * FROM (
           SELECT extract(WEEK FROM calls.call_date) AS visit_week,
@@ -131,7 +131,7 @@ def write_sql_code(calls = 'calls',
       WHERE grouped.subscriber_count >= 15
       """.format(start_date_weeks, end_date_weeks),
 
-    'count_unique_visitors_per_region_per_week' : 
+    'count_unique_visitors_per_region_per_week' :
     """
     SELECT * FROM (
           SELECT all_visits.visit_week,
@@ -145,7 +145,7 @@ def write_sql_code(calls = 'calls',
       WHERE visitors.subscriber_count >= 15""",
 
     # Aggregate 5 (April 1 version)
-    'regional_pair_connections_per_day' : 
+    'regional_pair_connections_per_day' :
     """
     SELECT * FROM (
           SELECT connection_date,
@@ -193,7 +193,7 @@ def write_sql_code(calls = 'calls',
       """.format(start_date, start_date),
 
     # Aggregate 6 (April 2 version)
-    'directed_regional_pair_connections_per_day' : 
+    'directed_regional_pair_connections_per_day' :
     """
       WITH subscriber_locations AS (
           SELECT calls.msisdn,
@@ -233,7 +233,7 @@ def write_sql_code(calls = 'calls',
       """.format(start_date),
 
     # Aggregate 7 (April 3 version)
-    'total_calls_per_region_per_day' : 
+    'total_calls_per_region_per_day' :
     """
       SELECT
           call_date,
@@ -255,8 +255,8 @@ def write_sql_code(calls = 'calls',
       """.format(start_date),
 
     # Aggregate 8 (April 3 version)
-    'home_location_counts_per_region' : 
-    """ 
+    'home_location_counts_per_region' :
+    """
       SELECT * FROM (
           SELECT region, count(msisdn) AS subscriber_count
           FROM home_locations     -- See intermediate_queries.sql for code to create the home_locations table
