@@ -2,9 +2,9 @@
 
 rm(list = ls())
 
-CLEAN_SPATIAL_DATA <- T
-CLEAN_TELECOM_DATA <- T
-PREP_DATA_FOR_DASH <- T
+CLEAN_SPATIAL_DATA <- F
+CLEAN_TELECOM_DATA <- F
+PREP_DATA_FOR_DASH <- F
 
 #### Packages #### =============================================================
 library(tidyverse)
@@ -48,8 +48,10 @@ CUSTOM_DATA_ADM3_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "databric
 CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin2", "data_clean")
 CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin3", "data_clean")
 
-GEO_ADM2_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin2", "geo_files")
+GEO_ADM2_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "geo_files")
 GEO_ADM3_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin3", "geo_files")
+
+RISK_ANALYSIS_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "risk-analysis")
 
 DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard")
 DASHBOARD_DATA_PATH     <- file.path(DASHBOARD_PATH, "data_inputs_for_dashboard")
