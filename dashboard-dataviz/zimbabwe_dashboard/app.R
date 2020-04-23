@@ -59,6 +59,12 @@ if (Sys.info()[["user"]] == "WB521633") {
   )
 }
 
+if (Sys.info()[["user"]] == "wb519128") {
+  setwd(
+    "C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
+  )
+}
+
 # LOAD/PREP DATA ===============================================================
 
 #### Spatial base layers
@@ -775,7 +781,7 @@ server = (function(input, output, session) {
           }
         }
         
-        # For values with label of 15 or less to be NA. \
+        # For values with label of 15 or less to be NA. /
         if(!is.null(input$select_metric)){
           if(input$select_metric %in% c("% Change", "Z-Score")){
             
