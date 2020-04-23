@@ -44,6 +44,7 @@ class tower_clusterer:
         self.datasource = datasource
         self.spark = datasource.spark
         self.shape = getattr(datasource, shape + '_gpd')
+        self.shape_df = getattr(datasource, shape)
         self.result_path = datasource.results_path
         self.filename = shape
         self.region_var = region_var
@@ -86,7 +87,7 @@ class tower_clusterer:
         self.distances_pd_long = pd.DataFrame(list(zip(distances, origin, destination)), columns =['distance', 'origin', 'destination'])
 
         self.map_to_regions()
-        self.save_results()
+        return self.save_results()
 
     def get_centroids(self):
 
@@ -111,9 +112,11 @@ class tower_clusterer:
       self.joined = self.joined.rename(columns={self.region_var:'region'})
       self.towers_regions_clusters_all_vars = self.joined.loc[:,['cell_id', 'LAT', 'LNG', 'centroid_LAT', 'centroid_LNG', 'region', 'cluster']]
       self.towers_regions_clusters_all_vars  = self.spark.createDataFrame(self.towers_regions_clusters_all_vars)
-      save_csv(self.towers_regions_clusters_all_vars, self.result_path, self.datasource.country_code + '_' + self.filename + '_all_vars')
+      save_csv(self.towers_regions_clusters_all_vars, self.result_path, self.datasource.country_code + '_' + self.filename + '_tower_map_all_vars')
       self.towers_regions_clusters = self.joined.loc[:,['cell_id', 'region']]
       self.towers_regions_clusters  = self.spark.createDataFrame(self.towers_regions_clusters)
-      save_csv(self.towers_regions_clusters, self.result_path, self.datasource.country_code + '_' + self.filename)
+      save_csv(self.towers_regions_clusters, self.result_path, self.datasource.country_code + '_' + self.filename + '_tower_map')
       self.distances_df_long  = self.spark.createDataFrame(self.distances_pd_long)
       save_csv(self.distances_df_long, self.result_path, self.datasource.country_code + '_distances_pd_long')
+      save_csv(self.shape_df, self.result_path, self.datasource.country_code + '_' + self.filename  + '_shapefile')
+      return self.towers_regions_clusters, self.distances_df_long

@@ -313,8 +313,10 @@ class custom_aggregator(aggregator):
         .orderBy('msisdn', frequency, 'total_duration')\
         .groupby('msisdn', frequency, home_location_frequency)\
         .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))\
-        .where(F.col('region').isNotNull())
-      result = prep.join(home_locations, ['msisdn', home_location_frequency], 'left')\
+        .where(F.col('region').isNotNull())\
+        .withColumnRenamed('msisdn', 'msisdn2')\
+        .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
+      result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) & (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
         .groupby(frequency, 'region', 'home_region')\
         .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'), F.count('msisdn').alias('count'))\
         .where(F.col('count') > 15)
