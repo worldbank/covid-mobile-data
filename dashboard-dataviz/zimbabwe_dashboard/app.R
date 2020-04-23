@@ -61,24 +61,13 @@ if (Sys.info()[["user"]] == "WB521633") {
 
 # LOAD/PREP DATA ===============================================================
 
+#### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
 district_sp <- readRDS(file.path("data_inputs_for_dashboard", "districts.Rds"))
-district_sp$province <- district_sp$province %>% as.character()
 
 #### Province List for Select Input
 provinces <- ward_sp$province %>% unique() %>% sort()
 provinces <- c("All", provinces)
-
-map_values <- rep(1, nrow(ward_sp))
-map_labels <- rep("label", nrow(ward_sp))
-map_data <- ward_sp
-
-unit_i <- "Wards"
-variable_i <- "Density"
-timeunit_i <- "Daily"
-date_i <- "2020-02-01"
-previous_zoom_selection <- ""
-metric_i <- "Count"
 
 #### Totals
 obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
@@ -90,6 +79,13 @@ data_methods_text <- read.table("data_methods.txt", sep="{")[[1]] %>%
 data_source_description_text <- read.table("data_source_description.txt", sep="{")[[1]] %>% 
   as.character()
 
+#### Default parameters on load
+unit_i <- "Wards"
+variable_i <- "Density"
+timeunit_i <- "Daily"
+date_i <- "2020-02-01"
+previous_zoom_selection <- ""
+metric_i <- "Count"
 
 # UIs ==========================================================================
 
@@ -142,7 +138,7 @@ ui_main <- fluidPage(
     # World Bank COVID Mobility Analytics Task Force
     
     
-    # ** Ward Level ---------------------------------------------------
+    # ** Telecom Data ----------------------------------------------------------
     tabPanel(
       "Dashboard",
       tags$head(includeCSS("styles.css")),
@@ -254,20 +250,12 @@ ui_main <- fluidPage(
           column(12,
                  " ")
         )
-        #hr(),
-        
-        #fluidRow(
-        #  column(12, align="center",
-        #         h4("World Bank COVID Mobility Analytics Task Force")
-        #  )
-        #)
-        
-        
+
       )
       
     ),
     
-    # ** Data Description ---------------------------------------------
+    # ** Data Description ------------------------------------------------------
     tabPanel("Data Description",
              fluidRow(column(4,
                              ""),
@@ -372,7 +360,7 @@ server = (function(input, output, session) {
       
       # ** Reactives and Observes ----------------------------------------------
       
-      #### Basemap
+      ##### **** Basemap Filtering ##### 
       ward_sp_filter <- reactive({
         
         #### Default
@@ -405,7 +393,7 @@ server = (function(input, output, session) {
         out
       })
       
-      
+      ##### **** Telecom Data Filtering ##### 
       ward_data_sp_filtered <- reactive({
         #### Determine the selected ward.
         # This is relevant only in O-D matrices when select an origin ward
@@ -734,10 +722,8 @@ server = (function(input, output, session) {
       output$mapward <- renderLeaflet({
         
         map_sp <- ward_sp_filter()
-        
         map_extent <- map_sp %>% extent()
-        #map_extent <- ward_sp %>% extent()
-        
+
         leaflet() %>%
           addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
           fitBounds(
@@ -746,7 +732,6 @@ server = (function(input, output, session) {
             lng2 = map_extent@xmax,
             lat2 = map_extent@ymax
           ) 
-        
         
       })
       
