@@ -46,7 +46,7 @@ library(scales)
 library(lubridate)
 
 #### Logged; make false to enable password
-Logged = F
+Logged = T
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
