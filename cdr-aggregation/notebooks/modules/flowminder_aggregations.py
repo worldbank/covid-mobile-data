@@ -56,10 +56,6 @@ class aggregator:
                  result_stub,
                  datasource,
                  regions,
-                 dates = {'start_date' : dt.datetime(2020,2,1),
-                         'end_date' : dt.datetime(2020,3,31),
-                         'start_date_weeks' : dt.datetime(2020,2,3),
-                         'end_date_weeks' : dt.datetime(2020,3,29)},
                  intermediate_tables = ['home_locations']):
         """
         Parameters
@@ -71,7 +67,7 @@ class aggregator:
         self.cells = getattr(datasource, regions)
         self.cells.createOrReplaceTempView("cells")
         self.spark = datasource.spark
-        self.dates = dates
+        self.dates = datasource.dates
         self.create_sql_dates()
         self.sql_code = write_sql_code(calls = self.calls,
                                        start_date = self.dates_sql['start_date'],

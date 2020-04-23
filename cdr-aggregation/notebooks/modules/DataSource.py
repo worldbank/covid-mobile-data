@@ -18,6 +18,7 @@ class DataSource:
 
     #Get input config and set default values as needed
     self.setup_config(config_input)
+    self.add_week_dates()
 
     # Country code and company and path
     self.ccc_path = self.country_code+"/"+self.telecom_alias
@@ -58,6 +59,7 @@ class DataSource:
       "data_paths":[list,["*csv.gz","*csv"]],
       "geofiles":[dict,{}],
       "shapefiles":[list,None],
+      "dates":[dict,{}],
       "load_seperator":[str,","],
       "load_header":[str,"false"],
       "load_mode":[str,"PERMISSIVE"],
@@ -90,6 +92,16 @@ class DataSource:
         #Otgherwise use default value
         else:
           setattr(self, config_key, keys_types_defaults[config_key][1])
+
+  def add_week_dates(self):
+      idx = self.dates['start_date'].weekday() % 7
+      idx2 = self.dates['end_date'].weekday() + 1 % 7
+      if idx == 0:
+          idx = 7
+      if idx2 == 7:
+          idx2 = 0
+      self.dates['start_date_weeks'] = self.dates['start_date'] + dt.timedelta(7-idx)
+      self.dates['end_date_weeks'] = self.dates['end_date'] - dt.timedelta(idx2)
 
   #Add more paths for data files in the country company folder
   def show_config(self):

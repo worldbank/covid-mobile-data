@@ -29,11 +29,7 @@ class custom_aggregator(aggregator):
                  result_stub,
                  datasource,
                  regions,
-                 re_use_home_locations = False,
-                 dates = {'start_date' : dt.datetime(2020,2,1),
-                         'end_date' : dt.datetime(2020,3,31),
-                         'start_date_weeks' : dt.datetime(2020,2,3),
-                         'end_date_weeks' : dt.datetime(2020,3,29)}):
+                 re_use_home_locations = False):
         """
         Parameters
         ----------
@@ -57,7 +53,7 @@ class custom_aggregator(aggregator):
           .withColumn('week', F.date_trunc('week', F.col('call_datetime')))\
           .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
           .withColumn('day', F.date_trunc('day', F.col('call_datetime')))
-        self.dates = dates
+        self.dates = datasource.dates
         self.create_sql_dates()
         self.table_names = []
         self.period_filter = (F.col('call_datetime') >= self.dates['start_date']) &\
