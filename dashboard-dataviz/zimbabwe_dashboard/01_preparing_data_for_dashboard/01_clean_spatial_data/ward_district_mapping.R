@@ -26,16 +26,6 @@ tower_cluster_df <- read.csv(file.path(GEO_PATH,
 coordinates(tower_cluster_df) <- ~centroid_LNG+centroid_LAT
 crs(tower_cluster_df) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
-# Load District Data for Mapping IDs -------------------------------------------
-district_sp <- readOGR(dsn = file.path(GEO_PATH),
-                       layer = "ZWE_adm2")
-
-ward_sp_centroids <- gCentroid(ward_sp, byid=T)
-
-ward_OVER_district <- over(ward_sp_centroids, district_sp)
-ward_sp$district_id <- ward_OVER_district$ID_2 %>% as.character() %>% as.numeric()
-ward_sp$district_name <- ward_OVER_district$NAME_2 %>% as.character()
-
 # Aggregate Wards --------------------------------------------------------------
 
 #### Divide into wards with and without clusters
@@ -93,8 +83,7 @@ ward_agg_sp@data <- ward_agg_sp@data %>%
                      str_replace_all("/", "-")) %>%
   dplyr::rename(province = ADM1_EN,
                 region   = ADM3_PCODE) %>%
-  dplyr::select(name, region, province,
-                district_id, district_name) 
+  dplyr::select(name, region, province) 
 
 #### Calculate Area
 ward_agg_sp$area <- geosphere::areaPolygon(ward_agg_sp) / 1000^2
@@ -113,19 +102,4 @@ saveRDS(ward_agg_sp, file.path(CLEAN_DATA_ADM3_PATH,
 
 saveRDS(ward_agg_sp, file.path(DASHBOARD_DATA_ONEDRIVE_PATH, 
                                "wards_aggregated.Rds"))
-
-ward_agg_sf <- ward_agg_sp %>% st_as_sf()
-ward_agg_sf$district_id <- ward_agg_sf$district_id %>% as.character() %>% as.numeric()
-
-ward_agg_sf <- ward_agg_sf %>%
-  dplyr::rename(ward_name = name,
-                ward_id = region,
-                province_name = province)
-
-st_write(ward_agg_sf, file.path(GEO_PATH, "wards_aggregated.geojson"),
-         delete_dsn=T)
-
-ward_agg_df <- ward_agg_sf
-ward_agg_df$geometry <- NULL
-write.csv(ward_agg_df, file.path(GEO_PATH, "wards_aggregated.csv"), row.names = F)
 
