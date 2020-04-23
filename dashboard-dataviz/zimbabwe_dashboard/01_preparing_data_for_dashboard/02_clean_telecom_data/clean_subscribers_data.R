@@ -12,7 +12,7 @@ for(unit in c("district", "ward")){
   }
   
   if(unit %in% "ward"){
-    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "flowminder indicators", "admin2")
+    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "flowminder indicators", "admin3")
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
   }
