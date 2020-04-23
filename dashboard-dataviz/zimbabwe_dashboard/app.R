@@ -138,7 +138,7 @@ ui_main <- fluidPage(
     # World Bank COVID Mobility Analytics Task Force
     
     
-    # ** Ward Level ---------------------------------------------------
+    # ** Telecom Data ----------------------------------------------------------
     tabPanel(
       "Dashboard",
       tags$head(includeCSS("styles.css")),
@@ -255,7 +255,7 @@ ui_main <- fluidPage(
       
     ),
     
-    # ** Data Description ---------------------------------------------
+    # ** Data Description ------------------------------------------------------
     tabPanel("Data Description",
              fluidRow(column(4,
                              ""),
@@ -360,7 +360,7 @@ server = (function(input, output, session) {
       
       # ** Reactives and Observes ----------------------------------------------
       
-      #### Basemap
+      ##### **** Basemap Filtering ##### 
       ward_sp_filter <- reactive({
         
         #### Default
@@ -393,7 +393,7 @@ server = (function(input, output, session) {
         out
       })
       
-      
+      ##### **** Telecom Data Filtering ##### 
       ward_data_sp_filtered <- reactive({
         #### Determine the selected ward.
         # This is relevant only in O-D matrices when select an origin ward
@@ -722,10 +722,8 @@ server = (function(input, output, session) {
       output$mapward <- renderLeaflet({
         
         map_sp <- ward_sp_filter()
-        
         map_extent <- map_sp %>% extent()
-        #map_extent <- ward_sp %>% extent()
-        
+
         leaflet() %>%
           addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
           fitBounds(
@@ -734,7 +732,6 @@ server = (function(input, output, session) {
             lng2 = map_extent@xmax,
             lat2 = map_extent@ymax
           ) 
-        
         
       })
       
