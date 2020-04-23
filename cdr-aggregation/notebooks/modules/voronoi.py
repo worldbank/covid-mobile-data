@@ -107,7 +107,7 @@ class voronoi_maker:
         self.voronoi_dict = self.voronoi_dict.reset_index()
         self.voronoi_dict.columns = ['region', 'cell_id']
         self.voronoi_dict  = self.spark.createDataFrame(self.voronoi_dict)
-        save_csv(self.voronoi_dict, self.result_path, self.datasource.country_code + '_voronoi_dict')
+        save_csv(self.voronoi_dict, self.result_path, self.datasource.country_code + '_voronoi_tower_map')
 
     def assign_to_spark_df(self):
 
