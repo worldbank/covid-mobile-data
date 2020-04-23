@@ -42,7 +42,7 @@ class custom_aggregator(aggregator):
         self.result_path = datasource.results_path + result_stub
         self.calls = datasource.parquet_df
         self.tempfile = datasource.tempfldr_path
-        self.incidence_file = datasource.support_data_cc + '/covid_incidence_march30.csv'
+        self.incidence = getattr(datasource, 'incidence')
         self.cells = getattr(datasource, regions)
         self.cells.createOrReplaceTempView("cells")
         self.distances_df = datasource.distances
@@ -78,13 +78,6 @@ class custom_aggregator(aggregator):
                 .withColumnRenamed('region', 'home_region'),
             'msisdn', 'left'),
           self.tempfile)
-
-        self.incidence = self.spark.read.format("csv")\
-          .option("header", "true")\
-          .option("delimiter", ",")\
-          .option("inferSchema", "true")\
-          .option("mode", "DROPMALFORMED")\
-          .load(self.incidence_file)
 
     def save_df(self, df, table_name):
       df.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv') \
@@ -215,7 +208,7 @@ class custom_aggregator(aggregator):
       result = self.df.where(time_filter)\
         .groupby(frequency, 'region')\
         .count()\
-        #.where(F.col('count') > 15)
+        .where(F.col('count') > 15)
       return result
 
     ## Indicator 2 + 3
@@ -223,7 +216,7 @@ class custom_aggregator(aggregator):
       result = self.df.where(time_filter)\
         .groupby(frequency, 'region')\
         .agg(F.countDistinct('msisdn').alias('count'))\
-        #.where(F.col('count') > 15)
+        .where(F.col('count') > 15)
       return result
 
     ## Indicator 3
@@ -231,7 +224,7 @@ class custom_aggregator(aggregator):
       result = self.df.where(time_filter)\
         .groupby(frequency)\
         .agg(F.countDistinct('msisdn').alias('count'))\
-        #.where(F.col('count') > 15)
+        .where(F.col('count') > 15)
       return result
 
     ## Indicator 4
@@ -239,8 +232,7 @@ class custom_aggregator(aggregator):
       prep = self.df.where(time_filter)\
         .select('msisdn')\
         .distinct()\
-        .count()\
-        #.where(F.col('count') > 15)
+        .count()
       result = self.unique_subscribers_country(time_filter, frequency).withColumn('percent_active', F.col('count') / prep)
       return result
 
@@ -320,11 +312,11 @@ class custom_aggregator(aggregator):
         .agg(F.sum('duration').alias('total_duration'))\
         .orderBy('msisdn', frequency, 'total_duration')\
         .groupby('msisdn', frequency, home_location_frequency)\
-        .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))
+        .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))\
+        .where(F.col('region').isNotNull())
       result = prep.join(home_locations, ['msisdn', home_location_frequency], 'left')\
         .groupby(frequency, 'region', 'home_region')\
-        .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'))\
-        .count()\
+        .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'), F.count('msisdn').alias('count'))\
         .where(F.col('count') > 15)
       return result
 

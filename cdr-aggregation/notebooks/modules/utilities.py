@@ -62,3 +62,14 @@ def fill_zero_dates(pd_df):
     msisdnx = pd.date_range(pd_df.index[0], pd_df.index[-1])
     pd_df = pd_df.reindex(msisdnx, fill_value= 0)
     return pd_df
+
+def add_week_dates(dates):
+    idx = dates['start_date'].weekday() % 7
+    idx2 = dates['end_date'].weekday() + 1 % 7
+    if idx == 0:
+        idx = 7
+    if idx2 == 7:
+        idx2 = 0
+    dates['start_date_weeks'] = dates['start_date'] + dt.timedelta(7-idx)
+    dates['end_date_weeks'] = dates['end_date'] - dt.timedelta(idx2)
+    return dates
