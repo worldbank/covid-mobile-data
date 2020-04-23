@@ -2,7 +2,7 @@
 
 **How to run `aggregtion_offsite.ipynb` in a docker container**
 
-Prerequisite: `docker` and `docker-compose. Get it [here](https://docs.docker.com/get-docker/).
+Prerequisite: `docker` and `docker-compose`. Get it [here](https://docs.docker.com/get-docker/).
 
 ## Step 1
 Clone this repository if you haven’t yet.
