@@ -183,8 +183,7 @@ class custom_aggregator(aggregator):
       prep = self.df.where(time_filter)\
         .select('msisdn')\
         .distinct()\
-        .count()\
-        .where(F.col('count') > 15)
+        .count()
       result = self.unique_subscribers_country(time_filter, frequency).withColumn('percent_active', F.col('count') / prep)
       return result
     
@@ -226,7 +225,8 @@ class custom_aggregator(aggregator):
         .withColumn('modal_region', F.when(F.first('last_region_count').over(user_frequency) == F.col('last_region_count'),1).otherwise(0))\
         .where(F.col('modal_region') == 1)\
         .groupby('msisdn', frequency)\
-        .agg(F.last('region').alias('home_region'))
+        .agg(F.last('region').alias('home_region'))\
+        .where(F.col('home_region').isNotNull())
       return result
     
     ## Indicator 6
@@ -264,12 +264,13 @@ class custom_aggregator(aggregator):
         .agg(F.sum('duration').alias('total_duration'))\
         .orderBy('msisdn', frequency, 'total_duration')\
         .groupby('msisdn', frequency, home_location_frequency)\
-        .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))
-      result = prep.join(home_locations, ['msisdn', home_location_frequency], 'left')\
+        .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))\
+        .where(F.col('region').isNotNull())\
+        .withColumnRenamed('msisdn', 'msisdn2')\
+        .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
+      result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) & (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
         .groupby(frequency, 'region', 'home_region')\
-        .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'))\
-        .count()\
-        .where(F.col('count') > 15)
+        .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'), F.count('msisdn').alias('count'))
       return result
     
     ## Indicator10
