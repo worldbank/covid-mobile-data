@@ -61,24 +61,13 @@ if (Sys.info()[["user"]] == "WB521633") {
 
 # LOAD/PREP DATA ===============================================================
 
+#### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
 district_sp <- readRDS(file.path("data_inputs_for_dashboard", "districts.Rds"))
-district_sp$province <- district_sp$province %>% as.character()
 
 #### Province List for Select Input
 provinces <- ward_sp$province %>% unique() %>% sort()
 provinces <- c("All", provinces)
-
-map_values <- rep(1, nrow(ward_sp))
-map_labels <- rep("label", nrow(ward_sp))
-map_data <- ward_sp
-
-unit_i <- "Wards"
-variable_i <- "Density"
-timeunit_i <- "Daily"
-date_i <- "2020-02-01"
-previous_zoom_selection <- ""
-metric_i <- "Count"
 
 #### Totals
 obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
@@ -90,6 +79,13 @@ data_methods_text <- read.table("data_methods.txt", sep="{")[[1]] %>%
 data_source_description_text <- read.table("data_source_description.txt", sep="{")[[1]] %>% 
   as.character()
 
+#### Default parameters on load
+unit_i <- "Wards"
+variable_i <- "Density"
+timeunit_i <- "Daily"
+date_i <- "2020-02-01"
+previous_zoom_selection <- ""
+metric_i <- "Count"
 
 # UIs ==========================================================================
 
@@ -254,15 +250,7 @@ ui_main <- fluidPage(
           column(12,
                  " ")
         )
-        #hr(),
-        
-        #fluidRow(
-        #  column(12, align="center",
-        #         h4("World Bank COVID Mobility Analytics Task Force")
-        #  )
-        #)
-        
-        
+
       )
       
     ),
