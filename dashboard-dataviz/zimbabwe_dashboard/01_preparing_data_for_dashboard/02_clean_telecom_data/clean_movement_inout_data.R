@@ -1,5 +1,7 @@
 # Clean Subscribers Data
 
+# REQUIRES RUNNING clean_movement_inout_data.R BEFOREHAND.
+
 EXPORT <- T
 
 for(unit in c("district", "ward")){
@@ -20,9 +22,17 @@ for(unit in c("district", "ward")){
   }
   
   # Daily ----------------------------------------------------------------------
+  print("day")
+  
   df_day <- read.csv(file.path(CUSTOM_DATA_PATH, 
                                "origin_destination_connection_matrix_per_day.csv"), 
                      stringsAsFactors=F)
+  
+  # If less than 15, make NA. Doing this now removes some region-pairs. For 
+  # example, if a o-d pair has a value less than 15 for every time period, 
+  # we don't considered here and helps improve code speed both here and in
+  # the script to prepare data for dashboard.
+  df_day <- df_day[df_day$total_count > 15,]
   
   df_day_clean <- df_day %>% 
     
@@ -34,8 +44,8 @@ for(unit in c("district", "ward")){
     tp_add_polygon_data_od(admin_sp) %>%
     
     # Interpolate/Clean Values
-    tp_interpolate_outliers(NAs_as_zero = T) %>%
-    tp_replace_zeros(NAs_as_zero = T) %>%
+    #tp_interpolate_outliers(NAs_as_zero = T) %>%
+    #tp_replace_zeros(NAs_as_zero = T) %>%
     tp_less15_NA() %>%
     
     # Percent change
@@ -48,16 +58,21 @@ for(unit in c("district", "ward")){
   
   if(EXPORT){
     saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
-                                "origin_destination_connection_matrix_per_day.Rds"))
+                                    "origin_destination_connection_matrix_per_day.Rds"))
     write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
-                                  "count_unique_subscribers_per_region_per_day.Rds"), 
+                                      "origin_destination_connection_matrix_per_day.csv"), 
               row.names=F)
   }
-
+  
   # Weekly ---------------------------------------------------------------------
+  print("week")
+  
   df_day <- read.csv(file.path(CUSTOM_DATA_PATH, 
                                "origin_destination_connection_matrix_per_day.csv"), 
                      stringsAsFactors=F)
+  
+  # If less than 15, make NA
+  df_day <- df_day[df_day$total_count > 15,]
   
   df_week_clean <- df_day %>% 
     
@@ -70,8 +85,8 @@ for(unit in c("district", "ward")){
     tp_add_polygon_data_od(admin_sp) %>%
     
     # Interpolate/Clean Values
-    tp_interpolate_outliers(NAs_as_zero = T) %>%
-    tp_replace_zeros(NAs_as_zero = T) %>%
+    #tp_interpolate_outliers(NAs_as_zero = T) %>%
+    #tp_replace_zeros(NAs_as_zero = T) %>%
     tp_less15_NA() %>%
     
     # Percent change
@@ -84,9 +99,9 @@ for(unit in c("district", "ward")){
   
   if(EXPORT){
     saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,
-                                    "origin_destination_connection_matrix_per_week.Rds"))
+                                     "origin_destination_connection_matrix_per_week.Rds"))
     write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, 
-                                      "count_unique_subscribers_per_region_per_week.Rds"), 
+                                       "origin_destination_connection_matrix_per_week.csv"), 
               row.names=F)
   }
   

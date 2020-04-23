@@ -3,20 +3,27 @@
 # Creates functions to standardize the process of cleaning and standardizing
 # telecom data.
 
+# For many functions, printing "Done: [function name]" to help identify wheich
+# functions take a long time and where more effort should be spent making them 
+# faster.
+
 # TODO: (1) Functions designed so that any variable name inputs will work; however,
 #           some (eg, complete) return dataframe always with standardized
 #           var names. Fix so output the origin names entered in to make this
 #           more general.
-#       
+#       (2) Where possible, use data.table methods - particularly when use
+#           group_by - to help make faster. 
+#               --complete?
+#               --interpolation and replace zero scripts
 
 tp_standardize_vars <- function(data,
-                                 date_var,
-                                 region_var,
-                                 value_var){
+                                date_var,
+                                region_var,
+                                value_var){
   
   # DESCRIPTION
   # Standardizes original variable names to names used in shiny dashboard
-
+  
   data <- data %>%
     dplyr::rename("date" = date_var,
                   "region" = region_var,
@@ -29,10 +36,10 @@ tp_standardize_vars <- function(data,
 }
 
 tp_standardize_vars_od <- function(data,
-                                date_var,
-                                region_origin_var,
-                                region_dest_var,
-                                value_var){
+                                   date_var,
+                                   region_origin_var,
+                                   region_dest_var,
+                                   value_var){
   
   # DESCRIPTION
   # Standardizes original variable names to names used in shiny dashboard
@@ -52,9 +59,9 @@ tp_standardize_vars_od <- function(data,
 }
 
 tp_complete_date_region <- function(data,
-                                       date_var = "date",
-                                       region_var = "region",
-                                       value_var = "value"){
+                                    date_var = "date",
+                                    region_var = "region",
+                                    value_var = "value"){
   
   data <- data.frame(
     date = data[date_var],
@@ -76,6 +83,7 @@ tp_complete_date_region_od <- function(data,
                                        region_dest_var = "region_dest",
                                        value_var = "value"){
   
+  
   data <- data.frame(
     date = data[date_var],
     region = data[region_var],
@@ -86,12 +94,20 @@ tp_complete_date_region_od <- function(data,
   
   data <- data %>%
     as.data.frame() %>%
-  tidyr::complete(nesting(region, region_origin, region_dest), date) 
+    tidyr::complete(nesting(region, region_origin, region_dest), date) 
+  
+  # https://stackoverflow.com/questions/43483497/data-table-equivalent-of-tidyrcomplete
+  #res = setDT(data)[
+  #  CJ(region = region, date = date, unique=TRUE), 
+  #  on=.(region, date)
+  #  ]
+  
+  print("Done: tp_complete_date_region_od")
   
   return(data)
 }
-  
-  
+
+
 tp_add_polygon_data <- function(data,
                                 sp_data,
                                 by = "region"){
@@ -108,52 +124,62 @@ tp_add_polygon_data <- function(data,
 }
 
 tp_add_polygon_data_od <- function(data,
-                                sp_data,
-                                by = "region"){
+                                   sp_data,
+                                   by = "region"){
   
   # TODO: Currently ignores "by" and assumes region, region_origin, region_dest
   
   # In case enteres spatialpolygonsdataframe, grab data
   sp_data <- sp_data %>% as.data.frame()
   
-  sp_data_origin <- sp_data
-  sp_data_dest <- sp_data
+  # data.table for speed
+  sp_data_origin <- sp_data %>% as.data.table()
+  sp_data_dest <- sp_data %>% as.data.table()
+  data <- data %>% as.data.table()
   
   # Add _origin and _destination to all variables
   names(sp_data_origin) <- paste0(names(sp_data_origin), "_origin")
   names(sp_data_dest)   <- paste0(names(sp_data_dest), "_dest")
   
-  data <- data %>%
-    left_join(sp_data_origin, by="region_origin")  %>%
-    left_join(sp_data_dest, by="region_dest") 
+  # Merge - data.table method
+  data <- merge(data, sp_data_origin, by = "region_origin")
+  data <- merge(data, sp_data_dest, by = "region_dest")
+  
+  #data <- data %>%
+  #  left_join(sp_data_origin, by="region_origin")  %>%
+  #  left_join(sp_data_dest, by="region_dest") 
   
   ## Clean up - exclude areas not in polygon
   data <- data[!is.na(data$name_origin),]
   data <- data[!is.na(data$name_dest),]
   
+  data <- as.data.frame(data)
+  
+  print("Done: tp_add_polygon_data_od")
+  
   return(data)
 }
 
 tp_fill_regions <- function(data, 
-                         admin_sp,
-                         unit_var = "region",
-                         date_var = "date"){
+                            admin_sp,
+                            unit_var = "region",
+                            date_var = "date"){
   
   # DESCRIPTION
-    # Some datasets to not contain all the regions found in the polygon - some
-    # wards or districts, for example, may be missing. This function adds 
-    # missing regions to the dataframe. It only adds for one time period; the
-    # "complete" function should then be used after to expand the region across
-    # time.
+  # Some datasets to not contain all the regions found in the polygon - some
+  # wards or districts, for example, may be missing. This function adds 
+  # missing regions to the dataframe. It only adds for one time period; the
+  # "complete" function should then be used after to expand the region across
+  # time.
   
   # Args
-    # data:     dataframe of tele data
-    # admin_sp: polygon layer at same level as dataframe
-    # unit_var: unit variable (e.g., region) common between datasets. Does not
-    #           support different variable names across datasets.
-    # date_var: When adding additional rows to data, all variables are NA
-    #           except for date, where we fill in one date
-
+  # data:     dataframe of tele data
+  # admin_sp: polygon layer at same level as dataframe
+  # unit_var: unit variable (e.g., region) common between datasets. Does not
+  #           support different variable names across datasets.
+  # date_var: When adding additional rows to data, all variables are NA
+  #           except for date, where we fill in one date
+  
   #### Prep data
   data$unit_var_TEMP     <- data[[unit_var]]
   admin_sp$unit_var_TEMP <- admin_sp[[unit_var]]
@@ -163,7 +189,7 @@ tp_fill_regions <- function(data,
   #### Dataframe with new regions
   new_units_df <- setdiff(admin_sp$unit_var_TEMP, 
                           data$unit_var_TEMP) %>%
-         as.data.frame() %>%
+    as.data.frame() %>%
     dplyr::mutate(date = date_example)
   
   names(new_units_df) <- c(unit_var, date_var)
@@ -171,12 +197,13 @@ tp_fill_regions <- function(data,
   data <- bind_rows(data, new_units_df)
   data$unit_var_TEMP <- NULL
   
+  print("Done: tp_fill_regions")
   return(data)
 }
 
 tp_clean_week <- function(data, 
-                       newvar_name = "date",
-                       date_var = "date"){
+                          newvar_name = "date",
+                          date_var = "date"){
   
   # DESCRIPTION
   # Function to clean week variable into text format seen by user in Shiny
@@ -236,14 +263,15 @@ tp_clean_week <- function(data,
   
   data[[newvar_name]] <- date_var
   
+  print("Done: tp_clean_week")
   return(data)
 }
 
 tp_agg_day_to_week <- function(data,
-                           value_var = "value", 
-                           region_var = "region", 
-                           date_var = "date",
-                           fun = "sum"){
+                               value_var = "value", 
+                               region_var = "region", 
+                               date_var = "date",
+                               fun = "sum"){
   
   data <- data.frame(value = data[[value_var]],
                      region = data[[region_var]],
@@ -260,17 +288,19 @@ tp_agg_day_to_week <- function(data,
       dplyr::group_by(region, date) %>%
       dplyr::summarise(value = mean(value, na.rm=T))
   }
-
+  
+  print("Done: tp_agg_day_to_week")
+  
   return(data)
 }
 
 tp_agg_day_to_week_od <- function(data,
-                               value_var = "value", 
-                               region_var = "region", 
-                               region_origin_var = "region_origin", 
-                               region_dest_var = "region_dest", 
-                               date_var = "date",
-                               fun = "sum"){
+                                  value_var = "value", 
+                                  region_var = "region", 
+                                  region_origin_var = "region_origin", 
+                                  region_dest_var = "region_dest", 
+                                  date_var = "date",
+                                  fun = "sum"){
   
   data <- data.frame(value = data[[value_var]],
                      region = data[[region_var]],
@@ -278,50 +308,64 @@ tp_agg_day_to_week_od <- function(data,
                      region_dest = data[[region_dest_var]],
                      date = data[[date_var]])
   
+  data <- data %>% as.data.table()
+  
   if(fun %in% "sum"){
-    data <- data %>%
-      dplyr::group_by(region, region_origin, region_dest, date) %>%
-      dplyr::summarise(value = sum(value, na.rm=T))
+    
+    data <- data[, .(value = sum(value, na.rm=T)), 
+                                             by = list(region, 
+                                                       region_origin,
+                                                       region_dest,
+                                                       date)]
+    
   }
   
   if(fun %in% "mean"){
-    data <- data %>%
-      dplyr::group_by(region, region_origin, region_dest, date) %>%
-      dplyr::summarise(value = mean(value, na.rm=T))
+    data <- data[, .(value = mean(value, na.rm=T)), 
+                 by = list(region, 
+                           region_origin,
+                           region_dest,
+                           date)]
   }
+  
+  data <- data %>% as.data.frame()
+  
+  print("Done: tp_agg_day_to_week_od")
   
   return(data)
 }
 
 tp_clean_date <- function(data, 
-                       newvar_name = "date",
-                       date_var = "date"){
+                          newvar_name = "date",
+                          date_var = "date"){
   
   # DESCRIPTION
-    # The date variable tends to come in the same format to be cleaned in the 
-    # same way.
+  # The date variable tends to come in the same format to be cleaned in the 
+  # same way.
   
   data[[newvar_name]] <- data[[date_var]] %>% 
     as.character() %>%
     substring(1,10) %>% 
     as.Date()
   
+  print("Done: tp_clean_date")
+  
   return(data)
 }
-  
+
 tp_add_label_baseline <- function(data, 
-                                newvar_name = "label_base",
-                                value_var = "value", 
-                                region_var = "region", 
-                                date_var = "date", 
-                                base_var = "value_base",
-                                perchange_base_var = "value_perchange_base",
-                                zscore_base_var = "value_zscore_base",
-                                name_var = "name",
-                                name_origin_var = "name_origin",
-                                name_dest_var = "name_dest",
-                                timeunit,
-                                OD){
+                                  newvar_name = "label_base",
+                                  value_var = "value", 
+                                  region_var = "region", 
+                                  date_var = "date", 
+                                  value_base_var = "value_base",
+                                  perchange_base_var = "value_perchange_base",
+                                  zscore_base_var = "value_zscore_base",
+                                  name_var = "name",
+                                  name_origin_var = "name_origin",
+                                  name_dest_var = "name_dest",
+                                  timeunit,
+                                  OD){
   
   #### Name
   if(OD){
@@ -335,9 +379,9 @@ tp_add_label_baseline <- function(data,
   #### Current Value
   label_value <- paste0("This ", timeunit, "'s value: ",
                         data[[value_var]], ".")
-
+  
   label_value <- ifelse(is.na(data[[value_var]]),
-                         "15 or fewer<br>or information not available",
+                        "15 or fewer<br>or information not available",
                         label_value)
   
   #### Baseline change value
@@ -346,15 +390,15 @@ tp_add_label_baseline <- function(data,
                     "decrease")
   
   label_base <- paste0("The baseline February value was: ",
-                     data[[base_var]], ".<br>",
-                     "Compared to baseline, this ", timeunit, "<br>",
-                     "had a ", 
-                     data[[perchange_base_var]] %>% round(2) %>% abs(),
-                     "% ",
-                     inc_dec,
-                     " (a ",
-                     data[[zscore_base_var]] %>% round(2), 
-                     " z-score).")
+                       data[[value_base_var]], ".<br>",
+                       "Compared to baseline, this ", timeunit, "<br>",
+                       "had a ", 
+                       data[[perchange_base_var]] %>% round(2) %>% abs(),
+                       "% ",
+                       inc_dec,
+                       " (a ",
+                       data[[zscore_base_var]] %>% round(2), 
+                       " z-score).")
   
   # In some instances, remove
   # next step should catch
@@ -362,7 +406,7 @@ tp_add_label_baseline <- function(data,
   #                     "",
   #                     label_base)
   
-  label_base <- ifelse(is.na(data$value_count) | is.na(data$value_count_baseline),
+  label_base <- ifelse(is.na(data[[value_var]]) | is.na(data[[value_base_var]]),
                        "",
                        label_base)
   
@@ -377,21 +421,23 @@ tp_add_label_baseline <- function(data,
   
   data[[newvar_name]] <- label
   
+  print("Done: tp_add_label_baseline")
+  
   return(data)
 }
 
 tp_add_label_level <- function(data, 
-                             newvar_name = "label_level",
-                             value_var = "value", 
-                             region_var = "region", 
-                             date_var = "date", 
-                             value_lag_var = "value_lag", 
-                             value_perchange_var = "value_perchange", 
-                             name_var = "name",
-                             name_origin_var = "name_origin",
-                             name_dest_var = "name_dest",
-                             timeunit,
-                             OD){
+                               newvar_name = "label_level",
+                               value_var = "value", 
+                               region_var = "region", 
+                               date_var = "date", 
+                               value_lag_var = "value_lag", 
+                               value_perchange_var = "value_perchange", 
+                               name_var = "name",
+                               name_origin_var = "name_origin",
+                               name_dest_var = "name_dest",
+                               timeunit,
+                               OD){
   
   #### Make function dataframe
   data_orig <- data
@@ -415,13 +461,13 @@ tp_add_label_level <- function(data,
   } else{
     label_name <- data$name
   }
-
+  
   #### Value
   label_value <- paste0("This ", timeunit, "'s value: ",data$value, ".")
   
   label_value <- ifelse(is.na(data$value),
-                         "15 or fewer<br>or information not available",
-                         label_value)
+                        "15 or fewer<br>or information not available",
+                        label_value)
   
   #### Change
   inc_dec <- ifelse((data$value_perchange >= 0) %in% T,
@@ -429,18 +475,18 @@ tp_add_label_level <- function(data,
                     "decrease") 
   
   label_change <- paste0("Last ", timeunit, "'s value: ", 
-                       data$value_lag, ".", 
-                       "<br>", 
-                       "This ", timeunit, " had a ",
-                       abs(data$value - data$value_lag), 
-                       " ",
-                       "(",
-                       data$value_perchange %>% round(2) %>% abs(),
-                       "%",
-                       ") ",
-                       data$inc_dec,
-                       "<br>compared to the previous ", 
-                       timeunit, ".")
+                         data$value_lag, ".", 
+                         "<br>", 
+                         "This ", timeunit, " had a ",
+                         abs(data$value - data$value_lag), 
+                         " ",
+                         "(",
+                         data$value_perchange %>% round(2) %>% abs(),
+                         "%",
+                         ") ",
+                         inc_dec,
+                         "<br>compared to the previous ", 
+                         timeunit, ".")
   
   # next step should catch
   #label_change <- ifelse(data$date == min(data$date),
@@ -464,70 +510,86 @@ tp_add_label_level <- function(data,
   
   data_orig[[newvar_name]] <- label
   
+  print("Done: tp_add_label_level")
+  
   return(data_orig)
   
 }
 
+
+
 tp_add_percent_change <- function(data,
-                               value_var = "value", 
-                               region_var = "region", 
-                               date_var = "date"){
+                                  value_var = "value", 
+                                  region_var = "region", 
+                                  date_var = "date"){
   
-  # Order by date
+  ### Order by date
   data <- data[order(data[[date_var]]),]
   
-  # Make function dataframe
+  ### Make function dataframe
   data_orig <- data
   data <- data.frame(value  = data[[value_var]],
                      region = data[[region_var]],
                      date   = data[[date_var]])
   
-  # Calculate percent change
+  ### Calculate percent change
+  # data.table method for lag
+  data <- data %>% as.data.table()
+  data <- data[, value_lag := c(NA, value[-.N]), by=region]
+  data <- data %>% as.data.frame()
+  
   data <- data %>%
-    group_by(region, date) %>%
-    mutate(value_lag = lag(value)) %>%
     mutate(value_perchange = (value - value_lag) / value_lag * 100)
   
   data$value_perchange[is.na(data$value_perchange) |
                          data$value_perchange %in% c(Inf, -Inf)] <- NA
   
+  # data.table messes up order; use data.table to efficiently order both
+  data      <- data.table(data)
+  data_orig <- data.table(data_orig)
+  
+  data      <- setorder(data, region, date) %>% as.data.frame()
+  data_orig <- setorder(data_orig, region, date) %>% as.data.frame()
+  
   data_orig[[paste0(value_var, "_perchange")]] <- data$value_perchange
   data_orig[[paste0(value_var, "_lag")]] <- data$value_lag
+  
+  print("Done: tp_add_percent_change")
   
   return(data_orig)
 }  
 
 tp_interpolate_outliers <- function(data,
-                                 newvar_name = "value",
-                                 value_var = "value", 
-                                 region_var = "region", 
-                                 date_var = "date", 
-                                 outlier_sd = 4,
-                                 outlier_replace = "negative",
-                                 NAs_as_zero = T,
-                                 return_scale = F){
+                                    newvar_name = "value",
+                                    value_var = "value", 
+                                    region_var = "region", 
+                                    date_var = "date", 
+                                    outlier_sd = 4,
+                                    outlier_replace = "negative",
+                                    NAs_as_zero = T,
+                                    return_scale = F){
   
   # DESCRIPTION
   # Interpolates outliers using values from the previous and following day. 
   # Assumes sorted by day.
   
   # Args:
-    # value: Vector of values to replace outliers for
-    # region: Vector of region ids
-    # date: Vector of dates
-    # outlier_sd: Standard deviations from mean to determine outlier
-    # outlier_replace: "negative", "positive", "both" - whether to interpolace
-      # negative/positive outliers only, or to interpoalte both
-    # NAs_as_zero: Whether to treat NAs as zero when checking for outliers. If
-      # T, NAs with all be turned into 0 then replaced if is outlier. If F,
-      # NAs will stay as NAs. 
-      # If T, mean and standard deviation to determine outliers ignores NAs.
-    # return_scale: returns standardized value. 
+  # value: Vector of values to replace outliers for
+  # region: Vector of region ids
+  # date: Vector of dates
+  # outlier_sd: Standard deviations from mean to determine outlier
+  # outlier_replace: "negative", "positive", "both" - whether to interpolace
+  # negative/positive outliers only, or to interpoalte both
+  # NAs_as_zero: Whether to treat NAs as zero when checking for outliers. If
+  # T, NAs with all be turned into 0 then replaced if is outlier. If F,
+  # NAs will stay as NAs. 
+  # If T, mean and standard deviation to determine outliers ignores NAs.
+  # return_scale: returns standardized value. 
   
   # RETURNS
-    # (if return_scale = F) vector of interpolated values
-    # (if return_scale = T) list, first item contains interpolated values, second
-      # item contains original scaled values
+  # (if return_scale = F) vector of interpolated values
+  # (if return_scale = T) list, first item contains interpolated values, second
+  # item contains original scaled values
   
   # Create dataframe with variables needed for identifying and replacing outliers
   data <- data[order(data[[date_var]]),]
@@ -545,17 +607,17 @@ tp_interpolate_outliers <- function(data,
     rowwise() %>%
     mutate(value_leadlag_avg = mean(c(value_lead, value_lag), na.rm=T)) %>%
     as.data.frame()
-
+  
   # Make NAs Zeros. 
   if(NAs_as_zero){
     data$value[is.na(data$value)] <- 0
     data$value_leadlag_avg[is.na(data$value_leadlag_avg)] <- 0
   }
-
+  
   # Scale
   data <- data %>%
     mutate(value_scale = (value - value_region_mean) / value_region_sd)
-
+  
   if (outlier_replace == "both"){
     outliers_to_replace <- (abs(data$value_scale) < outlier_sd) %in% T
   } else if (outlier_replace == "negative"){
@@ -577,12 +639,12 @@ tp_interpolate_outliers <- function(data,
 }
 
 tp_replace_zeros <- function(data,
-                          newvar_name = "value",
-                          value_var = "value", 
-                          region_var = "region", 
-                          date_var = "date", 
-                          NAs_as_zero = T,
-                          N_zero_thresh = 3){
+                             newvar_name = "value",
+                             value_var = "value", 
+                             region_var = "region", 
+                             date_var = "date", 
+                             NAs_as_zero = T,
+                             N_zero_thresh = 3){
   
   # DESCRIPTION
   # Interpolates values of zero in cases where the number of zeros within a 
@@ -593,7 +655,7 @@ tp_replace_zeros <- function(data,
   } else{
     NA_replace_value <- NA
   }
-
+  
   data_orig <- data
   
   data <- data.frame(value = data[[value_var]], 
@@ -617,13 +679,13 @@ tp_replace_zeros <- function(data,
 }
 
 tp_add_baseline_comp_stats <- function(data,
-                                    value_var = "value",
-                                    region_var = "region",
-                                    date_var = "date",
-                                    baseline_months = 2){
+                                       value_var = "value",
+                                       region_var = "region",
+                                       date_var = "date",
+                                       baseline_months = 2){
   
   # DESCRIPTION
-    # Adds baseline values
+  # Adds baseline values
   
   # TODO: Assumes baseline comes from same year, could generalize
   
@@ -640,7 +702,7 @@ tp_add_baseline_comp_stats <- function(data,
     
     ### Daily / In Date format
     data_sub <- data_sub %>%
-      mutate(date  = date %>% as.character %>% as.Date(),
+      mutate(date  = date %>% as.Date(),
              dow   = wday(date),
              month = month(date))
     
@@ -665,11 +727,23 @@ tp_add_baseline_comp_stats <- function(data,
   }
   
   #### Create variables of baseline values
-  data_sub <- data_sub %>%
-    dplyr::group_by(region, dow) %>%
-    dplyr::mutate(value_dow_base_mean = mean(value[month %in% baseline_months], na.rm=T),
-           value_dow_base_sd   = sd(value[month %in% baseline_months], na.rm=T)) %>%
-    dplyr::ungroup() 
+  # Use data.table method for below code
+  #data_sub <- data_sub %>%
+  #  dplyr::group_by(region, dow) %>%
+  #  dplyr::mutate(value_dow_base_mean = mean(value[month %in% baseline_months], na.rm=T),
+  #                value_dow_base_sd   = sd(value[month %in% baseline_months], na.rm=T)) %>%
+  #  dplyr::ungroup() 
+  
+  data_sub_dt <- as.data.table(data_sub)
+  
+  data_sub_base_dt <- data_sub_dt[(data_sub_dt$month %in% baseline_months),]
+  data_sub_base_agg_dt <- data_sub_base_dt[, .(value_dow_base_mean = mean(value, na.rm=T),
+                                               value_dow_base_sd   = sd(value, na.rm=T)), 
+                                           by = list(region, dow)]
+  
+  data_sub_dt <- merge(data_sub_dt, data_sub_base_agg_dt, by=c("region", "dow"))
+  
+  data_sub <- as.data.frame(data_sub_dt)
   
   #### Percent Change
   # If baseline value is NA or less than 15, make 15 
@@ -681,7 +755,7 @@ tp_add_baseline_comp_stats <- function(data,
   
   #### Z-Score
   # For standard deviations that are zero, replace with minimum standard
-  # deviation that isn't zero.
+  # deviation that isn't zero. 
   min_sd <- min(data_sub$value_dow_base_sd[data_sub$value_dow_base_sd > 0], na.rm=T)
   data_sub$value_dow_base_sd[data_sub$value_dow_base_sd < min_sd] <- min_sd
   
@@ -693,15 +767,25 @@ tp_add_baseline_comp_stats <- function(data,
                                  data_sub$value_dow_base_mean %in% c(Inf, -Inf)] <- NA
   
   data_sub$value_perchange_base[is.na(data_sub$value_perchange_base) |
-                                 data_sub$value_perchange_base %in% c(Inf, -Inf)] <- NA
+                                  data_sub$value_perchange_base %in% c(Inf, -Inf)] <- NA
   
   data_sub$value_zscore_base[is.na(data_sub$value_zscore_base) |
-                                 data_sub$value_zscore_base %in% c(Inf, -Inf)] <- NA
-
+                               data_sub$value_zscore_base %in% c(Inf, -Inf)] <- NA
+  
   #### Add variables to data
+  
+  # data.table messes up order; use data.table to efficiently order both
+  data      <- data.table(data)
+  data_sub  <- data.table(data_sub)
+  
+  data      <- setorder(data, region, date) %>% as.data.frame()
+  data_sub  <- setorder(data_sub, region, date) %>% as.data.frame()
+  
   data[[paste0(value_var, "_base")]] <- data_sub$value_dow_base_mean
   data[[paste0(value_var, "_perchange_base")]] <- data_sub$value_perchange_base
   data[[paste0(value_var, "_zscore_base")]] <- data_sub$value_zscore_base
+  
+  print("Done: tp_add_baseline_comp_stats")
   
   return(data)
 }
@@ -711,6 +795,8 @@ tp_less15_NA <- function(data,
                          value_var = "value"){
   
   data[[value_var]][data[[value_var]] <= 15] <- NA
+  
+  print("Done: tp_less15_NA")
   
   return(data)
 }

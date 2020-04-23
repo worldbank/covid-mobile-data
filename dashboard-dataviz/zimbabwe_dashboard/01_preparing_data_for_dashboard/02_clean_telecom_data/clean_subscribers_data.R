@@ -20,6 +20,8 @@ for(unit in c("district", "ward")){
   }
   
   # Daily ----------------------------------------------------------------------
+  print("day")
+  
   df_day <- read.csv(file.path(RAW_DATA_PATH, 
                            "count_unique_subscribers_per_region_per_day.csv"), 
                  stringsAsFactors=F)
@@ -31,20 +33,24 @@ for(unit in c("district", "ward")){
     # Clean datset
     tp_clean_date() %>%
     tp_fill_regions(admin_sp) %>%
-    tidyr::complete(region, date) %>%
-    left_join(admin_sp@data, by="region") %>%
+    tp_complete_date_region() %>%
+    tp_add_polygon_data(admin_sp) %>%
     
     # Interpolate/Clean Values
     tp_interpolate_outliers(NAs_as_zero = T) %>%
     tp_replace_zeros(NAs_as_zero = T) %>%
+    tp_less15_NA() %>%
     
     # Percent change
     tp_add_baseline_comp_stats() %>%
     tp_add_percent_change() %>%
-    
+
     # Add labels
-    tp_add_level_label(timeunit = "day", OD = F) %>%
-    tp_add_baseline_label(timeunit = "day", OD = F) 
+    tp_add_label_level(timeunit = "day", OD = F) %>%
+    tp_add_label_baseline(timeunit = "day", OD = F) %>%
+    
+    # Add density
+    mutate(density = value / area)
   
   if(EXPORT){
     saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
@@ -55,6 +61,8 @@ for(unit in c("district", "ward")){
   }
 
   # Weekly ---------------------------------------------------------------------
+  print("week")
+  
   df_week <- read.csv(file.path(RAW_DATA_PATH, 
                                "count_unique_subscribers_per_region_per_week.csv"), 
                      stringsAsFactors=F)
@@ -66,20 +74,24 @@ for(unit in c("district", "ward")){
     # Clean datset
     tp_clean_week() %>%
     tp_fill_regions(admin_sp) %>%
-    tidyr::complete(region, date) %>%
-    left_join(admin_sp@data, by="region") %>%
+    tp_complete_date_region() %>%
+    tp_add_polygon_data(admin_sp) %>%
     
     # Interpolate/Clean Values
     tp_interpolate_outliers(NAs_as_zero = T) %>%
     tp_replace_zeros(NAs_as_zero = T) %>%
+    tp_less15_NA() %>%
     
     # Percent change
     tp_add_baseline_comp_stats() %>%
     tp_add_percent_change() %>%
     
     # Add labels
-    tp_add_level_label(timeunit = "week", OD = F) %>%
-    tp_add_baseline_label(timeunit = "week", OD = F) 
+    tp_add_label_level(timeunit = "week", OD = F) %>%
+    tp_add_label_baseline(timeunit = "week", OD = F) %>%
+    
+    # Add density
+    mutate(density = value / area)
   
   if(EXPORT){
     saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,

@@ -1,0 +1,14 @@
+version: "3"
+services:
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    image: sebxwolf/cdr_aggregation_pyspark:v1
+    container_name: cdr_aggregation
+    ports:
+      - "8888:8888"
+      - "4040:4040"
+    volumes:
+          - ./:/home/jovyan/work
