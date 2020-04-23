@@ -143,7 +143,7 @@ od['total_count_w1'] = od['total_count']*od['w1']
 # Plot DRAFT
 
 # Set origin region
-od1 = od[od['region_from'] == 'ZW192105']
+od1 = od[od['region_from'] == 'ZW102109']
 
 # Select a set of destinations
 # od1_top_dest = ['ZW120435','ZW142513','ZW192205',
@@ -154,7 +154,8 @@ od1_top_dest = od1['region_to'].value_counts().head(9).index
 # Create plot df
 # p1_df = od1[od1['region_to'] == 'ZW120435']
 p1_df = od1[od1['region_to'].isin(od1_top_dest)]
-p1_df.index = p1_df['connection_date']
+p1_df.set_index(['date'],inplace=True)
+
 
 
 
@@ -163,13 +164,21 @@ def add_plts(dest_value,
              grid_pos,
              df = p1_df,
              dest_var = 'region_to',
-             x_axis = 'connection_date',
+             #x_axis = 'connection_date',
              y_axis = 'total_count'):
     df[df[dest_var] == dest_value].\
-    plot(x= x_axis, 
-         y= y_axis,
+    plot(y= y_axis,
          legend= False,
          ax = fig.add_subplot(grid_pos))
+
+df = p1_df 
+dest_value = od1_top_dest[0]
+grid_ps = gs[0, 0]
+y_axis = var
+dest_var = 'region_to'
+#x_axis = 'connection_date'
+y_axis = 'total_count'
+add_plts(od1_top_dest[0], gs[0, 0], y_axis = var)
 
 
 # Run plots
@@ -192,9 +201,7 @@ def add_plts(dest_value,
 #     return(fig)
 #     # fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
 
-
-
-plots_together('total_count')
+# plots_together('total_count')
 
 var = 'total_count'
 
@@ -241,3 +248,15 @@ fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
 
 
 
+df = p1_df
+dest_value = od1_top_dest[0]
+dest_var = 'region_to'
+x_axis = 'connection_date'
+y_axis = 'total_count'
+
+df[df[dest_var] == dest_value].\
+    plot(y= y_axis,
+         legend= False,
+         fontsize=6,
+         rot= 30)
+plt.show()
