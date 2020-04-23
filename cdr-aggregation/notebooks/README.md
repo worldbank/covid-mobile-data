@@ -17,7 +17,7 @@ Set up the folder structure as explained on the readme to [cdr-aggregation](http
 Add your raw data to the `data/new/CC/telco` folder.
 
 ## Step 5
-Add shapefiles and tower locations to `data/support-data/***REMOVED***/geofiles`. Get in touch to get assistance in accessing or creating these.
+Add shapefiles and tower locations to `data/support-data/CC/telco/geofiles`. Get in touch to get assistance in accessing or creating these.
 
 ## Step 6
 Modify and add the `config_file.py` to `data/support-data`. 
