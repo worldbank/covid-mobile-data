@@ -123,7 +123,7 @@ od = od.\
 
 # Multiplication of total active residents in origin and 
 # destiantion
-od['w1'] = od['p_active_res_O']* od['p_active_res_D']
+od['w1'] = od['p_active_res_O'] * od['p_active_res_D']
 
 
 # Sum of calls per person in origin and destinaion
@@ -135,7 +135,7 @@ od['w2'] = od['p_cals_O'] + od['p_cals_D']
 
 #-----------------------------------------------------------------#
 # Create scaled values
-od['total_count_w1'] = od['total_count']*od['w1'] 
+od['total_count_w1'] = od['total_count']/od['w1'] 
 
 
 
@@ -248,15 +248,15 @@ fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
 
 
 
-df = p1_df
-dest_value = od1_top_dest[0]
-dest_var = 'region_to'
-x_axis = 'connection_date'
-y_axis = 'total_count'
+# df = p1_df
+# dest_value = od1_top_dest[0]
+# dest_var = 'region_to'
+# x_axis = 'connection_date'
+# y_axis = 'total_count'
 
-df[df[dest_var] == dest_value].\
-    plot(y= y_axis,
-         legend= False,
-         fontsize=6,
-         rot= 30)
-plt.show()
+# df[df[dest_var] == dest_value].\
+#     plot(y= y_axis,
+#          legend= False,
+#          fontsize=6,
+#          rot= 30)
+# plt.show()
