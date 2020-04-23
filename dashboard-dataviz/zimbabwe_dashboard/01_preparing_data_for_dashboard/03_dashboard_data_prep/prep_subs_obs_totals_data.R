@@ -3,7 +3,9 @@
 # Prep datsets for line graphs on about page.
 
 # Subscribers ------------------------------------------------------------------
-subs_adm2 <- read.csv(file.path(RAW_DATA_ADM2_PATH, 
+subs_adm2 <- read.csv(file.path(DATABRICKS_PATH, 
+                                "flowminder indicators",
+                                "admin2",
                                 "count_unique_subscribers_per_region_per_day.csv"))
 
 subs_adm2 <- subs_adm2 %>%
@@ -12,10 +14,12 @@ subs_adm2 <- subs_adm2 %>%
   summarise(Subscribers = sum(subscriber_count)) %>%
   dplyr::rename(Date = date)
 
-saveRDS(subs_adm2, file.path(DASHBOARD_DATA_PATH,"subscribers_total.Rds"))
+saveRDS(subs_adm2, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,"subscribers_total.Rds"))
 
 # Observations -----------------------------------------------------------------
-obs_adm2 <- read.csv(file.path(RAW_DATA_ADM2_PATH, 
+obs_adm2 <- read.csv(file.path(DATABRICKS_PATH, 
+                               "flowminder indicators",
+                               "admin2", 
                                "total_calls_per_region_per_day.csv"))
 
 obs_adm2 <- obs_adm2 %>%
@@ -24,4 +28,4 @@ obs_adm2 <- obs_adm2 %>%
   summarise(Observations = sum(total_calls)) %>%
   dplyr::rename(Date = date)
 
-saveRDS(obs_adm2, file.path(DASHBOARD_DATA_PATH,"observations_total.Rds"))
+saveRDS(obs_adm2, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,"observations_total.Rds"))

@@ -8,15 +8,13 @@ for(unit in c("district", "ward")){
   
   # Set parameters -------------------------------------------------------------
   if(unit %in% "district"){
-    CUSTOM_DATA_PATH <- CUSTOM_DATA_ADM2_PATH
-    RAW_DATA_PATH    <- RAW_DATA_ADM2_PATH
+    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "indicator 5", "admin2")
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
   }
   
   if(unit %in% "ward"){
-    CUSTOM_DATA_PATH <- CUSTOM_DATA_ADM3_PATH
-    RAW_DATA_PATH    <- RAW_DATA_ADM3_PATH
+    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "indicator 5", "admin3")
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
   }
@@ -24,7 +22,7 @@ for(unit in c("district", "ward")){
   # Daily ----------------------------------------------------------------------
   print("day")
   
-  df_day <- read.csv(file.path(CUSTOM_DATA_PATH, 
+  df_day <- read.csv(file.path(RAW_DATA_PATH, 
                                "origin_destination_connection_matrix_per_day.csv"), 
                      stringsAsFactors=F)
   
@@ -67,7 +65,7 @@ for(unit in c("district", "ward")){
   # Weekly ---------------------------------------------------------------------
   print("week")
   
-  df_day <- read.csv(file.path(CUSTOM_DATA_PATH, 
+  df_day <- read.csv(file.path(RAW_DATA_PATH, 
                                "origin_destination_connection_matrix_per_day.csv"), 
                      stringsAsFactors=F)
   

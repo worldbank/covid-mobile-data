@@ -16,11 +16,11 @@
 # Load / Prep Data -------------------------------------------------------------
 
 #### Load all wards
-ward_sp <- read_sf(file.path(GEO_ADM3_PATH, "zimbabwe_admin3.geojson")) %>% 
+ward_sp <- read_sf(file.path(GEO_PATH, "zimbabwe_admin3.geojson")) %>% 
   as("Spatial")
 
 ####  Load tower clusters. Spatially set as centroid cluster
-tower_cluster_df <- read.csv(file.path(GEO_ADM3_PATH, 
+tower_cluster_df <- read.csv(file.path(GEO_PATH, 
                                        "towers_to_wards_clusters.csv"), 
                              stringsAsFactors=F) 
 coordinates(tower_cluster_df) <- ~centroid_LNG+centroid_LAT
@@ -100,6 +100,6 @@ ward_agg_sp <- ward_agg_sp[order(ward_agg_sp$region),]
 saveRDS(ward_agg_sp, file.path(CLEAN_DATA_ADM3_PATH, 
                                "wards_aggregated.Rds"))
 
-saveRDS(ward_agg_sp, file.path(DASHBOARD_DATA_PATH, 
+saveRDS(ward_agg_sp, file.path(DASHBOARD_DATA_ONEDRIVE_PATH, 
                                "wards_aggregated.Rds"))
 
