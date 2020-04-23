@@ -217,6 +217,7 @@ class custom_aggregator(aggregator):
         .orderBy(F.desc('last_region_count'))\
         .partitionBy('msisdn', frequency)
       result = self.df.where(time_filter)\
+        .na.fill({'region' : 99999})\
         .withColumn('last_timestamp', F.first('call_datetime').over(user_day))\
         .withColumn('last_region', F.when(F.col('call_datetime') == F.col('last_timestamp'), 1).otherwise(0))\
         .orderBy('call_datetime')\
@@ -225,8 +226,7 @@ class custom_aggregator(aggregator):
         .withColumn('modal_region', F.when(F.first('last_region_count').over(user_frequency) == F.col('last_region_count'),1).otherwise(0))\
         .where(F.col('modal_region') == 1)\
         .groupby('msisdn', frequency)\
-        .agg(F.last('region').alias('home_region'))\
-        .where(F.col('home_region').isNotNull())
+        .agg(F.last('region').alias('home_region'))
       return result
     
     ## Indicator 6
@@ -269,6 +269,7 @@ class custom_aggregator(aggregator):
         .withColumnRenamed('msisdn', 'msisdn2')\
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
       result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) & (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
+        .na.fill({'home_region' : 99999})\
         .groupby(frequency, 'region', 'home_region')\
         .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'), F.count('msisdn').alias('count'))
       return result
@@ -284,7 +285,7 @@ class custom_aggregator(aggregator):
         .withColumn('duration_change_only', F.when(F.col('region') == F.col('region_lead'), F.col('duration_next') + F.col('duration')).otherwise(F.col('duration')))\
         .withColumn('duration_change_only', F.when(F.col('duration_change_only') > (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))\
-       .where(F.col('region_lag') != F.col('region'))\
+        .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.sum(F.col('duration_change_only')).alias('total_duration_destination'), 
            F.avg(F.col('duration_change_only')).alias('avg_duration_destination'), 
