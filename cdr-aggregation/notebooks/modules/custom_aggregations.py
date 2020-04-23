@@ -331,7 +331,7 @@ class custom_aggregator(aggregator):
         .withColumn('duration_change_only', F.when(F.col('region') == F.col('region_lead'), F.col('duration_next') + F.col('duration')).otherwise(F.col('duration')))\
         .withColumn('duration_change_only', F.when(F.col('duration_change_only') > (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))\
-       .where(F.col('region_lag') != F.col('region'))\
+        .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.sum(F.col('duration_change_only')).alias('total_duration_destination'),
            F.avg(F.col('duration_change_only')).alias('avg_duration_destination'),
