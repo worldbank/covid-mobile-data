@@ -2,11 +2,13 @@
 
 library(leaflet)
 library(wesanderson)
+library(geosphere)
+
 
 
 # Load Spatial Data ------------------------------------------------------
 
-a2 <- readOGR(GEO_ADM2_PATH,
+a2 <- readOGR(GEO_PATH,
         "ZWE_adm2")
 
 # Risk analysis Data ------------------------------------------------------
@@ -14,6 +16,11 @@ ra <- fread(file.path(RISK_ANALYSIS_PATH,
                       "severe_disease_risk_district.csv"))
 
 
+# OD Data ------------------------------------------------------
+
+od <- fread(file.path(PROJECT_PATH, 
+                      "proof-of-concept/databricks-results/zw/indicator 5/admin2",
+                      "origin_destination_connection_matrix_per_day.csv"))
 
 # Merge data ------------------------------------------------------
 
@@ -87,7 +94,7 @@ add_cus_layer  <- function(map,
 map_extent <- a2 %>% extent()
 
 # Create map
-# map <- 
+map <- 
 leaflet(a2) %>%
   addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
   fitBounds(
