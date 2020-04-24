@@ -1,7 +1,7 @@
 # covid-mobile-data
 The COVID19 Mobility Task Force will use data from Mobile Network Operators (MNOs) to support data-poor countries with analytics on mobility to inform mitigation policies for preventing the spread of COVID-19.
 
-There are code for three high level tasks in this repository, `cdr-aggregation`, `data-checks` and `dashboard-datviz`.
+There is code for three high level tasks in this repository, `cdr-aggregation`, `data-checks` and `dashboard-datviz`. *All code in this repository is under active development.*
 
 ### cdr-aggregation
 
