@@ -61,6 +61,7 @@ class aggregator:
         Parameters
         ----------
         """
+        self.datasource = datasource
         self.result_path = datasource.results_path + result_stub
         self.calls = datasource.parquet_df
         self.calls.createOrReplaceTempView('calls')
@@ -74,6 +75,7 @@ class aggregator:
                                        end_date = self.dates_sql['end_date'],
                                        start_date_weeks = self.dates_sql['start_date_weeks'],
                                        end_date_weeks = self.dates_sql['end_date_weeks'])
+        self.table_names = self.sql_code.keys()
         self.intermediate_tables = intermediate_tables
 
     def create_sql_dates(self):
@@ -82,33 +84,34 @@ class aggregator:
                           'start_date_weeks' :  "\'" + self.dates['start_date_weeks'].isoformat('-')[:10] +  "\'",
                           'end_date_weeks' : "\'" + self.dates['end_date_weeks'].isoformat('-')[:10] +  "\'"}
 
-    def create_view(self, table_name):
-      self.df.createOrReplaceTempView(table_name)
+    def create_view(self, df, table_name):
+      df.createOrReplaceTempView(table_name)
 
-    def save(self, table_name):
-      self.df.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv') \
+    def save(self, df, table_name):
+      df.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv') \
         .save(os.path.join(self.result_path, table_name), header = 'true')
 
-    def run_and_save_sql(self, table_name):
-      self.df = self.spark.sql(self.sql_code[table_name])
+    def save_and_report(self, df, table_name):
       if table_name not in self.intermediate_tables:
-        print('--> Saving: ' + table_name)
-        self.save(table_name)
+        if self.check_if_file_exists(table_name):
+            print('Skipped: ' + table_name)
+        else:
+            print('--> File does not exist. Saving: ' + table_name)
+            self.save(df, table_name)
       else:
         print('Caching: home_locations')
-        self.df.createOrReplaceTempView("home_locations")
+        df.createOrReplaceTempView("home_locations")
         self.spark.sql('CACHE TABLE home_locations').collect()
-      self.create_view(table_name)
+      self.create_view(df, table_name)
+      return table_name
 
-    def run_and_save_all_sql(self):
-      for sql in self.sql_code.keys():
-        if self.check_if_file_exists(sql):
-          print('Skipped: ' + sql)
-        else:
-          self.run_and_save_sql(sql)
+    def run_and_save_all(self):
+      for table_name in self.table_names:
+          df = self.spark.sql(self.sql_code[table_name])
+          self.save_and_report(df, table_name)
 
-    def run_save_and_rename_all_sql(self):
-      self.run_and_save_all_sql()
+    def run_save_and_rename_all(self):
+      self.run_and_save_all()
       self.rename_all_csvs()
 
     def rename_csv(self, table_name):
@@ -123,31 +126,34 @@ class aggregator:
                             os.path.join(self.result_path, table_name + '.csv'))
           shutil.rmtree(os.path.join(self.result_path, table_name))
 
+    def save_and_rename_one(self, table_name):
+      self.rename_csv(self.save_and_report(table_name))
+
     def rename_all_csvs(self):
-      for sql in self.sql_code.keys():
-        if sql in self.intermediate_tables:
+      for table_name in self.table_names:
+        if table_name in self.intermediate_tables:
           pass
         else:
-            self.rename_if_not_existing(sql)
+            self.rename_if_not_existing(table_name)
 
-    def rename_if_not_existing(self, sql):
+    def rename_if_not_existing(self, table_name):
             if databricks:
               try:
                 # does the csv already exist
-                dbutils.fs.ls(self.result_path + '/' + sql + '.csv')
+                dbutils.fs.ls(self.result_path + '/' + table_name + '.csv')
               except Exception as e:
                 # the csv doesn't exist yet, move the file and delete the folder
                 if 'java.io.FileNotFoundException' in str(e):
-                  print('--> Renaming: ' + sql)
-                  self.rename_csv(sql)
+                  print('--> Renaming: ' + table_name)
+                  self.rename_csv(table_name)
                 else:
                   raise
             else:
-              if os.path.exists(self.result_path + '/' + sql + '.csv'):
+              if os.path.exists(self.result_path + '/' + table_name + '.csv'):
                   pass
               else:
-                  print('--> Renaming: ' + sql)
-                  self.rename_csv(sql)
+                  print('--> Renaming: ' + table_name)
+                  self.rename_csv(table_name)
 
     def check_if_file_exists(self, table_name):
         if databricks:
@@ -180,14 +186,14 @@ class aggregator:
           try:
               # all indicators
               if indicators_to_produce == 'all':
-                self.run_save_and_rename_all_sql()
+                self.run_save_and_rename_all()
               # single indicator
               else:
                 for table in indicators_to_produce.keys():
                   table_name = indicators_to_produce[table]
                   print('--> Producing: ' + table_name)
-                  self.run_save_and_rename_sql(table_name + '_per_' + indicators_to_produce[table_name])
-              print('Flowminder indicators saved.')
+                  self.run_save_and_rename(table_name + '_per_' + indicators_to_produce[table_name])
+              print('Indicators saved.')
               break
 
           except Exception as e:
