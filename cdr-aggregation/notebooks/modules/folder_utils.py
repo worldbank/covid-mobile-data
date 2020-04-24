@@ -5,7 +5,7 @@ import os
 #Loops over the requred folders for teh datasource and create any missing folders
 def setup_folder(datasource):
     #Loop over required paths, and return true
-    for folder in required_folders(datasource):
+    for folder in datasource.required_folders():
         test_folder(folder, create_if_not_exist=True)
     return True
 
@@ -13,7 +13,7 @@ def setup_folder(datasource):
 def check_folders(datasource):
     return_boolean = True
     #loop over required folders
-    for folder in required_folders(datasource):
+    for folder in datasource.required_folders():
         if not test_folder(folder, create_if_not_exist=False):
             print("Folder '{}' is required but does not exist".format(folder))
             return_boolean = False
@@ -29,13 +29,3 @@ def test_folder(path, create_if_not_exist):
         return True
     #Else: Folder does not exist and folder is not created, return false
     else: return False
-
-#Returns the list of required folders
-def required_folders(datasource):
-    return [
-        datasource.newdata_path,
-        datasource.standardize_path,
-        datasource.results_path,
-        datasource.tempfldr_path,
-        datasource.geofiles_path
-     ]
