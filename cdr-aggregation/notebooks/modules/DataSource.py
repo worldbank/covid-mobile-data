@@ -119,6 +119,16 @@ class DataSource:
  ######################################
   # ETL methods
 
+  #Returns the list of required folders. Only leaf foldes (ie. the most child subfolder in each branch)
+  def required_folders(self):
+    return [
+      self.newdata_path,
+      self.standardize_path,
+      self.results_path,
+      self.tempfldr_path,
+      self.geofiles_path
+    ]
+
   #Load one or multiple csvs into a data frame
   def standardize_csv_files(self,show=False):
 
