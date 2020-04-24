@@ -31,9 +31,8 @@ class custom_aggregator(aggregator):
         Parameters
         ----------
         """
-        super(custom_aggregator,self).__init__(result_stub,
-                                        datasource,
-                                        regions)
+        super().__init__(result_stub,datasource,regions)
+
         if regions == 'admin2_tower_map':
             self.level = 'admin2'
         elif regions == 'admin3_tower_map':
@@ -91,10 +90,12 @@ class custom_aggregator(aggregator):
                                         how = 'left')\
                             .drop('weight_region')
 
-            self.df = save_and_load_parquet(self.df,self.datasource.parquetfile_vars + self.level + '.parquet')
+            self.df = save_and_load_parquet(self.df,
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
 
         else:
-            self.df = self.spark.read.format("parquet").load(self.datasource.parquetfile_vars + self.level + '.parquet')
+            self.df = self.spark.read.format("parquet").load(
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
 
     def run_and_save_all(self, time_filter, frequency):
       if frequency == 'hour':
