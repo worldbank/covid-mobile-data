@@ -7,7 +7,6 @@ if os.environ['HOME'] != '/root':
 
 class custom_aggregator(aggregator):
     """Class to handle custom aggregations
-
     Attributes
     ----------
     calls : a dataframe. This should hold the CDR data to be processed
@@ -16,10 +15,8 @@ class custom_aggregator(aggregator):
     dates_sql : a dictionary. From when to when to run the queries
     intermediate_tables : a list. Tables that we don't want written to csv
     spark : An initialised spark connection
-
     Methods
     -------
-
     run_and_save_sql(df)
         - applies the aggregation and produces a dataframe
         - saves the result to a csv
@@ -29,63 +26,75 @@ class custom_aggregator(aggregator):
                  result_stub,
                  datasource,
                  regions,
-                 re_use_home_locations = False):
+                 re_create_vars = False):
         """
         Parameters
         ----------
         """
-        self.spark = datasource.spark
-        self.result_path = datasource.results_path + result_stub
-        self.calls = datasource.parquet_df
-        self.tempfile = datasource.tempfldr_path
-        self.incidence = getattr(datasource, 'incidence')
-        self.cells = getattr(datasource, regions)
-        self.cells.createOrReplaceTempView("cells")
+        super(custom_aggregator,self).__init__(result_stub,
+                                        datasource,
+                                        regions)
+        if regions == 'admin2_tower_map':
+            self.level = 'admin2'
+        elif regions == 'admin3_tower_map':
+            self.level = 'admin3'
+        else:
+            self.level = 'voronoi'
         self.distances_df = datasource.distances
-        self.df = self.calls.join(self.cells, self.calls.location_id == self.cells.cell_id, how = 'left').drop('cell_id')\
-          .orderBy('msisdn', 'call_datetime')\
-          .withColumn('region_lag', F.lag('region').over(user_window))\
-          .withColumn('region_lead', F.lead('region').over(user_window))\
-          .withColumn('call_datetime_lag', F.lag('call_datetime').over(user_window))\
-          .withColumn('call_datetime_lead', F.lead('call_datetime').over(user_window))\
-          .withColumn('hour_of_day', F.hour('call_datetime').cast('byte'))\
-          .withColumn('hour', F.date_trunc('hour', F.col('call_datetime')))\
-          .withColumn('week', F.date_trunc('week', F.col('call_datetime')))\
-          .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
-          .withColumn('day', F.date_trunc('day', F.col('call_datetime')))
-        self.dates = datasource.dates
-        self.create_sql_dates()
         self.table_names = []
         self.period_filter = (F.col('call_datetime') >= self.dates['start_date']) &\
                              (F.col('call_datetime') <= self.dates['end_date'])
         self.weeks_filter = (F.col('call_datetime') >= self.dates['start_date_weeks']) &\
                             (F.col('call_datetime') <= self.dates['end_date_weeks'])
-        self.sql_code = write_sql_code(calls = 'calls',
-                                       start_date = self.dates_sql['start_date'],
-                                       end_date = self.dates_sql['end_date'],
-                                       start_date_weeks = self.dates_sql['start_date_weeks'],
-                                       end_date_weeks = self.dates_sql['end_date_weeks'])
-        if re_use_home_locations:
-          self.df_with_home_locations = self.spark.read.format("parquet").load(self.tempfile)
+
+        if self.level == 'admin2':
+            self.incidence = getattr(datasource, 'admin2_incidence')
+            self.weight = getattr(datasource, 'admin2_weight')\
+                .withColumnRenamed('region', 'weight_region')
+            self.weight_total = self.weight.count() / self.weight.select('weight').groupBy().sum().collect()[0][0]
+
+        if databricks:
+          try:
+            # does the file exist?
+            dbutils.fs.ls(self.datasource.standardize_path,
+                self.datasource.parquetfile_vars + self.level + '.parquet')
+          except Exception as e:
+            # the csv doesn't exist yet, move the file and delete the folder
+            if 'java.io.FileNotFoundException' in str(e):
+                create_vars = True
+
         else:
-          self.df_with_home_locations = save_and_load_parquet(
-            self.df.join(
-                self.spark.sql(self.sql_code['home_locations'])\
-                .withColumnRenamed('region', 'home_region'),
-            'msisdn', 'left'),
-          self.tempfile)
+            create_vars = (os.path.exists(os.path.join(self.datasource.standardize_path,
+                self.datasource.parquetfile_vars + self.level + '.parquet')) == False)
 
-    def save_df(self, df, table_name):
-      df.repartition(1).write.mode('overwrite').format('com.databricks.spark.csv') \
-        .save(os.path.join(self.result_path, table_name), header = 'true')
 
-    def save_and_report(self, df, table_name):
-      if self.check_if_file_exists(table_name):
-        print('Skipped: ' + table_name)
-      else:
-        print('--> File does not exist. Saving: ' + table_name)
-        self.save_df(df, table_name)
-      return table_name
+        if (re_create_vars | create_vars):
+            self.df = self.calls.join(self.cells, self.calls.location_id == self.cells.cell_id, how = 'left').drop('cell_id')\
+              .join(self.spark.sql(self.sql_code['home_locations']).withColumnRenamed('region', 'home_region'), 'msisdn', 'left')\
+              .orderBy('msisdn', 'call_datetime')\
+              .withColumn('region_lag', F.lag('region').over(user_window))\
+              .withColumn('region_lead', F.lead('region').over(user_window))\
+              .withColumn('call_datetime_lag', F.lag('call_datetime').over(user_window))\
+              .withColumn('call_datetime_lead', F.lead('call_datetime').over(user_window))\
+              .withColumn('hour_of_day', F.hour('call_datetime').cast('byte'))\
+              .withColumn('hour', F.date_trunc('hour', F.col('call_datetime')))\
+              .withColumn('week', F.date_trunc('week', F.col('call_datetime')))\
+              .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
+              .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
+              .withColumn('constant', F.lit(1).cast('byte'))\
+              .withColumn('weight', F.col('constant'))
+
+            if self.level == 'admin2':
+                self.df = self.df.drop('weight')
+                self.df = self.df.join(self.weight.select('weight_region', 'weight'),
+                                        on = (self.df.home_region == self.weight.weight_region),
+                                        how = 'left')\
+                            .drop('weight_region')
+
+            self.df = save_and_load_parquet(self.df,self.datasource.parquetfile_vars + self.level + '.parquet')
+
+        else:
+            self.df = self.spark.read.format("parquet").load(self.datasource.parquetfile_vars + self.level + '.parquet')
 
     def run_and_save_all(self, time_filter, frequency):
       if frequency == 'hour':
@@ -140,13 +149,6 @@ class custom_aggregator(aggregator):
     def run_save_and_rename_all(self):
       self.run_and_save_all_frequencies()
       self.rename_all_csvs()
-
-    def save_and_rename_one(self, table):
-      self.rename_csv(self.save_and_report(table))
-
-    def rename_all_csvs(self):
-      for table in self.table_names:
-          self.rename_if_not_existing(table)
 
     def attempt_aggregation(self, indicators_to_produce = 'all', no_of_attempts = 4):
         attempts = 0
@@ -284,7 +286,7 @@ class custom_aggregator(aggregator):
 
     ## Indicator 7 + 8
     def mean_distance(self, time_filter, frequency):
-      prep = self.df_with_home_locations.where(time_filter)\
+      prep = self.df.where(time_filter)\
         .withColumn('location_id_lag', F.lag('location_id').over(user_window))
       result = prep.join(self.distances_df,
              (prep.location_id==self.distances_df.destination) &\
@@ -363,7 +365,7 @@ class custom_aggregator(aggregator):
       user_day_window = Window.partitionBy('msisdn', 'call_date')
       user_day_night_window = Window.partitionBy('msisdn', 'home_region', 'call_date', frequency)\
         .orderBy('day_night')
-      result = self.df_with_home_locations.where(time_filter)\
+      result = self.df.where(time_filter)\
         .withColumn('day_night', F.when((F.col('hour_of_day') < 9) | (F.col('hour_of_day') > 17), 1).otherwise(0))\
         .withColumn('night_day', F.when((F.col('hour_of_day') > 9) & (F.col('hour_of_day') < 17), 1).otherwise(0))\
         .withColumn('day_and_night', F.when((F.sum(F.col('day_night')).over(user_day_window) > 0) &\
@@ -382,7 +384,7 @@ class custom_aggregator(aggregator):
       return result
 
     def median_distance(self, time_filter, frequency):
-      prep = self.df_with_home_locations.where(time_filter)
+      prep = self.df.where(time_filter)
       prep = prep.withColumn('location_id_lag', F.lag('location_id').over(user_window))
       prep = prep.join(self.distances_df,
              (prep.location_id==self.distances_df.destination) &\
@@ -395,7 +397,7 @@ class custom_aggregator(aggregator):
       return result
 
     def different_areas_visited(self, time_filter, frequency):
-      result = self.df_with_home_locations.where(time_filter)\
+      result = self.df.where(time_filter)\
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.countDistinct(F.col('region')).alias('distinct_regions_visited'))\
         .groupby('home_region', frequency)\
@@ -403,7 +405,7 @@ class custom_aggregator(aggregator):
       return result
 
     def only_in_one_region(self, time_filter, frequency):
-      result = self.df_with_home_locations.where(time_filter)\
+      result = self.df.where(time_filter)\
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.countDistinct('region').alias('region_count'))\
         .where(F.col('region_count') == 1)\
