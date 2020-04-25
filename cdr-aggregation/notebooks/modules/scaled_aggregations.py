@@ -204,13 +204,10 @@ class scaled_aggregator(custom_aggregator):
         .withColumn('weighted_distance_observed_scale', F.col('weighted_distance_population_scale') / sum_of_weights * sum_of_counts)\
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.sum('distance').alias('distance'),
-             F.sum('weighted_distance_population_scale').alias('distance_population_scale'),
              F.sum('weighted_distance_observed_scale').alias('distance_observed_scale'))\
         .groupby('home_region', frequency)\
         .agg(F.mean('distance').alias('mean_distance'),
              F.stddev_pop('distance').alias('stdev_distance'),
-             F.mean('distance_population_scale').alias('mean_weighted_distance_population_scale'),
-             F.stddev_pop('distance_population_scale').alias('stdev_weighted_distance_population_scale'),
              F.mean('distance_observed_scale').alias('mean_weighted_distance_observed_scale'),
              F.stddev_pop('distance_observed_scale').alias('stdev_weighted_distance_observed_scale'))
       return result
@@ -247,8 +244,6 @@ class scaled_aggregator(custom_aggregator):
         .agg(F.count('msisdn').alias('count'),
              F.mean('duration').alias('mean_duration'),
              F.stddev_pop('duration').alias('stdev_duration'),
-             F.mean('weighted_duration_population_scale').alias('mean_weighted_duration_population_scale'),
-             F.stddev_pop('weighted_duration_population_scale').alias('stdev_weighted_duration_population_scale'),
              F.mean('weighted_duration_observed_scale').alias('mean_weighted_duration_observed_scale'),
              F.stddev_pop('weighted_duration_observed_scale').alias('stdev_weighted_duration_observed_scale'))\
         .where(F.col('count') > 15)
@@ -281,14 +276,6 @@ class scaled_aggregator(custom_aggregator):
            F.avg(F.col('duration_change_only_lag')).alias('avg_duration_origin'),
            F.count(F.col('duration_change_only_lag')).alias('count_origin'),
            F.stddev_pop(F.col('duration_change_only_lag')).alias('stddev_duration_origin'),
-           F.sum(F.col('weighted_duration_population_scale')).alias('total_weighted_duration_population_scale_destination'),
-           F.avg(F.col('weighted_duration_population_scale')).alias('avg_weighted_duration_population_scale_destination'),
-           F.count(F.col('weighted_duration_population_scale')).alias('count_weighted_duration_population_scale_destination'),
-           F.stddev_pop(F.col('weighted_duration_population_scale')).alias('stddev_weighted_duration_population_scale_destination'),
-           F.sum(F.col('weighted_duration_population_scale_lag')).alias('total_weighted_duration_population_scale_origin'),
-           F.avg(F.col('weighted_duration_population_scale_lag')).alias('avg_weighted_duration_population_scale_origin'),
-           F.count(F.col('weighted_duration_population_scale_lag')).alias('count_weighted_duration_population_scale_origin'),
-           F.stddev_pop(F.col('weighted_duration_population_scale_lag')).alias('stddev_weighted_duration_population_scale_origin'),
            F.sum(F.col('weighted_duration_observed_scale')).alias('total_weighted_duration_observed_scale_destination'),
            F.avg(F.col('weighted_duration_observed_scale')).alias('avg_weighted_duration_observedn_scale_destination'),
            F.count(F.col('weighted_duration_observed_scale')).alias('count_weighted_duration_observed_scale_destination'),
