@@ -85,6 +85,15 @@ data_methods_text <- read.table("data_methods.txt", sep="{")[[1]] %>%
 data_source_description_text <- read.table("data_source_description.txt", sep="{")[[1]] %>% 
   as.character()
 
+#### Risk analysis text
+risk_analysis_text <- read.table("risk_analysis.txt", sep="{")[[1]] %>% 
+  as.character()
+
+risk_analysis_text <- paste(risk_analysis_text[1], 
+                            risk_analysis_text[2],
+                            sep = "\n") 
+
+
 #### Default parameters on load
 unit_i <- "Wards"
 variable_i <- "Density"
@@ -305,6 +314,35 @@ ui_main <- fluidPage(
              #          "World Bank COVID Mobility Analytics Task Force"
              #   )
              # )
+    ),
+    
+    
+    # ** Risk analysis ------------------------------------------------------
+    
+    tabPanel("Risk analysis",
+             fluidRow(column(4,
+                             ""),
+                      column(
+                        4,
+                        fluidRow(
+                          h1("Risk analysis", align = "center"),
+                          
+                          #h4("Data Sources"),
+                          risk_analysis_text,
+                          
+                          # h4("Methods"),
+                          # data_methods_text
+                          
+                          
+                        )
+                        
+                      )
+             ),
+             fluidRow(
+               column(12,
+                      " ")
+             ),
+     
     )
     
     
