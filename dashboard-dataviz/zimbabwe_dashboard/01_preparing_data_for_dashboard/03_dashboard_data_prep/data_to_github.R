@@ -11,3 +11,18 @@ temp <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, pattern = "*.Rds") %>%
               overwrite=T)
   })
 
+
+# Transfer risk analysis data
+
+file.path("severe_disease_risk_district.csv")
+
+if(!dir.exists(file.path(DASHBOARD_DATA_GITHUB_PATH, "risk-analysis"))){
+  dir.create(file.path(DASHBOARD_DATA_GITHUB_PATH, "risk-analysis"))
+}
+
+file.copy(file.path(RISK_ANALYSIS_PATH, 
+                    "severe_disease_risk_district.csv"),
+          paste0(file.path(DASHBOARD_DATA_GITHUB_PATH, 
+                           "risk-analysis"),
+                 "/"),
+          overwrite=T)
