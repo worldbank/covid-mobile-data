@@ -82,16 +82,16 @@ subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.R
 #### Data descriptions
 data_methods_text <- read.table("data_methods.txt", sep="{")[[1]] %>% 
   as.character()
-data_source_description_text <- read.table("data_source_description.txt", sep="{")[[1]] %>% 
+data_source_description_text <- read.table("data_source_description.txt", sep="{")[[1]] %>%
   as.character()
 
 #### Risk analysis text
 risk_analysis_text <- read.table("risk_analysis.txt", sep="{")[[1]] %>% 
   as.character()
 
-risk_analysis_text <- paste(risk_analysis_text[1], 
+risk_analysis_text <- paste(risk_analysis_text[1],
                             risk_analysis_text[2],
-                            sep = "\n") 
+                            sep = "<br>")
 
 
 #### Default parameters on load
@@ -320,16 +320,20 @@ ui_main <- fluidPage(
     # ** Risk analysis ------------------------------------------------------
     
     tabPanel("Risk analysis",
-             fluidRow(column(4,
+             fluidRow(column(7,
                              ""),
                       column(
-                        4,
+                        8,
+                        offset = 2,
                         fluidRow(
                           h1("Risk analysis", align = "center"),
                           
                           #h4("Data Sources"),
-                          risk_analysis_text,
+                          HTML(risk_analysis_text)
                           
+                          
+                          
+
                           # h4("Methods"),
                           # data_methods_text
                           
@@ -340,8 +344,9 @@ ui_main <- fluidPage(
              ),
              fluidRow(
                column(12,
-                      " ")
-             ),
+                      " "
+             )
+            ),
      
     )
     
