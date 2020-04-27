@@ -1175,16 +1175,13 @@ server = (function(input, output, session) {
               by.y = "NAME_2")
         
         
-        if(is.null(input$select_risk_indicator)){
-          # Select the default
-          data[["risk_var"]] <- data[["severe_covid_risk"]]
+        
+        data[["risk_var"]] <- data[["severe_covid_risk"]]
+        if(!is.null(input$select_risk_indicator)){
+          # Select variable based on UI input
+          data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
+          
         }
-        
-        
-       
-        # Select variable based on UI input
-        data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
-        
         
         # Return final data
         data
@@ -1204,19 +1201,7 @@ server = (function(input, output, session) {
             lat1 = map_extent@ymin,
             lng2 = map_extent@xmax,
             lat2 = map_extent@ymax
-          )  %>% 
-          addPolygons(
-            data = risk_dist_sp(),
-            fillColor = ~pal(risk_var),
-            weight = 2,
-            opacity = 1,
-            color = "white",
-            fillOpacity = 0.7)  %>% 
-          clearControls() %>% 
-          addLegend(title = input$select_risk_indicator,
-                    position = 'bottomleft',
-                    colors = pal(unique(risk_dist_sp()@data$risk_var)),
-                    labels = unique(risk_dist_sp()@data$risk_var))
+          ) 
       })
 
       # Add risk indicators reactively 
@@ -1237,6 +1222,27 @@ server = (function(input, output, session) {
         leg_labels = sort(unique(risk_dist_sp()@data$risk_var))
         lg_colors = pal(sort(unique(risk_dist_sp()@data$risk_var)))
 
+        
+        
+        if(is.null(input$select_risk_indicator)){
+          leafletProxy("riskmap", data = risk_dist_sp()) %>%
+            clearShapes()  %>% 
+            addPolygons(
+              data = risk_dist_sp(),
+              fillColor = ~pal(risk_var),
+              weight = 2,
+              opacity = 1,
+              color = "white",
+              fillOpacity = 0.7)  %>% 
+            clearControls() %>% 
+            addLegend(title = input$select_risk_indicator,
+                      position = 'bottomleft',
+                      colors = lg_colors,
+                      labels = leg_labels)
+        } 
+        
+      
+        
         leafletProxy("riskmap", data = risk_dist_sp()) %>%
           clearShapes()  %>% 
           addPolygons(
