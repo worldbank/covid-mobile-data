@@ -217,36 +217,65 @@ ui_main <- fluidPage(
     
     
     # ** Risk analysis ------------------------------------------------------
-    
-    tabPanel("Risk analysis",
-             fluidRow(column(7,
-                             ""),
-                      column(
-                        8,
-                        offset = 2,
-                        fluidRow(
-                          h1("Risk analysis", align = "center"),
-                          
-                          #h4("Data Sources"),
-                          HTML(risk_analysis_text)
-                          
-                          
-                          
-                          
-                          # h4("Methods"),
-                          # data_methods_text
-                          
-                          
-                        )
-                        
-                      )
-             ),
-             fluidRow(
-               column(12,
-                      " "
-               )
-             ),
-             
+    tabPanel(
+      "Risk analysis",
+      # Title and text
+      fluidRow(column(7,
+                      ""),
+               
+               column(
+                 8,
+                 offset = 2,
+                 fluidRow(
+                   h1("Risk analysis", align = "center"),
+                   
+                   #h4("Data Sources"),
+                   HTML(risk_analysis_text)
+                   
+                   
+                   
+                   
+                   # h4("Methods"),
+                   # data_methods_text
+                   
+                   
+                 )
+                 
+               ) 
+               
+              
+      ),
+      
+      # Map and controls
+      fluidRow(
+        column(12," "),
+        column(4,
+               align = "center",
+               selectInput(
+                 "select_risk_indicator",
+                 label = h4("Select Indicator"),
+                 
+                 # Cambiarra braba arrumar isso dai
+                 choices = c("HIV prevalence quintile", 
+                             "Anaemia prevalence quintile",
+                             "Respiratory illness prevalence quintile",
+                             "Overweight prevalence quintile", 
+                             "Smoking prevalence quintile",
+                             "Severe COVID-19 risk"),
+                 multiple = F)
+               ),
+        leafletOutput("riskmap"),              
+        
+      ),
+      
+      
+      # Data table
+      fluidRow(
+        column(12," "),
+        dataTableOutput('risk_table')              
+        
+      )
+      
     )
     
     

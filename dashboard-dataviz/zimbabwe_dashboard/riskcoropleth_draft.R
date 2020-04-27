@@ -29,14 +29,6 @@ a2 <- merge(a2, ra, by = "NAME_2")
 # Leaflet map ------------------------------------------------------
 
 
-pal1 <- colorBin("YlOrRd", 
-                domain = a2$severe_covid_risk,
-                bins = c(7, 9, 11, 13, 15, 17, 19, 21) )
-
-pal2 <- colorBin("YlOrRd", 
-                 domain = a2$mean_hiv_pop_weighted_cat)
-
-
 
 vars <- c("mean_hiv_pop_weighted_cat",       
             "mean_anaemia_pop_weighted_cat",   
