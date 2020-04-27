@@ -1169,10 +1169,19 @@ server = (function(input, output, session) {
       risk_dist_sp <- reactive({
         
         data <- 
-        merge(district_sp, risk_an, by.x = "name",
+        merge(district_sp, 
+              risk_an, 
+              by.x = "name",
               by.y = "NAME_2")
         
         
+        if(is.null(input$select_risk_indicator)){
+          # Select the default
+          data[["risk_var"]] <- data[["severe_covid_risk"]]
+        }
+        
+        
+       
         # Select variable based on UI input
         data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
         
@@ -1195,13 +1204,33 @@ server = (function(input, output, session) {
             lat1 = map_extent@ymin,
             lng2 = map_extent@xmax,
             lat2 = map_extent@ymax
-          )  
+          )  %>% 
+          addPolygons(
+            data = risk_dist_sp(),
+            fillColor = ~pal(risk_var),
+            weight = 2,
+            opacity = 1,
+            color = "white",
+            fillOpacity = 0.7)  %>% 
+          clearControls() %>% 
+          addLegend(title = input$select_risk_indicator,
+                    position = 'bottomleft',
+                    colors = pal(unique(risk_dist_sp()@data$risk_var)),
+                    labels = unique(risk_dist_sp()@data$risk_var))
       })
 
       # Add risk indicators reactively 
       observe({
-        pal <- colorBin("YlOrRd", 
-                        domain = risk_dist_sp()@data$risk_var )
+        # pal <- colorBin("YlOrRd", 
+        #                 domain = risk_dist_sp()@data$risk_var )
+        
+        
+        pal <- 
+          colorNumeric(
+            palette = "viridis",
+            domain = risk_dist_sp()@data$risk_var, # c(0, map_values)
+            na.color = "gray",
+            reverse = F)
         
         
         # legend parameters
@@ -1219,7 +1248,7 @@ server = (function(input, output, session) {
             fillOpacity = 0.7)  %>% 
           clearControls() %>% 
           addLegend(title = input$select_risk_indicator,
-                    position = 'topleft',
+                    position = 'bottomleft',
                     colors = lg_colors,
                     labels = leg_labels)
         

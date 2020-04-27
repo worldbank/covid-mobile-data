@@ -171,10 +171,11 @@ ui_main <- fluidPage(
     
     # ** Data Description ------------------------------------------------------
     tabPanel("Data Description",
-             fluidRow(column(4,
+             fluidRow(column(12,
                              ""),
                       column(
-                        4,
+                        11,
+                        offset = 1,
                         fluidRow(
                           h1("Data Description", align = "center"),
                           
@@ -220,24 +221,19 @@ ui_main <- fluidPage(
     tabPanel(
       "Risk analysis",
       # Title and text
-      fluidRow(column(7,
+      fluidRow(column(12,
                       ""),
                
                column(
-                 8,
-                 offset = 2,
+                 11,
+                 offset = 1,
                  fluidRow(
                    h1("Risk analysis", align = "center"),
                    
-                   #h4("Data Sources"),
-                   HTML(risk_analysis_text)
-                   
-                   
-                   
-                   
-                   # h4("Methods"),
-                   # data_methods_text
-                   
+                   # p(HTML(risk_analysis_text, "<br>")),
+                   p(risk_analysis_text[1]),
+                   p(risk_analysis_text[2])
+
                    
                  )
                  
@@ -249,7 +245,7 @@ ui_main <- fluidPage(
       # Map and controls
       fluidRow(
         column(12," "),
-        column(4,
+        column(2,
                align = "center",
                selectInput(
                  "select_risk_indicator",
@@ -262,9 +258,10 @@ ui_main <- fluidPage(
                              "Overweight prevalence quintile", 
                              "Smoking prevalence quintile",
                              "Severe COVID-19 risk"),
+                 selected = NULL,
                  multiple = F)
                ),
-        leafletOutput("riskmap"),              
+        column(8, leafletOutput("riskmap")),
         
       ),
       

@@ -77,9 +77,9 @@ data_source_description_text <- read.table("text_inputs/data_source_description.
 risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
   as.character()
 
-risk_analysis_text <- paste(risk_analysis_text[1],
-                            risk_analysis_text[2],
-                            sep = "<br>")
+# risk_analysis_text <- paste(risk_analysis_text[1],
+#                             risk_analysis_text[2],
+#                             sep = "<br>")
 
 #### Default parameters on load
 unit_i <- "Wards"
