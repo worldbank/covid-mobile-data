@@ -45,7 +45,6 @@ library(htmltools)
 library(scales)
 library(lubridate)
 
-
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
   setwd("~/Documents/Github/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard")
@@ -62,9 +61,6 @@ if (Sys.info()[["user"]] == "wb519128") {
     "C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
   )
 }
-
-
-
 
 # RUN THE APP ==================================================================
 shinyApp(ui, server)

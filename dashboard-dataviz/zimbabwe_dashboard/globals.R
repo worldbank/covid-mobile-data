@@ -33,7 +33,6 @@ risk_analysis_text <- paste(risk_analysis_text[1],
                             risk_analysis_text[2],
                             sep = "<br>")
 
-
 #### Default parameters on load
 unit_i <- "Wards"
 variable_i <- "Density"

@@ -283,12 +283,14 @@ server = (function(input, output, session) {
             
           }
           
+
           out <- list(
             map_data = map_data,
             table_data = table_data,
             line_data = line_data,
             pal_val_max = max(ward_level_df$value, na.rm = T),
             map_title = paste0(unit_i_singular,
+                               " ", variable_i, ": ",
                                " Density: ", 
                                date_i),
             table_title = paste0("Top ",
