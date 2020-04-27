@@ -36,6 +36,7 @@ class DataSource:
 
     #filenames
     self.parquetfile = self.filestub + ".parquet"
+    self.parquetfile_vars = self.filestub + "_vars_"
     self.parquetfile_path = self.standardize_path +"/"+ self.parquetfile
 
     self.spark = spark
@@ -173,6 +174,10 @@ class DataSource:
   #read the parquet file
   def load_standardized_parquet_file(self):
     self.parquet_df = spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile)
+
+  #read the parquet file with vars
+  def load_parquet_file_with_vars(self, region):
+    self.parquet_vars_df = spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile_vars + region)
 
 ######################################
  # Create sample
