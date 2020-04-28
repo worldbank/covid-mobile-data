@@ -5,6 +5,8 @@ if os.environ['HOME'] != '/root':
     from modules.import_packages import *
     from modules.utilities import *
     from modules.custom_aggregations import *
+else:
+    databricks = True
 
 class scaled_aggregator(custom_aggregator):
     """Class to handle custom aggregations
