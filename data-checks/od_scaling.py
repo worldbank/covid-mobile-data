@@ -2,6 +2,8 @@
 # OD matrix scaling checks
 #-----------------------------------------------------------------#
 
+# This code depends on MASTER.py to run as file path objects are
+# defined there
 
 #-----------------------------------------------------------------#
 # Settings
@@ -11,19 +13,6 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 
-# File paths
-DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/databricks-results/zw/"
-
-
-# OD matrix
-I5_path = DATA_path + "indicator 5/"
-I5_Adm2_path = I5_path + "admin2/"
-I5_Adm3_path = I5_path + "admin3/"
-
-# Flowminder indicators
-FLOWM_path = DATA_path + "flowminder indicators/"
-FLOWM_adm2_path = FLOWM_path + "admin2/"
-FLOWM_adm3_path = FLOWM_path + "admin3/"
 
 #-----------------------------------------------------------------#
 # Load data
@@ -136,10 +125,6 @@ od['w2'] = od['p_cals_O'] + od['p_cals_D']
 #-----------------------------------------------------------------#
 # Create scaled values
 od['total_count_w1'] = od['total_count']/od['w1'] 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 
 od['total_count_w2'] = od['total_count']/od['w2'] 
 

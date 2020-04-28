@@ -4,6 +4,8 @@ if os.environ['HOME'] != '/root':
     from modules.flowminder_aggregations import *
     from modules.import_packages import *
     from modules.utilities import *
+else:
+    databricks = True
 
 class custom_aggregator(aggregator):
     """Class to handle custom aggregations
@@ -54,10 +56,9 @@ class custom_aggregator(aggregator):
             # does the file exist?
             dbutils.fs.ls(self.datasource.standardize_path,
                 self.datasource.parquetfile_vars + self.level + '.parquet')
+            create_vars = False
           except Exception as e:
-            # the csv doesn't exist yet, move the file and delete the folder
-            if 'java.io.FileNotFoundException' in str(e):
-                create_vars = True
+            create_vars = True
 
         else:
             create_vars = (os.path.exists(os.path.join(self.datasource.standardize_path,
