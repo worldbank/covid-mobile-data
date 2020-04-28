@@ -30,8 +30,8 @@
 # In[ ]:
 
 
-# %load_ext autoreload
-# %autoreload 2
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 
 
 # In[ ]:
@@ -53,10 +53,7 @@ spark
 # In[ ]:
 
 
-import os
-home = os.environ['HOME']
-data = os.path.join(home, 'work/data')
-config_file = os.path.join(data, 'support-data/config_file.py')
+config_file = '../config_file.py'
 
 
 # In[ ]:
@@ -77,14 +74,14 @@ ds.show_config()
 # In[ ]:
 
 
-ds.standardize_csv_files(show=True)
-ds.save_as_parquet()
+# ds.standardize_csv_files(show=True)
+# ds.save_as_parquet()
 
 
 # In[ ]:
 
 
-ds.load_standardized_parquet_file()
+#ds.load_standardized_parquet_file()
 
 
 # In[ ]:
@@ -93,8 +90,8 @@ ds.load_standardized_parquet_file()
 ## Use this in case you want to sample the data and run the code on the sample
 
 #ds.sample_and_save(number_of_ids=1000)
-# ds.load_sample()
-# ds.parquet_df = ds.sample_df
+ds.load_sample('sample_feb_mar2020')
+ds.parquet_df = ds.sample_df
 
 
 # ## Load geo data
@@ -176,4 +173,24 @@ agg_custom = custom_aggregator(result_stub = '/admin3/custom',
                             regions = 'admin3_tower_map')
 
 agg_custom.attempt_aggregation()
+
+
+# ## Scaled priority indicators for admin2
+
+# In[ ]:
+
+
+agg_custom = scaled_aggregator(result_stub = '/admin2/scaled',
+                               datasource = ds,
+                               regions = 'admin2_tower_map')
+
+agg_custom.attempt_aggregation()
+
+
+# # Produce script
+
+# In[ ]:
+
+
+get_ipython().system('jupyter nbconvert --to script *.ipynb')
 
