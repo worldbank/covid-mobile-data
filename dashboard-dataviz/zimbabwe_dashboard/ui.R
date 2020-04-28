@@ -258,7 +258,7 @@ ui_main <- fluidPage(
                              "Overweight prevalence quintile", 
                              "Smoking prevalence quintile",
                              "Severe COVID-19 risk"),
-                 selected = NULL,
+                 selected = "HIV prevalence quintile",
                  multiple = F)
                ),
         column(8, leafletOutput("riskmap")),

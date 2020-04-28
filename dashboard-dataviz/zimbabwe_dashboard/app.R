@@ -24,5 +24,9 @@ if (Sys.info()[["user"]] == "wb519128") {
   )
 }
 
+source("server.R")
+source("ui.R")
+source("globals.R")
+
 # RUN THE APP ==================================================================
 shinyApp(ui, server)

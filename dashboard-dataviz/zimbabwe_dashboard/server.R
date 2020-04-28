@@ -1181,6 +1181,8 @@ server = (function(input, output, session) {
           # Select variable based on UI input
           data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
           
+        } else{
+          data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == "HIV prevalence"]]]
         }
         
         # Return final data
@@ -1208,7 +1210,6 @@ server = (function(input, output, session) {
       observe({
         # pal <- colorBin("YlOrRd", 
         #                 domain = risk_dist_sp()@data$risk_var )
-        
         
         pal <- 
           colorNumeric(

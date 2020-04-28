@@ -42,7 +42,7 @@ library(scales)
 library(lubridate)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 
 # LOAD/PREP DATA ===============================================================
