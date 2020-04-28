@@ -105,6 +105,8 @@ In the _aggregation_ task the following is done:
 * The parquet files will be processed using spark to produce aggregate indicators. See list of indicators in the indicator section.
 * Save the aggregated indicators in normal unpartitioned csv files in the `<base_path>/results/<country_code>/<telecom_alias>`  folder.
 
+The aggregation  builds on much of the work that has been developed by [Flowminder](https://web.flowminder.org) for the purpose of supporting MNOs in producing basic indicators. Their code can be found in their [GitHub account](https://github.com/Flowminder).
+
 ### Indicators
 
 * __Timeframe__: Indicators are built using data from Feb 1 2020 and going forward in real time.
