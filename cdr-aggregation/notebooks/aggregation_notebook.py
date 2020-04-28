@@ -50,15 +50,15 @@
 
 # COMMAND ----------
 
+# MAGIC %run COVID19DataAnalysis/modules/scaled_aggregations
+
+# COMMAND ----------
+
 # MAGIC %md 
 # MAGIC ## 1. Load CDR Data 
 # MAGIC - Load from CSV files
 # MAGIC - Standardize columns
 # MAGIC - Save as parquet file
-
-# COMMAND ----------
-
-basepath = '/mnt/COVID19Data/proof-of-concept'
 
 # COMMAND ----------
 
@@ -74,9 +74,9 @@ ds.show_config()
 
 # COMMAND ----------
 
-#Standardize the csv and save as parque
-ds.standardize_csv_files(show=True)
-ds.save_as_parquet()
+# #Standardize the csv and save as parque
+# ds.standardize_csv_files(show=True)
+# ds.save_as_parquet()
 
 # COMMAND ----------
 
@@ -91,11 +91,6 @@ ds.save_as_parquet()
 
 ds.load_standardized_parquet_file()
 calls = ds.parquet_df
-calls.createOrReplaceTempView("calls")
-
-# COMMAND ----------
-
-# calls.limit(5).toPandas()
 
 # COMMAND ----------
 
@@ -193,109 +188,23 @@ outliers.count()
 
 # COMMAND ----------
 
-# DBTITLE 1,Shapefiles and tower locations
-sites = spark.read.format("csv")\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("inferSchema", "true")\
-  .option("mode", "DROPMALFORMED")\
-  .load(ds.support_data + "/geo-files/" + ds.geofiles["tower_sites"])
-sites = sites.toPandas()
+ds.load_geo_csvs()
 
 # COMMAND ----------
 
-shape = spark.read.format("csv")\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("inferSchema", "true")\
-  .option("mode", "DROPMALFORMED")\
-  .load(ds.support_data + "/geo-files/" + ds.geofiles["admin3"])
-shape = shape.toPandas()
+## Use this in case you want to cluster the towers and create a distance matrix
 
-shape['geometry'] = shape['geometry'].apply(wkt.loads)
-shape_gpd = gpd.GeoDataFrame(shape, geometry = 'geometry', crs = 'epsg:4326')
+# ds.create_gpds()
+# clusterer = tower_clusterer(ds, 'admin2', 'ID_2')
+# ds.admin2_tower_map, ds.distances = clusterer.cluster_towers()
+# clusterer = tower_clusterer(ds, 'admin3', 'ADM3_PCODE')
 
 # COMMAND ----------
 
-shape2 = spark.read.format("csv")\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("inferSchema", "true")\
-  .option("mode", "DROPMALFORMED")\
-  .load(ds.support_data + "/geo-files/" + ds.geofiles["admin2"])
-shape2 = shape2.toPandas()
-from shapely import wkt
-shape2['geometry'] = shape2['geometry'].apply(wkt.loads)
-shape_gpd2 = gpd.GeoDataFrame(shape2, geometry = 'geometry', crs = 'epsg:4326')
+## Use this in case you want to create a voronoi tesselation
 
-# COMMAND ----------
-
-shape_aivin = spark.read.format("csv")\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("inferSchema", "true")\
-  .option("mode", "DROPMALFORMED")\
-  .load(ds.support_data + "/geo-files/" + ds.geofiles["admin2_aivin"])
-shape_aivin = shape_aivin.toPandas()
-from shapely import wkt
-shape_aivin['geometry'] = shape_aivin['geometry'].apply(wkt.loads)
-shape_aivin_gpd = gpd.GeoDataFrame(shape_aivin, geometry = 'geometry', crs = 'epsg:4326')
-
-# COMMAND ----------
-
-# DBTITLE 1,Create regions
-sites_handler = tower_clusterer(shape = shape_gpd, 
-                                  sites_df = sites, 
-                                  region_var = 'ADM3_PCODE',
-                                  result_path = ds.results_path + '/admin3',
-                                  filename = ds.geofiles["admin3"])
-sites_handler.cluster_towers()
-regions = sites_handler.towers_regions_clusters
-
-# COMMAND ----------
-
-display(sites_handler.shape.plot())
-
-# COMMAND ----------
-
-sites_handler2 = tower_clusterer(shape = shape_gpd2, 
-                                  sites_df = sites, 
-                                  region_var = 'ID_2',
-                                  result_path = ds.results_path + '/admin2',
-                                  filename = ds.geofiles["admin2"])
-sites_handler2.cluster_towers()
-regions2 = sites_handler2.towers_regions_clusters                                 
-
-# COMMAND ----------
-
-display(sites_handler2.shape.plot())
-
-# COMMAND ----------
-
-sites_handler_aivin = tower_clusterer(shape = shape_aivin_gpd, 
-                                  sites_df = sites, 
-                                  region_var = 'DIST2012',
-                                  result_path = result_path + '/admin2',
-                                  filename = ds.geofiles["admin2_aivin"])
-sites_handler_aivin.cluster_towers()
-regions_aivin = sites_handler_aivin.towers_regions_clusters                 
-
-# COMMAND ----------
-
-display(sites_handler_aivin.shape.plot())
-
-# COMMAND ----------
-
-voronoi_handler = voronoi_maker(spark_df = calls, 
-                                  sites_handler = sites_handler, 
-                                  result_path = ds.results_path + '/voronoi',
-                                  filename = ds.geofiles["voronoi"])
-voronoi_handler.make_voronoi()
-voronois = voronoi_handler.voronoi_dict
-
-# COMMAND ----------
-
-display(voronoi_handler.voronoi_gpd.plot())
+# voronoi = voronoi_maker(ds, 'admin3', 'ADM3_PCODE')
+# ds.voronoi = voronoi.make_voronoi()
 
 # COMMAND ----------
 
@@ -308,95 +217,48 @@ display(voronoi_handler.voronoi_gpd.plot())
 
 # COMMAND ----------
 
-# DBTITLE 1,Define time period
-dates_sql = {'start_date' : "\'2020-02-01\'",
-         'end_date' :  "\'2020-03-31\'",
-         'start_date_weeks' :  "\'2020-02-03\'",
-         'end_date_weeks' : "\'2020-03-29\'"}
+# DBTITLE 1,Aggregation of flowminder indicators at admin2 level
+agg_flowminder = aggregator(result_stub = '/admin2/flowminder',
+                            datasource = ds,
+                            regions = 'admin2_tower_map')
 
-dates = {'start_date' : dt.datetime(2020,2,1),
-         'end_date' : dt.datetime(2020,3,31),
-         'start_date_weeks' : dt.datetime(2020,2,3),
-         'end_date_weeks' : dt.datetime(2020,3,29)}
+agg_flowminder.attempt_aggregation()
 
 # COMMAND ----------
 
 # DBTITLE 1,Aggregation of flowminder indicators at admin3 level
-# admin3 level
-regions.createOrReplaceTempView("cells")
-agg_flowminder = aggregator(result_stub = ds.results_path + '/admin3/flowminder',
-                            dates_sql = dates_sql)
+agg_flowminder = aggregator(result_stub = '/admin3/flowminder',
+                            datasource = ds,
+                            regions = 'admin3_tower_map')
 
-attempt_aggregation(agg_flowminder, aggregator_type = 'flowminder', no_of_attempts = 4)
-
-# COMMAND ----------
-
-# DBTITLE 1,Aggregation of flowminder indicators at admin2 level
-# admin2 level
-regions2.createOrReplaceTempView("cells")
-agg_flowminder = aggregator(result_stub = '/admin2/flowminder',
-                            dates_sql = dates_sql)
-
-attempt_aggregation(agg_flowminder, aggregator_type = 'flowminder', no_of_attempts = 4)
-
-# COMMAND ----------
-
-# DBTITLE 1,Aggregation of custom indicators at admin3 level
-# admin3 level
-regions.createOrReplaceTempView("cells")
-
-agg_custom = custom_aggregator(sites_handler, 
-                               re_use_home_locations = False,
-                               result_stub = '/admin3/custom',
-                               dates = dates)
-
-attempt_aggregation(agg_custom, indicators_to_produce= 'all', aggregator_type = 'custom', no_of_attempts = 4)
+agg_flowminder.attempt_aggregation()
 
 # COMMAND ----------
 
 # DBTITLE 1,Aggregation of custom indicators at admin2 level
-# admin2 level
-regions2.createOrReplaceTempView("cells")
+agg_custom = custom_aggregator(result_stub = '/admin2/custom',
+                               datasource = ds,
+                               regions = 'admin2_tower_map')
 
-agg_custom = custom_aggregator(sites_handler2, 
-                               re_use_home_locations = False,
-                               result_stub = '/admin2/custom',
-                               dates = dates)
-
-indicators_to_produce = {'table_1' : ['home_vs_day_location', ['day', {'home_location_frequency' : 'month'}]]}
-
-attempt_aggregation(agg_custom, indicators_to_produce, aggregator_type = 'custom', no_of_attempts = 4)
+agg_custom.attempt_aggregation()
 
 # COMMAND ----------
 
-# DBTITLE 1,Aggregation of custom indicators at tower level
-# voronoi
-voronois.createOrReplaceTempView("cells")
+# DBTITLE 1,Aggregation of custom indicators at admin3 level
+agg_custom = custom_aggregator(result_stub = '/admin3/custom',
+                            datasource = ds,
+                            regions = 'admin3_tower_map')
 
-agg_custom = custom_aggregator(voronoi_handler, 
-                               re_use_home_locations = False,
-                               result_stub = '/voronoi/custom',
-                               dates = dates)
-
-indicators_to_produce = {'table_1' : ['unique_subscribers', 'hour']}
-
-attempt_aggregation(agg_custom, indicators_to_produce, aggregator_type = 'custom', no_of_attempts = 4)
+agg_custom.attempt_aggregation()
 
 # COMMAND ----------
 
-# admin2 2012 level
-regions_aivin.createOrReplaceTempView("cells")
+# DBTITLE 1,Aggregation of scaled indicators at admin2 level
+agg_custom = scaled_aggregator(result_stub = '/admin2/scaled',
+                               datasource = ds,
+                               regions = 'admin2_tower_map')
 
-agg_custom = custom_aggregator(sites_handler_aivin, 
-                               re_use_home_locations = True,
-                               result_stub = '/admin2/custom/aivin',
-                               dates = dates)
-    
-indicators_to_produce = {'table_1' : ['origin_destination_matrix_time_longest_only', 'day'],
-                         'table_2' : ['home_vs_day_location', ['day', {'home_location_frequency' : 'month'}]],
-                         'table_3' : ['home_vs_day_location', ['day', {'home_location_frequency' : 'week'}]]}
-
-attempt_aggregation(agg_custom, indicators_to_produce, aggregator_type = 'custom', no_of_attempts = 4)
+agg_custom.attempt_aggregation()
 
 # COMMAND ----------
 
