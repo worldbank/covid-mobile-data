@@ -76,6 +76,7 @@ class custom_aggregator(aggregator):
               .withColumn('hour', F.date_trunc('hour', F.col('call_datetime')))\
               .withColumn('week', F.date_trunc('week', F.col('call_datetime')))\
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
+              .withColumn('constant', F.lit(1).cast('byte'))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
@@ -98,6 +99,9 @@ class custom_aggregator(aggregator):
         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
         # indicator 4
         self.table_names.append(self.save_and_report(self.percent_of_all_subscribers_active(time_filter, frequency), 'percent_of_all_subscribers_active_per_' + frequency))
+        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency),exlusion_start = dt.datetime(2020,4,1), 'percent_of_all_subscribers_active_option1_per_' + frequency))
+        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency), 'percent_of_all_subscribers_active_option2_per_' + frequency))
+        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency,active_only_at_home = False), 'percent_of_all_subscribers_active_option3_per_' + frequency))
         # indicator 5
         self.table_names.append(self.save_and_report(self.origin_destination_connection_matrix(time_filter, frequency), 'origin_destination_connection_matrix_per_' + frequency))
         # indicator 7
@@ -488,3 +492,30 @@ class custom_aggregator(aggregator):
            F.count(F.col('duration_change_only')).alias('count'),
            F.stddev_pop(F.col('duration_change_only')).alias('stddev_duration'))
       return result
+
+    def active_residents_from_specific_period(self, time_filter, frequency, exlusion_start = dt.datetime(2020,3,1), active_only_at_home = True):
+        user_window = Window.partitionBy('msisdn').orderBy('call_datetime')
+        exclusion_filter = (F.col('call_datetime') >= self.dates['start_date']) &\
+                           (F.col('call_datetime') < exlusion_start)
+        home_locations = self.assign_home_locations(exclusion_filter, 'constant')\
+          .withColumnRenamed('msisdn', 'msisdn2')
+        home_location_count = home_locations\
+          .groupby('home_region')\
+          .agg(F.countDistinct('msisdn2').alias('home_location_count'))\
+          .withColumnRenamed('home_region', 'home_region2')
+        prep = self.df.where(time_filter)\
+          .withColumn('first_observation', F.first('call_datetime').over(user_window))\
+          .where(F.col('first_observation') < exlusion_start)\
+          .drop('home_region')
+        prep = prep\
+          .join(home_locations, prep.msisdn == home_locations.msisdn2, 'left')
+        if active_only_at_home:
+            prep = prep.where(F.col('region') == F.col('home_region'))
+        prep = prep\
+          .groupby('home_region', frequency)\
+          .agg(F.countDistinct('msisdn').alias('count'))
+        result = prep\
+          .join(home_location_count, prep.home_region == home_location_count.home_region2, 'left')\
+          .withColumn('percent_active', F.col('count') / F.col('home_location_count'))\
+          .drop('home_region2')
+        return result
