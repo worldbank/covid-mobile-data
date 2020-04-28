@@ -336,14 +336,14 @@ class custom_aggregator(aggregator):
         .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))\
         .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
-        .agg(F.sum(F.col('duration_change_only')).alias('total_duration_destination'),
-           F.avg(F.col('duration_change_only')).alias('avg_duration_destination'),
-           F.count(F.col('duration_change_only')).alias('count_destination'),
-           F.stddev_pop(F.col('duration_change_only')).alias('stddev_duration_destination'),
-           F.sum(F.col('duration_change_only_lag')).alias('total_duration_origin'),
-           F.avg(F.col('duration_change_only_lag')).alias('avg_duration_origin'),
-           F.count(F.col('duration_change_only_lag')).alias('count_origin'),
-           F.stddev_pop(F.col('duration_change_only_lag')).alias('stddev_duration_origin'))
+        .agg(F.sum('duration_change_only').alias('total_duration_destination'),
+           F.avg('duration_change_only').alias('avg_duration_destination'),
+           F.count('duration_change_only').alias('count_destination'),
+           F.stddev_pop('duration_change_only').alias('stddev_duration_destination'),
+           F.sum('duration_change_only_lag').alias('total_duration_origin'),
+           F.avg('duration_change_only_lag').alias('avg_duration_origin'),
+           F.count('duration_change_only_lag').alias('count_origin'),
+           F.stddev_pop('duration_change_only_lag').alias('stddev_duration_origin'))
       return result
 
     ##### Non-priority Indicators

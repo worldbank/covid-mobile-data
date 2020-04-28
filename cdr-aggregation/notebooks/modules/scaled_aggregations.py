@@ -131,7 +131,6 @@ class scaled_aggregator(custom_aggregator):
       sum_of_counts = right_side.select('od_count').groupby().agg(F.sum('od_count')).collect()[0][0]
       sum_of_weights = right_side.select('weighted_od_count_population_scale').groupby().agg(F.sum('weighted_od_count_population_scale')).collect()[0][0]
       right_side = right_side.withColumn('weighted_od_count_observed_scale', F.col('weighted_od_count_population_scale') / sum_of_weights * sum_of_counts)
-
       result = left_side.join(right_side,
                              (left_side.region_to == right_side.region)\
                            & (left_side.region_from == right_side.region_lag)\
@@ -197,19 +196,18 @@ class scaled_aggregator(custom_aggregator):
              (prep.location_id==self.distances_df.destination) &\
              (prep.location_id_lag==self.distances_df.origin),
              'left')\
-        .withColumn('weighted_distance_population_scale', F.col('distance') * F.col('weight'))
-      sum_of_counts = result.select('distance').groupby().agg(F.sum('distance')).collect()[0][0]
-      sum_of_weights = result.select('weighted_distance_population_scale').groupby().agg(F.sum('weighted_distance_population_scale')).collect()[0][0]
-      result = result\
-        .withColumn('weighted_distance_observed_scale', F.col('weighted_distance_population_scale') / sum_of_weights * sum_of_counts)\
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.sum('distance').alias('distance'),
-             F.sum('weighted_distance_observed_scale').alias('distance_observed_scale'))\
+             F.last('weight').alias('weight'),
+             F.last('constant').alias('constant'))\
         .groupby('home_region', frequency)\
         .agg(F.mean('distance').alias('mean_distance'),
              F.stddev_pop('distance').alias('stdev_distance'),
-             F.mean('distance_observed_scale').alias('mean_weighted_distance_observed_scale'),
-             F.stddev_pop('distance_observed_scale').alias('stdev_weighted_distance_observed_scale'))
+             F.sum('constant').alias('count'),
+             F.sum('weight').alias('weighted_count_population_scale'))
+      sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
+      sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
+      result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
       return result
 
    ## Indicator 9
@@ -221,38 +219,33 @@ class scaled_aggregator(custom_aggregator):
       prep = self.df.where(time_filter)\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration', (F.col('call_datetime_lead').cast('long') - F.col('call_datetime').cast('long')))\
-        .withColumn('weighted_duration_population_scale', F.col('duration') * F.col('weight'))\
         .groupby('msisdn', 'region', frequency, home_location_frequency)\
-        .agg(F.sum('duration').alias('total_duration'),
-             F.sum('weighted_duration_population_scale').alias('total_weighted_duration_population_scale'))\
+        .agg(F.sum('duration').alias('total_duration'))\
         .orderBy('msisdn', frequency, 'total_duration')\
         .groupby('msisdn', frequency, home_location_frequency)\
         .agg(F.last('region').alias('region'),
-             F.last('total_duration').alias('duration'),
-             F.last('total_weighted_duration_population_scale').alias('weighted_duration_population_scale'))\
-        .where(F.col('region').isNotNull())
-      sum_of_counts = prep.select('duration').groupby().agg(F.sum('duration')).collect()[0][0]
-      sum_of_weights = prep.select('weighted_duration_population_scale').groupby().agg(F.sum('weighted_duration_population_scale')).collect()[0][0]
-      prep = prep\
-        .withColumn('weighted_duration_observed_scale', F.col('weighted_duration_population_scale') / sum_of_weights * sum_of_counts)\
+             F.last('total_duration').alias('duration'))\
+        .where(F.col('region').isNotNull())\
         .withColumnRenamed('msisdn', 'msisdn2')\
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
       result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) &\
             (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
         .na.fill({'home_region' : 99999})\
         .groupby(frequency, 'region', 'home_region')\
-        .agg(F.count('msisdn').alias('count'),
-             F.mean('duration').alias('mean_duration'),
+        .agg(F.mean('duration').alias('mean_duration'),
              F.stddev_pop('duration').alias('stdev_duration'),
-             F.mean('weighted_duration_observed_scale').alias('mean_weighted_duration_observed_scale'),
-             F.stddev_pop('weighted_duration_observed_scale').alias('stdev_weighted_duration_observed_scale'))\
+             F.sum('constant').alias('count'),
+             F.sum('weight').alias('weighted_count_population_scale'))\
         .where(F.col('count') > 15)
+      sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
+      sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
+      result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
       return result
 
     ## Indicator10
     def origin_destination_matrix_time(self, time_filter, frequency):
       user_frequency_window = Window.partitionBy('msisdn').orderBy('call_datetime')
-      prep = self.df.where(time_filter)\
+      result = self.df.where(time_filter)\
         .where((F.col('region_lag') != F.col('region')) | (F.col('region_lead') != F.col('region')) | (F.col('call_datetime_lead').isNull()))\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration', (F.col('call_datetime_lead').cast('long') - F.col('call_datetime').cast('long')))\
@@ -260,13 +253,7 @@ class scaled_aggregator(custom_aggregator):
         .withColumn('duration_change_only', F.when(F.col('region') == F.col('region_lead'), F.col('duration_next') + F.col('duration')).otherwise(F.col('duration')))\
         .withColumn('duration_change_only', F.when(F.col('duration_change_only') > (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))\
-        .withColumn('weighted_duration_population_scale', F.col('duration_change_only') * F.col('weight'))\
-        .withColumn('weighted_duration_population_scale_lag', F.col('duration_change_only_lag') * F.col('weight'))\
-        .where(F.col('region_lag') != F.col('region'))
-      sum_of_counts = prep.select('duration_change_only').groupby().agg(F.sum('duration_change_only')).collect()[0][0]
-      sum_of_weights = prep.select('weighted_duration_population_scale').groupby().agg(F.sum('weighted_duration_population_scale')).collect()[0][0]
-      result = prep\
-        .withColumn('weighted_duration_observed_scale', F.col('weighted_duration_population_scale') / sum_of_weights * sum_of_counts)\
+        .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.sum(F.col('duration_change_only')).alias('total_duration_destination'),
            F.avg(F.col('duration_change_only')).alias('avg_duration_destination'),
@@ -276,12 +263,9 @@ class scaled_aggregator(custom_aggregator):
            F.avg(F.col('duration_change_only_lag')).alias('avg_duration_origin'),
            F.count(F.col('duration_change_only_lag')).alias('count_origin'),
            F.stddev_pop(F.col('duration_change_only_lag')).alias('stddev_duration_origin'),
-           F.sum(F.col('weighted_duration_observed_scale')).alias('total_weighted_duration_observed_scale_destination'),
-           F.avg(F.col('weighted_duration_observed_scale')).alias('avg_weighted_duration_observedn_scale_destination'),
-           F.count(F.col('weighted_duration_observed_scale')).alias('count_weighted_duration_observed_scale_destination'),
-           F.stddev_pop(F.col('weighted_duration_observed_scale')).alias('stddev_weighted_duration_observed_scale_destination'),
-           F.sum(F.col('weighted_duration_observed_scale')).alias('total_weighted_duration_observed_scale_origin'),
-           F.avg(F.col('weighted_duration_observed_scale')).alias('avg_weighted_duration_observed_scale_origin'),
-           F.count(F.col('weighted_duration_observed_scale')).alias('count_weighted_duration_observed_scale_origin'),
-           F.stddev_pop(F.col('weighted_duration_observed_scale')).alias('stddev_weighted_duration_observed_scale_origin'))
+           F.sum('constant').alias('count'),
+           F.sum('weight').alias('weighted_count_population_scale'))
+      sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
+      sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
+      result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
       return result

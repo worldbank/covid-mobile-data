@@ -27,20 +27,20 @@
 
 # # Import code
 
-# In[26]:
+# In[ ]:
 
 
-# %load_ext autoreload
-# %autoreload 2
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[27]:
+# In[ ]:
 
 
 from modules.setup import *
 
 
-# In[28]:
+# In[ ]:
 
 
 spark
@@ -50,19 +50,19 @@ spark
 
 # ## Set up the configuration for data standardization
 
-# In[29]:
+# In[ ]:
 
 
 config_file = '../config_file.py'
 
 
-# In[30]:
+# In[ ]:
 
 
 exec(open(config_file).read())
 
 
-# In[31]:
+# In[ ]:
 
 
 ds = DataSource(datasource_configs)
@@ -71,20 +71,20 @@ ds.show_config()
 
 # ## Standardize raw csv files
 
-# In[32]:
+# In[ ]:
 
 
 # ds.standardize_csv_files(show=True)
 # ds.save_as_parquet()
 
 
-# In[33]:
+# In[ ]:
 
 
 #ds.load_standardized_parquet_file()
 
 
-# In[34]:
+# In[ ]:
 
 
 ## Use this in case you want to sample the data and run the code on the sample
@@ -96,13 +96,13 @@ ds.parquet_df = ds.sample_df
 
 # ## Load geo data
 
-# In[35]:
+# In[ ]:
 
 
 ds.load_geo_csvs()
 
 
-# In[36]:
+# In[ ]:
 
 
 ## Use this in case you want to cluster the towers and create a distance matrix
@@ -115,7 +115,7 @@ ds.load_geo_csvs()
 # ds.admin3_tower_map, ds.distances  = clusterer.cluster_towers()
 
 
-# In[37]:
+# In[ ]:
 
 
 ## Use this in case you want to create a voronoi tesselation
@@ -129,7 +129,7 @@ ds.load_geo_csvs()
 
 # ## Flowminder indicators for admin2
 
-# In[38]:
+# In[ ]:
 
 
 agg_flowminder = aggregator(result_stub = '/admin2/flowminder',
@@ -141,7 +141,7 @@ agg_flowminder.attempt_aggregation()
 
 # ## Flowminder indicators for admin3
 
-# In[39]:
+# In[ ]:
 
 
 agg_flowminder = aggregator(result_stub = '/admin3/flowminder',
@@ -153,7 +153,7 @@ agg_flowminder.attempt_aggregation()
 
 # ## Priority indicators for admin2
 
-# In[40]:
+# In[ ]:
 
 
 agg_custom = custom_aggregator(result_stub = '/admin2/custom',
@@ -165,7 +165,7 @@ agg_custom.attempt_aggregation()
 
 # ## Priority indicators for admin3
 
-# In[41]:
+# In[ ]:
 
 
 agg_custom = custom_aggregator(result_stub = '/admin3/custom',
@@ -177,24 +177,12 @@ agg_custom.attempt_aggregation()
 
 # ## Scaled priority indicators for admin2
 
-# In[42]:
+# In[ ]:
 
 
 agg_custom = scaled_aggregator(result_stub = '/admin2/scaled',
                                datasource = ds,
                                regions = 'admin2_tower_map')
-
-agg_custom.attempt_aggregation()
-
-
-# ## Scaled priority indicators for admin3
-
-# In[ ]:
-
-
-agg_custom = scaled_aggregator(result_stub = '/admin3/scaled',
-                            datasource = ds,
-                            regions = 'admin3_tower_map')
 
 agg_custom.attempt_aggregation()
 
