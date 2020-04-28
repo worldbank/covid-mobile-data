@@ -13,11 +13,8 @@ This table of content will be made into links.
 
 ### Set-up
 
-Most users want to use the Docker set-up as this will install on most types of
-servers, and even on a single computer. The main exception is if you use
-Databricks/datalake. We have special instructions for that. Regardless of which
-set-up instructions you are using, you should start by creating a config file
-that will be read but the [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class.
+The standardization and aggregation scripts in this repository are written for deployment using pyspark on linux and pyspark on Databricks (connected to a datalake). If you want to test the scripts and/or run them on a standalone machine, you can use the Dockerfile provided, which is based on the [jupyter/pyspark-notebook](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html) image. We have special instructions for deploying the code on Databricks. In case you want to deploy the code using a different cluster setup and run into problems, please get in touch and we will do our best to help. Pull requests to add code that expands the range of deployment settings supported are welcome! Regardless which set-up you are using, you should start by creating a config file
+that will be read by the [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class.
 
 #### DataSource class and config file
 
@@ -42,7 +39,7 @@ schema = StructType([
 ###### Optional parameters (and their default values)
 
 * **data_paths**: Indicates the file paths (starting from `<base_path>/new/<country_code>/<telecom_alias>`) and file formats for the files that should be loaded and outputted in the standardized parquet file. This can be used to only read one sub-folder of data. For example by using `[mar20/*.csv]` to only read `.csv` files in the folder `mar20`. Default is `["*.csv.gz","*.csv"]` meaning all `.csv.gz` and `.csv` files immediately in the `<telecom_alias>` folder
-* **geofiles** `<class dict>`: - SEBASTIAN, how would you describe these?
+* **geofiles** `<class dict>`: The aggregation scripts require mappings of the towers to administrative regions to which we want to aggregate. You can generate these mappings yourself using the `tower_clusterer` class, or you can contact us to support you with this task. If you are to do this yourself you will need to specify a list towers and their coordinates as well as the shapefiles of the administrative regions in csv format under `geofiles`. In case you already have this mapping or we supported you to generate it, you will need to specify the csv files containing the mapping under `geofiles`
 * **load_seperator**: The delimiter used in the raw data files. Default is a comma - `,`
 * **load_header** : Whether the raw data files has column names in the first row. Default is false (that they do not have column names in the first row) as we specify this in the schema
 * **load_mode**: How will rows that does not fit the schema be handled? Default is `PERMISSIVE` where the record is loaded as good as possible and any errors will happen downstream. Alternatives are `DROPMALFORMED` where those records are skipped, and `FAILFAST` where the rest of the specific spark job loading the file is interrupted.
@@ -60,22 +57,22 @@ ds.show_config()
 
 ##### Docker set-up
 
-Unless you run a databricks/datalake set-up, the by far easiest way to get started is to run `aggregtion_offsite.ipynb` in a docker container. You first need to make sure that you have both `docker` and `docker-compose` installed. Get it [here](https://docs.docker.com/get-docker/). The follow the steps blow:
+Unless you run a databricks/datalake set-up, the by far easiest way to get started is to run `aggregtion_offsite.ipynb` in a docker container. You first need to make sure that you have both `docker` and `docker-compose` installed. Get it [here](https://docs.docker.com/get-docker/). Then follow the steps blow:
 
 1. Clone this repository if you haven’t yet.
 1. Open a terminal and cd into the `cdr-aggregation` directory. Then run `docker-compose up` to start the docker container. You'll see the url for the jupyter server, copy that into your browser
 1. Set up the config file. Use the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py) and after you have modified it, save it in the `cdr-aggregation` folder. Use `"/home/jovyan/work/data"` as your base path in the docker environment
 1. Set up the folder structure using [folder_setup.ipynb](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation\notebooks\folder_setup.ipynb) file in the `\cdr-aggregation\notebooks` folder
 1. Add your raw data to the `<base_path>/new/<country_code>/<telecom_alias>` folder created in last step
-1. Add shapefiles and tower locations to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these
+1. Add shapefiles and tower locations, or alternatively add the tower-admin region mapping directly, to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these
 1. Open the `aggregation_offsite.ipynb` notebook to run aggregations. If all went well, you should find the indicators in the `<base_path>/results/<country_code>/<telecom_alias>`
 
 ##### Databricks/datalake set-up
-This is a manual tasks where the following steps needs to be completed:
+This is a manual tasks where the following steps need to be completed:
   1. Set up folders. Set up the `new`, `standardized`, `results`, `support_data` and `temporary` folders in the datalake according to the folder structure graph in the folder structure section below. Create the `country_code` and `telecom_alias` folder each folder.
   1. Set up the config file. Use the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py) and after you have modified it, save it in the `cdr-aggregation` folder.
   1. Copy all the raw anonymized CDR data to the `<base_path>/new/<country_code>/<telecom_alias>` folder
-  1. Add shapefiles and tower locations to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these
+  1. Add shapefiles and tower locations, or alternatively add the tower-admin region mapping directly, to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these.
   1. Then you can run the [aggregation_notebook](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_notebook.py) in your spark cluster creating aggregates from your data.
 
 ### Workflow description
@@ -111,7 +108,7 @@ In the _aggregation_ task the following is done:
 ### Indicators
 
 * __Timeframe__: Indicators are built using data from Feb 1 2020 and going forward in real time.
-* __Data Type__: CDR or, if available, netwark probes.
+* __Data Type__: CDR or, if available, network probes.
 * __Description__: Towers are clustered using Ward’s hierarchical clustering, with a maximum distance constraint of 1km from the centroid of the cluster resulting in ‘flat’ clusters. We use the clustering function: https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.cluster.hierarchy.fcluster.html with criterion: distance and t = 1km. We then assign admin units based on the location of the centroid of the cluster (all observations in the cluster are then assigned to that admin unit).
 
 Priority 1 indicators are given preference, priority 2 indicators are meant to help with assessing changes in the underlying data that could affect the indicators of interest, and priority 3 indicators are secondary.
