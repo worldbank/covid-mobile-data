@@ -1,7 +1,5 @@
 #### Settings #### =============================================================
 
-rm(list = ls())
-
 CLEAN_SPATIAL_DATA <- F
 CLEAN_TELECOM_DATA <- F
 PREP_DATA_FOR_DASH <- F
@@ -27,6 +25,7 @@ library(raster)
 library(geosphere)
 library(lubridate)
 library(data.table)
+library(mapview)
 
 #### File paths #### ===========================================================
 

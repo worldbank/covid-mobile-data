@@ -82,6 +82,57 @@ add_cus_layer  <- function(map,
 
 
 
+districts_sp <- readRDS(file.path("data_inputs_for_dashboard",
+                     "districts.Rds"))
+
+library(geosphere)
+
+district <- "Harare"
+
+dist_o <- districts_sp[districts_sp$name %in% district,]
+
+l_all <- lapply(1:nrow(districts_sp), function(i){
+  print(i)
+  l <- gcIntermediate(dist_o %>% 
+                        coordinates() %>%
+                        as.vector(),
+                      districts_sp[i,] %>% 
+                        coordinates %>% 
+                        as.vector(),
+                      n=20,
+                      addStartEnd=TRUE,
+                      sp=TRUE)
+  return(l)
+}) %>% do.call(what="rbind")
+
+
+
+move_df <- readRDS(file.path("data_inputs_for_dashboard",
+                             paste0("Districts_Movement Out of_Weekly_",district,"_Feb 15 - Feb 21.Rds")))
+value <- paste("Value: ", move_df$value) 
+move_df$value <- log( move_df$value+1, 2)
+move_alpha <- move_df$value / max(move_df$value, na.rm=T)
+move_weight <- move_alpha*3
+
+pal_ward <- colorNumeric(
+  palette = "viridis",
+  domain = c(move_df$value), # c(0, map_values)
+  na.color = "gray",
+  reverse = F
+)
+
+
+
+
+leaflet() %>%
+  addTiles() %>%
+  addPolylines(data=l_all,
+               opacity = move_alpha,
+               weight=move_weight,
+               color = pal_ward(move_df$value),
+               label=value)
+
+
 # Set map boundaries
 map_extent <- a2 %>% extent()
 
@@ -105,4 +156,4 @@ leaflet(a2) %>%
 addLayersControl(
   baseGroups = group_df$group,
   options = layersControlOptions(collapsed = FALSE)
-  )
+  ) 
