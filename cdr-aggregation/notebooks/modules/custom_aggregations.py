@@ -75,6 +75,7 @@ class custom_aggregator(aggregator):
               .withColumn('hour', F.date_trunc('hour', F.col('call_datetime')))\
               .withColumn('week', F.date_trunc('week', F.col('call_datetime')))\
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
+              .withColumn('constant', F.lit(1).cast('byte'))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
@@ -492,7 +493,7 @@ class custom_aggregator(aggregator):
         user_window = Window.partitionBy('msisdn').orderBy('call_datetime')
         exclusion_filter = (F.col('call_datetime') >= self.dates['start_date']) &\
                            (F.col('call_datetime') < exlusion_start)
-        home_locations = self.assign_home_locations(exclusion_filter, 'month')\
+        home_locations = self.assign_home_locations(exclusion_filter, 'constant')\
           .withColumnRenamed('msisdn', 'msisdn2')
         home_location_count = home_locations\
           .groupby('home_region')\
