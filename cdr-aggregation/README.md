@@ -11,6 +11,44 @@ This is a manual tasks where the folloowing steps needs to be completed:
   1. Set up folders. Set up the `new`, `standardized`, `results` and `support_data` according to the folder structure section below.
   1. Copy all the raw anonymized CDR data to the `<base_path>/new/<country_code>/<telecom_alias>` folder. See folder structure section for details.
   1. Set up configuration object for the DataSource class used to standardize data. See the DataSource class section below.
+#### DataSource class and config file
+
+The [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class reads raw pseudonymized CDR data using a config dict as the only constructor argument. We recommend setting up the config dict by adapting the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py).
+
+###### Required parameters
+
+* **base_path** `<class 'str'>`: The top data folder, where all data sub-folders for new data, standardized data, and results go. See folder structure for more details
+* **country_code** and **telecom_alias** `<class 'str'>`: Within each data sub-folder, folders are organized after country and telecom, in case one setup is used for multiple countries or telecoms. See folder structure for more details
+* **filestub** `<class 'str'>`: The name stub that will be used for all files generated, for example `<filestub>.parquet`
+* **shapefiles** `<class list>`: A list of strings - SEBASTIAN
+* **dates** `<class dict>`: A dict that should have the two keys `"start_date"` and `"end_date"`, where the values are of type `datatime` and indicate the date range to be included
+* **schema** `<class 'StructType'>`: The [spark schema](https://spark.apache.org/docs/latest/sql-reference.html) with the data types and column names. The `StructType` should have three `StructFields` and the order of the three `StructField` should match the order of the columns in the raw data files. See example below:
+```
+schema = StructType([
+    StructField("msisdn", IntegerType(), True),
+    StructField("call_datetime", StringType(), True), #Will be casted using datemask
+    StructField("location_id", StringType(), True)
+])
+```
+
+###### Optional parameters (and their default values)
+
+* **data_paths**: Indicates the file paths (starting from `<base_path>/new/<country_code>/<telecom_alias>`) and file formats for the files that should be loaded and outputted in the standardized parquet file. This can be used to only read one sub-folder of data. For example by using `[mar20/*.csv]` to only read `.csv` files in the folder `mar20`. Default is `["*.csv.gz","*.csv"]` meaning all `.csv.gz` and `.csv` files immediately in the `<telecom_alias>` folder
+* **geofiles** `<class dict>`: - SEBASTIAN, how would you describe these?
+* **load_seperator**: The delimiter used in the raw data files. Default is a comma - `,`
+* **load_header** : Whether the raw data files has column names in the first row. Default is false (that they do not have column names in the first row) as we specify this in the schema
+* **load_mode**: How will rows that does not fit the schema be handled? Default is `PERMISSIVE` where the record is loaded as good as possible and any errors will happen downstream. Alternatives are `DROPMALFORMED` where those records are skipped, and `FAILFAST` where the rest of the specific spark job loading the file is interrupted.
+* **load_datemask**: The datestring mask that will be used when casting the datestring into a timestamp. The default is `dd/MM/yyyy HH:mm:ss`
+
+###### Show setup of `DataSource` class
+
+The DataSource class has a method called `show_config()` where a summary of the configuration of a class is showed in a readable format after it has been created. See example below:
+
+```
+#Set up the datasource object, and show the config settings
+ds = DataSource(config_object)
+ds.show_config()
+```
   1. Then you can run the [aggregation_notebook](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_notebook.py) in your spark cluster creating aggregates from your data.
 
 ### Task: _standardization_
