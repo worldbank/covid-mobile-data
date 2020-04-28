@@ -14,7 +14,6 @@ DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/proof-of-c
 DATA_DB_raw_indicators = DATA_path + "databricks-results/zw/"
 DATA_dashboad_clean = DATA_path + "/files_for_dashboard/files_clean/"
 
-
 DATA_dash_clean_a2 = DATA_dashboad_clean + "adm2/"
 DATA_dash_clean_a3 = DATA_dashboad_clean + "adm3/"
 
@@ -24,6 +23,12 @@ DATA_dash_clean_a3 = DATA_dashboad_clean + "adm3/"
 # Transactions per hour
 I1_path = DATA_DB_raw_indicators + "indicator 1/"
 I1_Adm3_path = I1_path + "admin3/"
+
+
+# Unique subcribers per hour
+I2_path = DATA_DB_raw_indicators + "indicator 2/"
+I2_Adm3_path = I2_path + "admin3/"
+I2_towercluster_path = I2_path + "tower_cluster/"
 
 # OD matrix
 I5_path = DATA_DB_raw_indicators + "indicator 5/"
