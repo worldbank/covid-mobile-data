@@ -3,13 +3,13 @@
 ### Table of content
 This table of content will be made into links.
 
-* Initial set-up
-  * DataSource class and config file
-  * Docker set-up
-  * Databricks/datalake set-up
-* Workflow description
-* Indicators
-* Folder structure
+* [Initial set-up](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#set-up)
+  * [DataSource class and config file](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#datasource-class-and-config-file)
+  * [Docker set-up](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#docker-set-up)
+  * [Databricks/datalake set-up](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#databricksdatalake-set-up)
+* [Workflow description](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#workflow-description)
+* [Indicators](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#indicators)
+* [Folder structure](https://github.com/worldbank/covid-mobile-data/tree/readme-redo/cdr-aggregation#folder-structure)
 
 ### Set-up
 
