@@ -36,6 +36,7 @@ class DataSource:
 
     #filenames
     self.parquetfile = self.filestub + ".parquet"
+    self.parquetfile_vars = self.filestub + "_vars_"
     self.parquetfile_path = self.standardize_path +"/"+ self.parquetfile
 
     self.spark = spark
@@ -56,10 +57,10 @@ class DataSource:
       "telecom_alias":[str,None],
       "schema":[StructType,None],
       "filestub":[str,None],
-      "data_paths":[list,["*csv.gz","*csv"]],
-      "geofiles":[dict,{}],
       "shapefiles":[list,None],
-      "dates":[dict,{}],
+      "dates":[dict,None],
+      "data_paths":[list,["*.csv.gz","*.csv"]],
+      "geofiles":[dict,{}],
       "load_seperator":[str,","],
       "load_header":[str,"false"],
       "load_mode":[str,"PERMISSIVE"],
@@ -118,6 +119,16 @@ class DataSource:
  ######################################
   # ETL methods
 
+  #Returns the list of required folders. Only leaf foldes (ie. the most child subfolder in each branch)
+  def required_folders(self):
+    return [
+      self.newdata_path,
+      self.standardize_path,
+      self.results_path,
+      self.tempfldr_path,
+      self.geofiles_path
+    ]
+
   #Load one or multiple csvs into a data frame
   def standardize_csv_files(self,show=False):
 
@@ -163,6 +174,10 @@ class DataSource:
   #read the parquet file
   def load_standardized_parquet_file(self):
     self.parquet_df = spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile)
+
+  #read the parquet file with vars
+  def load_parquet_file_with_vars(self, region):
+    self.parquet_vars_df = spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile_vars + region)
 
 ######################################
  # Create sample
