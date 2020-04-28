@@ -772,6 +772,25 @@ tp_add_baseline_comp_stats <- function(data,
   data_sub$value_zscore_base[is.na(data_sub$value_zscore_base) |
                                data_sub$value_zscore_base %in% c(Inf, -Inf)] <- NA
   
+  # Remove baseline values and comparisson if month is baseline
+  bmonth_replace <- function(var, base_month = baseline_months){
+    ifelse(month == base_month,
+           NA,
+           var)
+  }
+  
+  data_sub %<>% 
+    mutate(value_dow_base_mean =  ifelse(month == baseline_months,
+                                         NA,
+                                         value_dow_base_mean),
+           value_perchange_base =  ifelse(month == baseline_months,
+                                          NA,
+                                          value_perchange_base),
+           value_zscore_base =  ifelse(month == baseline_months,
+                                       NA,
+                                       value_zscore_base) )
+  
+  
   #### Add variables to data
   
   # data.table messes up order; use data.table to efficiently order both
