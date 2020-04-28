@@ -48,9 +48,6 @@ class custom_aggregator(aggregator):
 
         if self.level == 'admin2':
             self.incidence = getattr(datasource, 'admin2_incidence')
-            self.weight = getattr(datasource, 'admin2_weight')\
-                .withColumnRenamed('region', 'weight_region')
-            self.weight_total = self.weight.count() / self.weight.select('weight').groupBy().sum().collect()[0][0]
 
         if databricks:
           try:
@@ -66,7 +63,6 @@ class custom_aggregator(aggregator):
             create_vars = (os.path.exists(os.path.join(self.datasource.standardize_path,
                 self.datasource.parquetfile_vars + self.level + '.parquet')) == False)
 
-
         if (re_create_vars | create_vars):
             self.df = self.calls.join(self.cells, self.calls.location_id == self.cells.cell_id, how = 'left').drop('cell_id')\
               .join(self.spark.sql(self.sql_code['home_locations']).withColumnRenamed('region', 'home_region'), 'msisdn', 'left')\
@@ -80,15 +76,7 @@ class custom_aggregator(aggregator):
               .withColumn('week', F.date_trunc('week', F.col('call_datetime')))\
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
-              .withColumn('constant', F.lit(1).cast('byte'))\
-              .withColumn('weight', F.col('constant'))
-
-            if self.level == 'admin2':
-                self.df = self.df.drop('weight')
-                self.df = self.df.join(self.weight.select('weight_region', 'weight'),
-                                        on = (self.df.home_region == self.weight.weight_region),
-                                        how = 'left')\
-                            .drop('weight_region')
+              .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
             self.df = save_and_load_parquet(self.df,
                 os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
@@ -259,10 +247,10 @@ class custom_aggregator(aggregator):
     ## Indicator 6 helper method
     def assign_home_locations(self, time_filter, frequency):
       user_day = Window\
-        .orderBy(F.desc('call_datetime'))\
+        .orderBy(F.desc_nulls_last('call_datetime'))\
         .partitionBy('msisdn', 'day')
       user_frequency = Window\
-        .orderBy(F.desc('last_region_count'))\
+        .orderBy(F.desc_nulls_last('last_region_count'))\
         .partitionBy('msisdn', frequency)
       result = self.df.where(time_filter)\
         .na.fill({'region' : 99999})\
@@ -301,9 +289,6 @@ class custom_aggregator(aggregator):
 
    ## Indicator 9
     def home_vs_day_location(self, time_filter, frequency, home_location_frequency = 'week', **kwargs):
-      user_window_day_location = Window\
-        .orderBy(F.desc('total_duration'))\
-        .partitionBy('msisdn', frequency)
       home_locations = self.assign_home_locations(time_filter, home_location_frequency)
       prep = self.df.where(time_filter)\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
@@ -313,7 +298,6 @@ class custom_aggregator(aggregator):
         .orderBy('msisdn', frequency, 'total_duration')\
         .groupby('msisdn', frequency, home_location_frequency)\
         .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))\
-        .where(F.col('region').isNotNull())\
         .withColumnRenamed('msisdn', 'msisdn2')\
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
       result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) & (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
@@ -436,7 +420,7 @@ class custom_aggregator(aggregator):
       user_window_incidence = Window\
         .partitionBy('msisdn').orderBy('stop_number')
       user_window_incidence_rev = Window\
-        .partitionBy('msisdn').orderBy(F.desc('stop_number'))
+        .partitionBy('msisdn').orderBy(F.desc_nulls_last('stop_number'))
       result = self.df\
         .withColumn('call_datetime_lag', F.when(F.col('call_datetime_lag').isNull(), self.dates['start']).otherwise(F.col('call_datetime_lag')))\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end']).otherwise(F.col('call_datetime_lead')))\
@@ -460,7 +444,7 @@ class custom_aggregator(aggregator):
       user_window_incidence = Window\
         .partitionBy('msisdn').orderBy('stop_number')
       user_window_incidence_rev = Window\
-        .partitionBy('msisdn').orderBy(F.desc('stop_number'))
+        .partitionBy('msisdn').orderBy(F.desc_nulls_last('stop_number'))
       result = self.df.orderBy('call_datetime')\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end']).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration', (F.col('call_datetime_lead').cast('long') - F.col('call_datetime').cast('long')))\

@@ -31,7 +31,17 @@ class scaled_aggregator(custom_aggregator):
                  regions,
                  re_create_vars = False):
 
-        super().__init__(result_stub,datasource,regions)
+        super().__init__(result_stub,datasource,regions,re_create_vars)
+
+        if self.level == 'admin2':
+            self.weight = getattr(datasource, 'admin2_weight')\
+                .withColumnRenamed('region', 'weight_region')
+            self.df = self.df\
+                .withColumn('constant', F.lit(1).cast('byte'))\
+                .join(self.weight.select('weight_region', 'weight'),
+                                    on = (self.df.home_region == self.weight.weight_region),
+                                    how = 'left')\
+                .drop('weight_region')
 
     ## Indicator 1
     def transactions(self, time_filter, frequency):
@@ -154,10 +164,10 @@ class scaled_aggregator(custom_aggregator):
     ## Indicator 6 helper method
     def assign_home_locations(self, time_filter, frequency):
       user_day = Window\
-        .orderBy(F.desc('call_datetime'))\
+        .orderBy(F.desc_nulls_last('call_datetime'))\
         .partitionBy('msisdn', 'day')
       user_frequency = Window\
-        .orderBy(F.desc('last_region_count'))\
+        .orderBy(F.desc_nulls_last('last_region_count'))\
         .partitionBy('msisdn', frequency)
       result = self.df.where(time_filter)\
         .na.fill({'region' : 99999})\
@@ -172,8 +182,8 @@ class scaled_aggregator(custom_aggregator):
         .where(F.col('modal_region') == 1)\
         .groupby('msisdn', frequency)\
         .agg(F.last('region').alias('home_region'),
-             F.first('constant').alias('constant'),
-             F.first('weight').alias('weight'))
+             F.last('constant').alias('constant'),
+             F.last('weight').alias('weight'))
       return result
 
     ## Indicator 6
@@ -212,9 +222,6 @@ class scaled_aggregator(custom_aggregator):
 
    ## Indicator 9
     def home_vs_day_location(self, time_filter, frequency, home_location_frequency = 'week', **kwargs):
-      user_window_day_location = Window\
-        .orderBy(F.desc('total_duration'))\
-        .partitionBy('msisdn', frequency)
       home_locations = self.assign_home_locations(time_filter, home_location_frequency)
       prep = self.df.where(time_filter)\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
@@ -225,7 +232,6 @@ class scaled_aggregator(custom_aggregator):
         .groupby('msisdn', frequency, home_location_frequency)\
         .agg(F.last('region').alias('region'),
              F.last('total_duration').alias('duration'))\
-        .where(F.col('region').isNotNull())\
         .withColumnRenamed('msisdn', 'msisdn2')\
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
       result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) &\
@@ -236,7 +242,7 @@ class scaled_aggregator(custom_aggregator):
              F.stddev_pop('duration').alias('stdev_duration'),
              F.sum('constant').alias('count'),
              F.sum('weight').alias('weighted_count_population_scale'))\
-        .where(F.col('count') > 15)
+        # .where(F.col('count') > 15)
       sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
       sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
       result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
