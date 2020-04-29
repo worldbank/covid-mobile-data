@@ -54,8 +54,8 @@ class custom_aggregator(aggregator):
         if databricks:
           try:
             # does the file exist?
-            dbutils.fs.ls(self.datasource.standardize_path,
-                self.datasource.parquetfile_vars + self.level + '.parquet')
+            dbutils.fs.ls(os.path.join(self.datasource.standardize_path,
+                self.datasource.parquetfile_vars + self.level + '.parquet'))
             create_vars = False
           except Exception as e:
             create_vars = True
@@ -65,6 +65,7 @@ class custom_aggregator(aggregator):
                 self.datasource.parquetfile_vars + self.level + '.parquet')) == False)
 
         if (re_create_vars | create_vars):
+            print('Creating vars parquet-file...')
             self.df = self.calls.join(self.cells, self.calls.location_id == self.cells.cell_id, how = 'left').drop('cell_id')\
               .join(self.spark.sql(self.sql_code['home_locations']).withColumnRenamed('region', 'home_region'), 'msisdn', 'left')\
               .orderBy('msisdn', 'call_datetime')\
@@ -99,9 +100,9 @@ class custom_aggregator(aggregator):
         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
         # indicator 4
         self.table_names.append(self.save_and_report(self.percent_of_all_subscribers_active(time_filter, frequency), 'percent_of_all_subscribers_active_per_' + frequency))
-        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency ,exlusion_start = dt.datetime(2020,4,1)), 'percent_of_all_subscribers_active_option1_per_' + frequency))
-        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency), 'percent_of_all_subscribers_active_option2_per_' + frequency))
-        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency, active_only_at_home = False), 'percent_of_all_subscribers_active_option3_per_' + frequency))
+#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency ,exlusion_start = dt.datetime(2020,4,1)), 'percent_of_all_subscribers_active_option1_per_' + frequency))
+#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency), 'percent_of_all_subscribers_active_option2_per_' + frequency))
+#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency, active_only_at_home = False), 'percent_of_all_subscribers_active_option3_per_' + frequency))
         # indicator 5
         self.table_names.append(self.save_and_report(self.origin_destination_connection_matrix(time_filter, frequency), 'origin_destination_connection_matrix_per_' + frequency))
         # indicator 7
