@@ -36,6 +36,7 @@ library(dplyr)
 library(rmarkdown)
 library(lubridate)
 library(shiny)
+library(wesanderson)
 library(ggplot2)
 library(tidyr)
 library(shinyWidgets)
@@ -66,9 +67,10 @@ library(raster)
 library(htmltools)
 library(scales)
 library(lubridate)
+library(geosphere)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 
 # LOAD/PREP DATA ===============================================================
@@ -88,9 +90,9 @@ subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.R
 
 
 #### Risk analysis Data 
-risk_an <- fread(file.path(RISK_ANALYSIS_PATH, 
+risk_an <- fread(file.path("data_inputs_for_dashboard", 
                            "severe_disease_risk_district.csv"))
-risk_an_labs <- fread(file.path(RISK_ANALYSIS_PATH, 
+risk_an_labs <- fread(file.path("data_inputs_for_dashboard", 
                                 "severe_disease_risk_district_labels.csv"))
 
 #### Data descriptions
@@ -171,6 +173,7 @@ ui_main <- fluidPage(
     tabPanel(
       "Dashboard",
       tags$head(includeCSS("styles.css")),
+      
       
       dashboardBody(
         fluidRow(
@@ -295,9 +298,12 @@ ui_main <- fluidPage(
           column(2,
                  #wellPanel(
                    #align = "center",
+                 column(12,
+                        align="center",
                    selectInput(
                      "select_risk_indicator",
                      label = h4("Select Indicator"),
+                 
                      
                      # Cambiarra braba arrumar isso dai
                      choices = c("HIV prevalence quintile", 
@@ -307,8 +313,8 @@ ui_main <- fluidPage(
                                  "Smoking prevalence quintile",
                                  "Severe COVID-19 risk"),
                      selected = "HIV prevalence quintile",
-                     multiple = F),
-                   
+                     multiple = F)
+                 ),
                    
                    p(risk_analysis_text[1]),
                    p(risk_analysis_text[2])
@@ -353,7 +359,13 @@ ui_main <- fluidPage(
           ),
           
           column(3,
-                 formattableOutput('risk_table2')  
+                 align = "center",
+                 wellPanel(
+                   h3("District Rankings"),
+                 div(style = 'height:700px; overflow-y: scroll',
+                     formattableOutput("risk_table2"))
+                 )
+  
           )
           
           
@@ -404,7 +416,8 @@ ui_main <- fluidPage(
              )
     )
     
-  )
+  ),
+  selected = "Dashboard"
 )
 
 
@@ -1635,7 +1648,7 @@ server = (function(input, output, session) {
         # https://www.stat.auckland.ac.nz/~paul/Reports/VWline/vwline-intro/power-curve.html
         l_all <- lapply(1:nrow(district_sp), function(i){
           
-          N_lines <- 20 # must be even
+          N_lines <- 15 # must be even
           
           l <- gcIntermediate(dist_o %>% 
                                 coordinates() %>%
@@ -1695,7 +1708,10 @@ server = (function(input, output, session) {
       })
       
       #### Main Map
+  
       observe({
+        
+        req(input$nav == "Risk analysis") # This makes leaflet show up; before no defaults.
         
         #### Prep Movement Data
         move_data <- risk_map_move_data()
@@ -1708,18 +1724,25 @@ server = (function(input, output, session) {
         )
         
         #### Prep Main Map Data
+        risk_map <- risk_dist_sp()
+        
+        wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
+          as.vector()
+        
         pal <- 
           colorNumeric(
-            palette = "viridis",
-            domain = risk_dist_sp()@data$risk_var, # c(0, map_values)
+            palette = wes,
+            domain = c(risk_dist_sp()@data$risk_var), # c(0, map_values)
             na.color = "gray",
             reverse = F)
         
         # legend parameters
-        leg_labels = sort(unique(risk_dist_sp()@data$risk_var))
-        lg_colors = pal(sort(unique(risk_dist_sp()@data$risk_var)))
+        leg_labels = sort(unique(risk_map@data$risk_var)) %>% rev()
+        lg_colors = pal(sort(unique(risk_map@data$risk_var))) %>% rev()
         
-        
+        #map_label = paste0(risk_dist_sp()@data$name, "; ",
+        #                   risk_dist_sp()@data$risk_var)
+        map_label <- risk_map@data$name
         
         #if(is.null(input$select_risk_indicator)){
         #  leafletProxy("riskmap", data = risk_dist_sp()) %>%
@@ -1740,13 +1763,13 @@ server = (function(input, output, session) {
         #              labels = leg_labels)
         #} 
         
-        leafletProxy("riskmap", data = risk_dist_sp()) %>%
+        leafletProxy("riskmap", data = risk_map) %>%
           
           clearShapes()  %>% 
           
           addPolygons(
-            data = risk_dist_sp(),
-            label = ~ name,
+            data = risk_map,
+            label = ~ map_label,
             layerId = ~ name,
             fillColor = ~pal(risk_var),
             weight = 2,
@@ -1788,50 +1811,9 @@ server = (function(input, output, session) {
       })
       
       # ** Risk table ----------------------------------------------------------
-      
-      tab_data <- 
-        reactive({
-          
-          tab_data <- 
-            risk_dist_sp()@data %>% 
-            dplyr::select("name",
-                          "mean_hiv_pop_weighted_cat",
-                          "mean_anaemia_pop_weighted_cat",
-                          "mean_overweight_pop_weighted_cat",
-                          "mean_smoker_pop_weighted_cat",
-                          "mean_resp_risk_pop_weighted_cat",
-                          "severe_covid_risk") %>% 
-            dplyr::rename(District = name)
-          
-          # Rename other colunmns dimanicly
-          names(tab_data)[-1] <- 
-            risk_an_labs$group[match(names(risk_an[,21:26]), 
-                                     risk_an_labs$var)]
-          
-          # Return value
-          
-          tab_data
-          
-        })
-      
-      
-      
-      output$risk_table <- renderDT ({ #renderTable({ 
-        tab_data()
-      })
-      
-      # ** Table 2 ---------------------------------------------------------------
+
       output$risk_table2 <- renderFormattable({
-        
-        #### Define Colors
-        customGreen = "#71CA97"
-        customGreen0 = "#DeF7E9"
-        customRed = "#ff7f7f"
-        customRed0 = "#FA614B66"
-        customGreen0 = "#DeF7E9"
-        customYellow = "goldenrod2"
-     
-        
+
         risk_var_i <- "HIV prevalence quintile"
         if(!is.null(input$select_risk_indicator)){
           if(input$select_risk_indicator %in% "HIV prevalence quintile") risk_var_i <- "mean_hiv_pop_weighted_cat"
@@ -1855,22 +1837,22 @@ server = (function(input, output, session) {
           arrange(desc(value)) 
         
         #### Make Table
+        # https://stackoverflow.com/questions/49885176/is-it-possible-to-use-more-than-2-colors-in-the-color-tile-function
+        color_tile2 <- function (...) {
+          formatter("span", style = function(x) {
+            style(display = "block",
+                  padding = "0 4px", 
+                  font.weight = "bold",
+                  `border-radius` = "4px", 
+                  `background-color` = csscolor(matrix(as.integer(colorRamp(...)(normalize(as.numeric(x)))), 
+                                                       byrow=TRUE, dimnames=list(c("red","green","blue"), NULL), nrow=3)))
+          })}
+        
+       # formattable(mtcars, list(mpg = color_tile2(c("blue", "green", "pink") ) ))
+
         f_list <- list(
           `name` = formatter("span", style = ~ style(color = "black")),
-          `value` = formatter(
-            "span",
-            style = x ~ style(
-              display = "inline-block",
-              direction = "lft",
-              font.weight = "bold",
-              #"border-radius" = "4px",
-              "padding-left" = "2px",
-              "background-color" = csscolor(customRed0),
-              width = percent(proportion(x)),
-              color = csscolor("black")
-            )
-          )
-          
+          `value` = color_tile2(c("#95C6D3", "#ECDC87", "#EA7E71"))
         )
         
         names(f_list)[1] <- "District"
