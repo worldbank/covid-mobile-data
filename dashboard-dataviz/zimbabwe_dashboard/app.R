@@ -13,14 +13,12 @@ if (Sys.info()[["user"]] == "robmarty") {
 }
 
 if (Sys.info()[["user"]] == "WB521633") {
-  setwd(
-    "C:/Users/wb521633/Documents/Github/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
+  setwd("C:/Users/wb521633/Documents/Github/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
   )
 }
 
 if (Sys.info()[["user"]] == "wb519128") {
-  setwd(
-    "C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
+  setwd("C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
   )
 }
 
@@ -71,16 +69,16 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = F
+Logged = T
 
 
 # LOAD/PREP DATA ===============================================================
 
-towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
-                                  "outputs", 
-                                  "data-checks", 
-                                  "days_wards_with_low_hours_I1.csv"))
-towers_down$date <- towers_down$date %>% as.character() %>% as.Date()
+#towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
+#                                  "outputs", 
+#                                  "data-checks", 
+#                                  "days_wards_with_low_hours_I1.csv"))
+#towers_down$date <- towers_down$date %>% as.character() %>% as.Date()
 
 #### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
@@ -96,10 +94,10 @@ subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.R
 
 
 #### Risk analysis Data 
-risk_an <- fread(file.path("data_inputs_for_dashboard", 
-                           "severe_disease_risk_district.csv"))
-risk_an_labs <- fread(file.path("data_inputs_for_dashboard", 
-                                "severe_disease_risk_district_labels.csv"))
+#risk_an <- fread(file.path("data_inputs_for_dashboard", 
+#                           "severe_disease_risk_district.csv"))
+#risk_an_labs <- fread(file.path("data_inputs_for_dashboard", 
+#                                "severe_disease_risk_district_labels.csv"))
 
 #### Data descriptions
 data_methods_text <- read.table("text_inputs/data_methods.txt", sep="{")[[1]] %>% 
@@ -108,8 +106,9 @@ data_source_description_text <- read.table("text_inputs/data_source_description.
   as.character()
 
 #### Risk analysis text
-risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
-  as.character()
+#risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
+#  as.character()
+risk_analysis_text <- "a"
 
 # risk_analysis_text <- paste(risk_analysis_text[1],
 #                             risk_analysis_text[2],
@@ -230,7 +229,7 @@ ui_main <- fluidPage(
         ),
         fluidRow(
           column(
-            width = 9,
+            width = 8,
             
             h4(textOutput("map_title"),
                align = "center"),
@@ -270,16 +269,16 @@ ui_main <- fluidPage(
             )
           ),
           column( 
-            3,
+            4,
             wellPanel(
               strong(textOutput("line_title"), align = "center"),
               h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
-              hr(),
+              #hr(),
               strong(htmlOutput("table_title"), align = "center"),
               div(style = 'height:380px; overflow-y: scroll',
-                  formattableOutput("ward_top_5_in")),
+                  htmlOutput("ward_top_5_in")), # formattableOutput("ward_top_5_in"))
               h5(textOutput("rank_text"))
             )
           )
@@ -1221,8 +1220,9 @@ server = (function(input, output, session) {
       })
       
       # ** Table ---------------------------------------------------------------
-      output$ward_top_5_in <- renderFormattable({
-        
+      # renderFormattable
+      output$ward_top_5_in <- renderUI({
+
         data <- readRDS(file.path("data_inputs_for_dashboard",
                                            paste0("Districts","_",
                                                   "Density", "_",
@@ -1244,7 +1244,7 @@ server = (function(input, output, session) {
         
         data <- data[!is.na(data$value),]
         
-        table_max <- 50
+        table_max <- 20
         
         #### Restrict to Province
         if(!is.null(input$select_province)){
@@ -1261,38 +1261,38 @@ server = (function(input, output, session) {
           arrange(desc(value)) 
         
         #### Grab Line Graph Info
-        data_for_table <- data_for_table[1:10,]
+        data_for_table <- data_for_table[1:table_max,]
         
-        
-        a <- readRDS(file.path("data_inputs_for_dashboard",
-                          paste0(input$select_unit,"_",
-                                 input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
-                                 input$select_timeunit, "_",
-                                 data_for_table$name[1],".Rds")))
-        
+        #### Add Sparkline
         # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
         trend_spark <- lapply(1:nrow(data_for_table), function(i){
-          readRDS(file.path("data_inputs_for_dashboard",
-                            paste0("Districts","_",
-                                   "Density" %>% str_replace_all(" Districts| Wards", "") , "_",
-                                   "Daily", "_",
-                                   data_for_table$name[1],".Rds"))) %>%
-            dplyr::mutate(group = i) %>%
-            mutate(value = value / max(value, na.rm=T))
+          df_out <- readRDS(file.path("data_inputs_for_dashboard",
+                            paste0(input$select_unit,"_",
+                                   input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
+                                   input$select_timeunit, "_",
+                                   data_for_table$name[i],".Rds"))) %>%
+            dplyr::mutate(group = i) 
+          
+          if(input$select_timeunit %in% "Daily"){
+            df_out <- df_out %>%
+              filter(date <= input$date_ward)
+          }
+
         }) %>%
           bind_rows() %>%
           group_by(group) %>%
           summarize(
             TrendSparkline = spk_chr(
               value, type ="line",
-              chartRangeMin = 0, chartRangeMax = 1
+              height=40,
+              width=90
             )
           )
         
-        
-        
-
         data_for_table$Trend <- trend_spark$TrendSparkline
+        
+        print(data_for_table)
+        
         
         #### Variable names for table
         admin_name <- input$select_unit %>% str_replace_all("s$", "")
@@ -1330,14 +1330,7 @@ server = (function(input, output, session) {
               width = percent(proportion(x)),
               color = csscolor("black")
             )
-          ),
-          "Trend"=function(z){
-            sapply(
-              paste0(text='`r sparkline(', df$Name, ')`')
-              ,function(md) knitr::knit(text=md, quiet=T)
-            )
-          }
-          
+          )
         )
 
         
@@ -1346,20 +1339,24 @@ server = (function(input, output, session) {
         
         names(data_for_table)[1] <- admin_name
         names(data_for_table)[2] <- var_name
+      
         
         # https://github.com/renkun-ken/formattable/issues/89
+
         l <- formattable(
-          data_for_table[1:table_max,],
+          data_for_table[1:table_max,] %>% as.data.table(),
           align = c("l", "l", "l"),
           f_list
-        ) %>% format_table() %>%
+        ) %>% format_table(align = c("l", "l", "l")) %>%
           htmltools::HTML() %>%
           div() %>%
           # use new sparkline helper for adding dependency
           spk_add_deps() %>%
           # use column for bootstrap sizing control
           # but could also just wrap in any tag or tagList
-          {column(width=6, .)}
+          {column(width=12, .)}
+        
+        l
         
         
       })
@@ -1581,7 +1578,7 @@ server = (function(input, output, session) {
               NULL,
               value = "2020-03-01",
               min = "2020-02-01",
-              max = "2020-03-31"
+              max = "2020-03-29"
             )
           } else{
             out <- dateInput(
@@ -1589,7 +1586,7 @@ server = (function(input, output, session) {
               NULL,
               value = "2020-03-01",
               min = "2020-03-01",
-              max = "2020-03-31"
+              max = "2020-03-29"
             )
           }
           
