@@ -21,8 +21,11 @@
 
 import pandas as pd
 
-
 EXPORT = True
+
+# Number of hours below avg, used as a trashold to 
+# define a tower down
+htrahshold = -3
 
 #-----------------------------------------------------------------#
 # Import data
@@ -31,8 +34,8 @@ EXPORT = True
 i1 = pd.read_csv(I1_Adm3_path + "transactions_per_hour.csv")
 
 # Unique subscribers per hour
-i2a3 = pd.read_csv(I2_Adm3_path + "unique_subscribers_per_hour.csv")
-i2t = pd.read_csv(I2_towercluster_path + "unique_subscribers_per_hour.csv")
+# i2a3 = pd.read_csv(I2_Adm3_path + "unique_subscribers_per_hour.csv")
+# i2t = pd.read_csv(I2_towercluster_path + "unique_subscribers_per_hour.csv")
 
 
 #-----------------------------------------------------------------#
@@ -93,38 +96,25 @@ i1_ag_df['h_diff'] = i1_ag_df['hcount'] - i1_ag_df['avg_hours']
 
 # Create data only with pairs of wards and days potential 
 # towers down
-i1_ag_df_tower_down = i1_ag_df[i1_ag_df['h_diff'] < -5]
+i1_ag_df_tower_down = i1_ag_df[i1_ag_df['h_diff'] < htrahshold]
 
+# Read me text
+readme_text = "This file contains a combinations of wards and  days that are assumed to have a tower down."
+readme_text += "If a day has " + str(abs(htrahshold))  
+readme_text += " hours with any calls below the daily avergage for that ward,"
+readme_text += " it is considered to have a trower down at some point that day."  
 
 # Export
 if(EXPORT):
-    (i1_ag_df_tower_down.drop(['flag'])  
+    (i1_ag_df_tower_down 
     .to_csv(OUT_hfcs + 'days_wards_with_low_hours_I1.csv', 
             index = False) )
-
-
-# len(set(i1_ag_df[i1_ag_df['h_diff'] < -10].region))
-
-
-#-----------------------------------------------------------------#
-# Draft code
-
-# len(set(hours_per_day.region[hours_per_day['hcount'] < 10]))
-
-# foo = i1.merge(hours_per_day,
-#                on = ['region', 'date'])
-
-# i1.groupby('region').size()
-# Create outliers data frame
-
-
-# i1['count'].mean()
-# i1.groupby('region').mean()
+    # Read me file
+    file = open(OUT_hfcs + "days_wards_with_low_hours_I1_README.txt", "w") 
+    file.write(readme_text) 
+    file.close() 
 
 
 
-# from IPython.display import HTML
-# foo = pd.read_csv(DATA_dash_clean_a3 + "origin_destination_connection_matrix_per_day.csv")
-# bar = foo[0:1000]
-# HTML(bar.to_html())
+
 
