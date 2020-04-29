@@ -42,6 +42,7 @@ if(Sys.info()[["user"]] == "WB521633") GITHUB_PATH <- "C:/Users/wb521633/Documen
 GEO_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "geo_files")
 RISK_ANALYSIS_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "risk-analysis")
 DATABRICKS_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw")
+PROOF_CONCEPT_PATH   <- file.path(PROJECT_PATH, "proof-of-concept")
 
 CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm2")
 CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm3")

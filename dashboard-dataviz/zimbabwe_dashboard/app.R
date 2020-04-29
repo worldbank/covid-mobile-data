@@ -28,6 +28,7 @@ if (Sys.info()[["user"]] == "wb519128") {
 
 
 #### Pacakges
+library(sparkline)
 library(shinydashboard)
 library(RColorBrewer)
 library(shinythemes)
@@ -75,6 +76,11 @@ Logged = F
 
 # LOAD/PREP DATA ===============================================================
 
+towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
+                                  "outputs", 
+                                  "data-checks", 
+                                  "days_wards_with_low_hours_I1.csv"))
+towers_down$date <- towers_down$date %>% as.character() %>% as.Date()
 
 #### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
@@ -171,7 +177,7 @@ ui_main <- fluidPage(
     
     # ** Telecom Data ----------------------------------------------------------
     tabPanel(
-      "Dashboard",
+      "Density and Movement",
       tags$head(includeCSS("styles.css")),
       
       
@@ -270,7 +276,7 @@ ui_main <- fluidPage(
               h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
-              #hr(),
+              hr(),
               strong(htmlOutput("table_title"), align = "center"),
               div(style = 'height:380px; overflow-y: scroll',
                   formattableOutput("ward_top_5_in")),
@@ -289,7 +295,7 @@ ui_main <- fluidPage(
     
     # ** Risk analysis ------------------------------------------------------
     tabPanel(
-      "Risk analysis",
+      "Risk Analysis",
       # Title and text
       
       dashboardBody(
@@ -297,27 +303,27 @@ ui_main <- fluidPage(
           
           column(2,
                  #wellPanel(
-                   #align = "center",
+                 #align = "center",
                  column(12,
                         align="center",
-                   selectInput(
-                     "select_risk_indicator",
-                     label = h4("Select Indicator"),
-                 
-                     
-                     # Cambiarra braba arrumar isso dai
-                     choices = c("HIV prevalence quintile", 
-                                 "Anaemia prevalence quintile",
-                                 "Respiratory illness prevalence quintile",
-                                 "Overweight prevalence quintile", 
-                                 "Smoking prevalence quintile",
-                                 "Severe COVID-19 risk"),
-                     selected = "HIV prevalence quintile",
-                     multiple = F)
+                        selectInput(
+                          "select_risk_indicator",
+                          label = h4("Select Indicator"),
+                          
+                          
+                          # Cambiarra braba arrumar isso dai
+                          choices = c("HIV prevalence quintile", 
+                                      "Anaemia prevalence quintile",
+                                      "Respiratory illness prevalence quintile",
+                                      "Overweight prevalence quintile", 
+                                      "Smoking prevalence quintile",
+                                      "Severe COVID-19 risk"),
+                          selected = "HIV prevalence quintile",
+                          multiple = F)
                  ),
-                   
-                   p(risk_analysis_text[1]),
-                   p(risk_analysis_text[2])
+                 
+                 p(risk_analysis_text[1]),
+                 p(risk_analysis_text[2])
                  #)
                  
           ),
@@ -342,7 +348,7 @@ ui_main <- fluidPage(
                                         "Mar 21 - Mar 27"),
                             multiple = F)
                    ),
-                   column(3, align="center",
+                   column(4, align="center",
                           
                           selectInput("move_type_risk",
                                       label = h4("Movement Indicator"),
@@ -353,6 +359,9 @@ ui_main <- fluidPage(
                    )
                  ),
                  
+                 column(12, align="center",
+                        strong("Click on a district to change the origin/destination")
+                 ),
                  
                  leafletOutput("riskmap",
                                height = 720)
@@ -362,10 +371,10 @@ ui_main <- fluidPage(
                  align = "center",
                  wellPanel(
                    h3("District Rankings"),
-                 div(style = 'height:700px; overflow-y: scroll',
-                     formattableOutput("risk_table2"))
+                   div(style = 'height:720px; overflow-y: scroll',
+                       formattableOutput("risk_table2"))
                  )
-  
+                 
           )
           
           
@@ -533,8 +542,7 @@ server = (function(input, output, session) {
         if(is.null(timeunit_i)) timeunit_i <- "Daily"
         if(is.null(date_i)) date_i <- "2020-02-01"
         if(is.null(metric_i)) metric_i <- "Count"
-        
-        
+
         variable_i <- variable_i %>% str_replace_all(" Districts| Wards", "") 
         unit_i_singular <- substr(unit_i, 1, nchar(unit_i) - 1)
         
@@ -716,7 +724,6 @@ server = (function(input, output, session) {
             pal_val_max = max(ward_level_df$value, na.rm = T),
             map_title = paste0(unit_i_singular,
                                " ", variable_i, ": ",
-                               " Density: ", 
                                date_i),
             table_title = paste0("Top ",
                                  unit_i,
@@ -1049,7 +1056,19 @@ server = (function(input, output, session) {
           }
         }
         
+        #towers_down_i <- towers_down[towers_down$date %in% input$date_ward,]
+        #ward_sp_towerdown <- ward_sp[ward_sp$region %in% towers_down_i$region,]
         
+        #if(nrow(ward_sp_towerdown) > 0){
+        #  
+        #  ward_sp_towerdown_c <- gCentroid(ward_sp_towerdown, byid=T)
+        #  ward_sp_towerdown_c$id <- 1:length(ward_sp_towerdown_c)
+        #  ward_sp_towerdown_c@data <- ward_sp_towerdown@data
+        #  
+        #  l <- l %>%
+        #    addCircles(data=ward_sp_towerdown_c,
+        #               color="red", weight=3)
+        #}
         
         #### Further Zoom to Region
         # Only change if choose something different
@@ -1204,6 +1223,13 @@ server = (function(input, output, session) {
       # ** Table ---------------------------------------------------------------
       output$ward_top_5_in <- renderFormattable({
         
+        data <- readRDS(file.path("data_inputs_for_dashboard",
+                                           paste0("Districts","_",
+                                                  "Density", "_",
+                                                  "Daily", "_",
+                                                  "2020-02-20",".Rds")))
+        
+        
         #### Define Colors
         customGreen = "#71CA97"
         customGreen0 = "#DeF7E9"
@@ -1234,17 +1260,54 @@ server = (function(input, output, session) {
           mutate(value = value %>% round(2)) %>%
           arrange(desc(value)) 
         
+        #### Grab Line Graph Info
+        data_for_table <- data_for_table[1:10,]
+        
+        
+        a <- readRDS(file.path("data_inputs_for_dashboard",
+                          paste0(input$select_unit,"_",
+                                 input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
+                                 input$select_timeunit, "_",
+                                 data_for_table$name[1],".Rds")))
+        
+        # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
+        trend_spark <- lapply(1:nrow(data_for_table), function(i){
+          readRDS(file.path("data_inputs_for_dashboard",
+                            paste0("Districts","_",
+                                   "Density" %>% str_replace_all(" Districts| Wards", "") , "_",
+                                   "Daily", "_",
+                                   data_for_table$name[1],".Rds"))) %>%
+            dplyr::mutate(group = i) %>%
+            mutate(value = value / max(value, na.rm=T))
+        }) %>%
+          bind_rows() %>%
+          group_by(group) %>%
+          summarize(
+            TrendSparkline = spk_chr(
+              value, type ="line",
+              chartRangeMin = 0, chartRangeMax = 1
+            )
+          )
+        
+        
+        
+
+        data_for_table$Trend <- trend_spark$TrendSparkline
+        
         #### Variable names for table
         admin_name <- input$select_unit %>% str_replace_all("s$", "")
         
-        if(input$select_variable %in% "Density"){
-          var_name <- "Subscribers"
-        } else if (input$select_variable %in% "Net Movement"){
-          var_name <- "Net Trips"
-        } else if (input$select_variable %in% "Median Distance Traveled"){
-          var_name <- "Distance"
-        } else{
-          var_name <- "Trips"
+        var_name <- "Density"
+        if(!is.null(input$select_variable)){
+          if(input$select_variable %in% "Density"){
+            var_name <- "Subscribers"
+          } else if (input$select_variable %in% "Net Movement"){
+            var_name <- "Net Trips"
+          } else if (input$select_variable %in% "Median Distance Traveled"){
+            var_name <- "Distance"
+          } else{
+            var_name <- "Trips"
+          }
         }
         
         ## Add metric if not count
@@ -1267,9 +1330,16 @@ server = (function(input, output, session) {
               width = percent(proportion(x)),
               color = csscolor("black")
             )
-          )
+          ),
+          "Trend"=function(z){
+            sapply(
+              paste0(text='`r sparkline(', df$Name, ')`')
+              ,function(md) knitr::knit(text=md, quiet=T)
+            )
+          }
           
         )
+
         
         names(f_list)[1] <- admin_name
         names(f_list)[2] <- var_name
@@ -1277,11 +1347,19 @@ server = (function(input, output, session) {
         names(data_for_table)[1] <- admin_name
         names(data_for_table)[2] <- var_name
         
+        # https://github.com/renkun-ken/formattable/issues/89
         l <- formattable(
           data_for_table[1:table_max,],
-          align = c("l", "l"),
+          align = c("l", "l", "l"),
           f_list
-        )
+        ) %>% format_table() %>%
+          htmltools::HTML() %>%
+          div() %>%
+          # use new sparkline helper for adding dependency
+          spk_add_deps() %>%
+          # use column for bootstrap sizing control
+          # but could also just wrap in any tag or tagList
+          {column(width=6, .)}
         
         
       })
@@ -1367,7 +1445,7 @@ server = (function(input, output, session) {
           }
         }
         
-
+        
         
         out
         
@@ -1390,18 +1468,18 @@ server = (function(input, output, session) {
         out <- ""
         
         if (!is.null(input$select_variable)){
-        
-        if (input$select_variable %in% "Movement Out of Wards") { 
-          out <- "Click a ward on the map to select different origin ward"
-        } else if (input$select_variable %in% "Movement Into Wards") {
-          out <- "Click a ward on the map to select different destination ward"
-        } else if (input$select_variable %in% "Movement Out of Districts") {
-          out <- "Click a district on the map to select different destination district"
-        } else if (input$select_variable %in% "Movement Into Districts") {
-          out <- "Click a district on the map to select different destination district"
-        } else{
-          out <- ""
-        }
+          
+          if (input$select_variable %in% "Movement Out of Wards") { 
+            out <- "Click a ward on the map to select different origin ward"
+          } else if (input$select_variable %in% "Movement Into Wards") {
+            out <- "Click a ward on the map to select different destination ward"
+          } else if (input$select_variable %in% "Movement Out of Districts") {
+            out <- "Click a district on the map to select different destination district"
+          } else if (input$select_variable %in% "Movement Into Districts") {
+            out <- "Click a district on the map to select different destination district"
+          } else{
+            out <- ""
+          }
           
         }
         
@@ -1708,10 +1786,10 @@ server = (function(input, output, session) {
       })
       
       #### Main Map
-  
+      
       observe({
         
-        req(input$nav == "Risk analysis") # This makes leaflet show up; before no defaults.
+        req(input$nav == "Risk Analysis") # This makes leaflet show up; before no defaults.
         
         #### Prep Movement Data
         move_data <- risk_map_move_data()
@@ -1811,9 +1889,9 @@ server = (function(input, output, session) {
       })
       
       # ** Risk table ----------------------------------------------------------
-
+      
       output$risk_table2 <- renderFormattable({
-
+        
         risk_var_i <- "HIV prevalence quintile"
         if(!is.null(input$select_risk_indicator)){
           if(input$select_risk_indicator %in% "HIV prevalence quintile") risk_var_i <- "mean_hiv_pop_weighted_cat"
@@ -1827,7 +1905,7 @@ server = (function(input, output, session) {
         risk_an_df <- as.data.frame(risk_an)
         risk_an_i <- risk_an_df[,c("NAME_2",risk_var_i )]
         names(risk_an_i) <- c("name", "value")
-
+        
         
         #### Prep Data for Table
         data_for_table <- risk_an_i %>%
@@ -1848,8 +1926,8 @@ server = (function(input, output, session) {
                                                        byrow=TRUE, dimnames=list(c("red","green","blue"), NULL), nrow=3)))
           })}
         
-       # formattable(mtcars, list(mpg = color_tile2(c("blue", "green", "pink") ) ))
-
+        # formattable(mtcars, list(mpg = color_tile2(c("blue", "green", "pink") ) ))
+        
         f_list <- list(
           `name` = formatter("span", style = ~ style(color = "black")),
           `value` = color_tile2(c("#95C6D3", "#ECDC87", "#EA7E71"))

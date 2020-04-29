@@ -635,6 +635,8 @@ tp_interpolate_outliers <- function(data,
     data_orig[[paste0(value_var, "_scale")]] <- data$value_scale
   } 
   
+  print("Done: tp_interpolate_outliers")
+  
   return(data_orig)
 }
 
