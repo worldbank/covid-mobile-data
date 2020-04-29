@@ -5,7 +5,9 @@ There is code for three high level tasks in this repository, `cdr-aggregation`, 
 
 ### cdr-aggregation
 
-This code aggregates and thereby anonymizes CDR data. This code is written in python for an Azure Databricks environment but can be modified to run in other environments. See more [here](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation).
+This code aggregates and thereby anonymizes CDR data. This code builds on much of the work that has been developed by [Flowminder](https://web.flowminder.org) for the purpose of supporting MNOs in producing basic indicators. Their code can be found in their [GitHub account](https://github.com/Flowminder).
+
+The aggregation code is written in python for an Azure Databricks environment but a docker image has been provided so that it runs in other environments. See more [here](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation).
 
 ### data-checks
 
