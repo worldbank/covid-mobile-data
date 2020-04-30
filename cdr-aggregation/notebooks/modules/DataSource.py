@@ -2,7 +2,6 @@
 import os
 if os.environ['HOME'] != '/root':
     from modules.import_packages import *
-    from modules.setup_spark import *
 
 from pyspark.sql.functions import to_timestamp
 from pyspark.sql.types import *
@@ -19,6 +18,9 @@ class DataSource:
     #Get input config and set default values as needed
     self.setup_config(config_input)
     self.add_week_dates()
+
+    # Start spark
+    self.start_spark()
 
     # Country code and company and path
     self.ccc_path = self.country_code+"/"+self.telecom_alias
@@ -39,10 +41,38 @@ class DataSource:
     self.parquetfile_vars = self.filestub + "_vars_"
     self.parquetfile_path = self.standardize_path +"/"+ self.parquetfile
 
-    self.spark = spark
-
   ######################################
   # Setup Methods
+
+  def start_spark(self):
+      print('Spark mode is',self.spark_mode)
+      if self.spark_mode == 'hive':
+          # warehouse_location points to the default location for managed databases and tables
+          if self.hive_warehouse_location == 'path_to_hive_warehouse':
+            raise Exception("Specify hive warehouse location.")
+          self.spark = SparkSession.builder.master(self.spark_master)\
+              .appName("Python Spark SQL Hive integration") \
+              .config("spark.sql.warehouse.dir", self.hive_warehouse_location) \
+              .enableHiveSupport() \
+              .getOrCreate()
+
+      elif self.spark_mode == 'local':
+          self.spark = SparkSession.builder.master(self.spark_master) \
+              .config("spark.driver.maxResultSize", "2g") \
+              .config("spark.sql.shuffle.partitions", "16") \
+              .config("spark.driver.memory", "8g") \
+              .config("spark.sql.session.timeZone", "UTC") \
+              .config("spark.sql.execution.arrow.enabled", "true")\
+              .getOrCreate()
+
+      elif self.spark_mode == 'cluster':
+          self.spark = SparkSession.builder.master(self.spark_master) \
+              .config("spark.sql.session.timeZone", "UTC") \
+              .config("spark.sql.execution.arrow.enabled", "true")\
+              .getOrCreate()
+
+      else:
+          raise Exception('Spark session not initialised. Specify type (local, cluster, hive) of spark connection in config file, and/or modify the setup_spark.py file.')
 
   def setup_config(self,input_config):
 
@@ -53,6 +83,10 @@ class DataSource:
     #Config values : [<type>, <default value>]. If default value is None then value must be specified by user
     keys_types_defaults = {
       "base_path":[str,None],
+      "spark_master":[str,"local[*]"],
+      "hive_warehouse_location":[str,'path_to_hive_warehouse'],
+      "hive_vars":[dict,{}],
+      "spark_mode":[str,'local'],
       "country_code":[str,None],
       "telecom_alias":[str,None],
       "schema":[StructType,None],
@@ -173,11 +207,11 @@ class DataSource:
 
   #read the parquet file
   def load_standardized_parquet_file(self):
-    self.parquet_df = spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile)
+    self.parquet_df = self.spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile)
 
   #read the parquet file with vars
   def load_parquet_file_with_vars(self, region):
-    self.parquet_vars_df = spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile_vars + region)
+    self.parquet_vars_df = self.spark.read.format("parquet").load(self.standardize_path+"/"+self.parquetfile_vars + region)
 
 ######################################
  # Create sample
@@ -190,7 +224,7 @@ class DataSource:
 
     #write sample file to parquet file and then load that sample into self.sample_df
     self.sample_df.write.mode('overwrite').parquet(self.standardize_path +"/"+ filestub)
-    self.sample_df = spark.read.format("parquet").load(self.standardize_path +"/"+ filestub)
+    self.sample_df = self.spark.read.format("parquet").load(self.standardize_path +"/"+ filestub)
     return self.sample_df
 
   #Sample dataframe based on all records for sample of unique ids
@@ -209,12 +243,12 @@ class DataSource:
   #Load a parquet sample
   def load_sample(self,  filestub = 'sample'):
     #Load sample file and return it
-    self.sample_df = spark.read.format("parquet").load(self.standardize_path +"/"+ filestub)
+    self.sample_df = self.spark.read.format("parquet").load(self.standardize_path +"/"+ filestub)
     return self.sample_df
 
   def load_geo_csvs(self):
     for file in self.geofiles.keys():
-        df = spark.read.format("csv")\
+        df = self.spark.read.format("csv")\
            .option("header", "true")\
            .option("delimiter", ",")\
            .option("inferSchema", "true")\

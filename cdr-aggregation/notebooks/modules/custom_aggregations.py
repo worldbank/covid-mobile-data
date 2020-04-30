@@ -79,10 +79,11 @@ class custom_aggregator(aggregator):
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
               .withColumn('constant', F.lit(1).cast('byte'))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
+              .withColumn('call_date', F.date_trunc('day', F.col('call_datetime')))\
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
             self.df = save_and_load_parquet(self.df,
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'), self)
 
         else:
             self.df = self.spark.read.format("parquet").load(
