@@ -50,8 +50,8 @@ class DataSource:
           # warehouse_location points to the default location for managed databases and tables
           if self.hive_warehouse_location == 'path_to_hive_warehouse':
             raise Exception("Specify hive warehouse location.")
-          self.spark = SparkSession.builder.master(self.spark_master)\
-              .appName("Python Spark SQL Hive integration") \
+          self.spark = SparkSession.builder\
+              .appName("CDR Aggregation") \
               .config("spark.sql.warehouse.dir", self.hive_warehouse_location) \
               .enableHiveSupport() \
               .getOrCreate()

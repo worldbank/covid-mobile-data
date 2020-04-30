@@ -9,7 +9,6 @@ datasource_configs = {
   "base_path": "path_to_folder/data", #folder path used in this docker env
   "hive_warehouse_location": "path_to_hive_warehouse",
   "spark_mode": 'hive',
-  "spark_master":"local[*]",
   "hive_vars":{ 'msisdn' : 'col1',
                 'call_datetime': 'col2',
                 'location_id': 'col3',
