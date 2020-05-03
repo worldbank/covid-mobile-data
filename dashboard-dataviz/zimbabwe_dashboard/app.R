@@ -69,16 +69,10 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 
 # LOAD/PREP DATA ===============================================================
-
-#towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
-#                                  "outputs", 
-#                                  "data-checks", 
-#                                  "days_wards_with_low_hours_I1.csv"))
-#towers_down$date <- towers_down$date %>% as.character() %>% as.Date()
 
 #### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
@@ -94,10 +88,10 @@ subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.R
 
 
 #### Risk analysis Data 
-#risk_an <- fread(file.path("data_inputs_for_dashboard", 
-#                           "severe_disease_risk_district.csv"))
-#risk_an_labs <- fread(file.path("data_inputs_for_dashboard", 
-#                                "severe_disease_risk_district_labels.csv"))
+risk_an <- fread(file.path("data_inputs_for_dashboard", 
+                           "severe_disease_risk_district.csv"))
+risk_an_labs <- fread(file.path("data_inputs_for_dashboard", 
+                                "severe_disease_risk_district_labels.csv"))
 
 #### Data descriptions
 data_methods_text <- read.table("text_inputs/data_methods.txt", sep="{")[[1]] %>% 
@@ -106,9 +100,8 @@ data_source_description_text <- read.table("text_inputs/data_source_description.
   as.character()
 
 #### Risk analysis text
-#risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
-#  as.character()
-risk_analysis_text <- "a"
+risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
+  as.character()
 
 # risk_analysis_text <- paste(risk_analysis_text[1],
 #                             risk_analysis_text[2],
@@ -271,13 +264,15 @@ ui_main <- fluidPage(
           column( 
             4,
             wellPanel(
+              
               strong(textOutput("line_title"), align = "center"),
               h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
               #hr(),
               strong(htmlOutput("table_title"), align = "center"),
-              div(style = 'height:380px; overflow-y: scroll',
+              
+              div(style = 'height:425px; overflow-y: scroll',
                   htmlOutput("ward_top_5_in")), # formattableOutput("ward_top_5_in"))
               h5(textOutput("rank_text"))
             )
@@ -541,7 +536,7 @@ server = (function(input, output, session) {
         if(is.null(timeunit_i)) timeunit_i <- "Daily"
         if(is.null(date_i)) date_i <- "2020-02-01"
         if(is.null(metric_i)) metric_i <- "Count"
-
+        
         variable_i <- variable_i %>% str_replace_all(" Districts| Wards", "") 
         unit_i_singular <- substr(unit_i, 1, nchar(unit_i) - 1)
         
@@ -653,13 +648,14 @@ server = (function(input, output, session) {
         
         # Density - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         # TODO: Can more cleanly integrtate into Density / Non-OD all together
-        if(variable_i %in% c("Net Movement", "Median Distance Traveled")){
+        if(variable_i %in% c("Net Movement", 
+                             "Mean Distance Traveled", 
+                             "Std Dev Distance Traveled")){
           
           # Need to check for 2020 in case weekly
           if(substring(date_i,1,4) %in% "2020"){
             #if(date_i > "2020-02-29") date_i <- "2020-02-01"
           }
-          
           
           ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
@@ -673,7 +669,6 @@ server = (function(input, output, session) {
                                                     timeunit_i, "_",
                                                     ward_i,".Rds")))
           
-          #print(ward_level_df)
           
           
           if(metric_i %in% "Count"){
@@ -729,7 +724,7 @@ server = (function(input, output, session) {
                                  ": ", # by Total Number of Subscribers: 
                                  date_i),
             table_subtitle = "",
-            line_title = paste0("Trends in Movement Distance in ", ward_i)
+            line_title = paste0("Trends in ",variable_i," in ", ward_i)
           )
           
         }
@@ -897,7 +892,6 @@ server = (function(input, output, session) {
             
             od_index <- which(grepl("Origin|Destination", map_labels))
             
-            #print(od_index)
           }
         }
         
@@ -914,6 +908,13 @@ server = (function(input, output, session) {
                 map_values[grepl("information", map_labels)] <- 0
                 
               }
+              
+              if(input$select_variable %in% c("Mean Distance Traveled",
+                                              "Std Dev Distance Traveled")){
+                map_values[grepl("information", map_labels)] <- min(map_values, na.rm=T)
+                
+              }
+              
             }
             
             
@@ -957,25 +958,8 @@ server = (function(input, output, session) {
           }
         }
         
-        #print(summary(map_values))
         
-        
-        #print(map_values)
-        
-        ##### Define color palettes
-        
-        ## Diverging
-        #N_colors_above0 <- max(map_values, na.rm=T) %>% abs() %>% round(0)
-        #  N_colors_below0 <- min(map_values, na.rm=T) %>% abs() %>% round(0)
-        
-        #N_colors_below0 <- colorRampPalette(colors = c("red3", "lemonchiffon"), 
-        #                                    space = "Lab")(N_colors_below0*10)
-        #N_colors_above0 <- colorRampPalette(colors = c("lemonchiffon", "forestgreen"), 
-        #                                    space = "Lab")(N_colors_above0*10)
-        #rampcols <- c(N_colors_below0, N_colors_above0)
-        #pal_ward <- colorNumeric(palette = rampcols, 
-        #                         domain = map_values)
-        
+        if(sum(!is.na(map_values)) %in% 0) map_values <- rep(0, length(map_values))
         
         pal_ward <- colorNumeric(
           palette = "viridis",
@@ -1074,8 +1058,6 @@ server = (function(input, output, session) {
         if(!is.null(input$select_region_zoom)){
           if(previous_zoom_selection != input$select_region_zoom){
             if(input$select_region_zoom %in% map_data$name){
-              
-              #print(input$select_region_zoom %in% map_data$name_id)
               
               loc_i <- which(map_data$name %in% input$select_region_zoom)
               #map_labels_zoom <- map_labels[loc_i]
@@ -1222,12 +1204,12 @@ server = (function(input, output, session) {
       # ** Table ---------------------------------------------------------------
       # renderFormattable
       output$ward_top_5_in <- renderUI({
-
+        
         data <- readRDS(file.path("data_inputs_for_dashboard",
-                                           paste0("Districts","_",
-                                                  "Density", "_",
-                                                  "Daily", "_",
-                                                  "2020-02-20",".Rds")))
+                                  paste0("Districts","_",
+                                         "Density", "_",
+                                         "Daily", "_",
+                                         "2020-02-20",".Rds")))
         
         
         #### Define Colors
@@ -1263,36 +1245,48 @@ server = (function(input, output, session) {
         #### Grab Line Graph Info
         data_for_table <- data_for_table[1:table_max,]
         
-        #### Add Sparkline
-        # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
-        trend_spark <- lapply(1:nrow(data_for_table), function(i){
-          df_out <- readRDS(file.path("data_inputs_for_dashboard",
-                            paste0(input$select_unit,"_",
-                                   input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
-                                   input$select_timeunit, "_",
-                                   data_for_table$name[i],".Rds"))) %>%
-            dplyr::mutate(group = i) 
+        #### Check NA vaues
+        data_for_table <- data_for_table[!is.na(data_for_table$name),]
+        table_max <- nrow(data_for_table)
+        
+        if(nrow(data_for_table) > 0){
           
-          if(input$select_timeunit %in% "Daily"){
-            df_out <- df_out %>%
-              filter(date <= input$date_ward)
-          }
-
-        }) %>%
-          bind_rows() %>%
-          group_by(group) %>%
-          summarize(
-            TrendSparkline = spk_chr(
-              value, type ="line",
-              height=40,
-              width=90
+          #### Add Sparkline
+          # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
+          trend_spark <- lapply(1:nrow(data_for_table), function(i){
+            df_out <- readRDS(file.path("data_inputs_for_dashboard",
+                                        paste0(input$select_unit,"_",
+                                               input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
+                                               input$select_timeunit, "_",
+                                               data_for_table$name[i],".Rds"))) %>%
+              dplyr::mutate(group = i) 
+            
+            if(input$select_timeunit %in% "Daily"){
+              df_out <- df_out %>%
+                filter(date <= input$date_ward)
+            }
+            
+            return(df_out)
+            
+          }) %>%
+            bind_rows() %>%
+            group_by(group) %>%
+            summarize(
+              TrendSparkline = spk_chr(
+                value, 
+                type ="line",
+                lineColor = 'black', 
+                fillColor = "orange", # NA for no fill
+                height=40,
+                width=100
+              )
             )
-          )
-        
-        data_for_table$Trend <- trend_spark$TrendSparkline
-        
-        print(data_for_table)
-        
+          
+          data_for_table$Trend <- trend_spark$TrendSparkline
+        } else{
+          # Need to use rep to account for cases where data is nrow=0
+          data_for_table$Trend <- rep("", nrow(data_for_table))
+        }
         
         #### Variable names for table
         admin_name <- input$select_unit %>% str_replace_all("s$", "")
@@ -1303,8 +1297,10 @@ server = (function(input, output, session) {
             var_name <- "Subscribers"
           } else if (input$select_variable %in% "Net Movement"){
             var_name <- "Net Trips"
-          } else if (input$select_variable %in% "Median Distance Traveled"){
-            var_name <- "Distance"
+          } else if (input$select_variable %in% "Mean Distance Traveled"){
+            var_name <- "Mean Distance"
+          } else if (input$select_variable %in% "Std Dev Distance Traveled"){
+            var_name <- "Std Dev Distance"
           } else{
             var_name <- "Trips"
           }
@@ -1332,17 +1328,17 @@ server = (function(input, output, session) {
             )
           )
         )
-
+        
         
         names(f_list)[1] <- admin_name
         names(f_list)[2] <- var_name
         
         names(data_for_table)[1] <- admin_name
         names(data_for_table)[2] <- var_name
-      
+        
         
         # https://github.com/renkun-ken/formattable/issues/89
-
+        
         l <- formattable(
           data_for_table[1:table_max,] %>% as.data.table(),
           align = c("l", "l", "l"),
@@ -1639,9 +1635,10 @@ server = (function(input, output, session) {
           label = h4("Select Variable"),
           choices = c("Density",
                       "Net Movement",
-                      #"Median Distance Traveled",
                       "Movement Into Wards",
-                      "Movement Out of Wards"),
+                      "Movement Out of Wards",
+                      "Mean Distance Traveled",
+                      "Std Dev Distance Traveled"),
           multiple = F
         )
         
@@ -1651,9 +1648,10 @@ server = (function(input, output, session) {
             label = h4("Select Variable"),
             choices = c("Density",
                         "Net Movement",
-                        #"Median Distance Traveled",
                         "Movement Into Wards",
-                        "Movement Out of Wards"),
+                        "Movement Out of Wards",
+                        "Mean Distance Traveled",
+                        "Std Dev Distance Traveled"),
             multiple = F
           )
         }
@@ -1664,9 +1662,10 @@ server = (function(input, output, session) {
             label = h4("Select Variable"),
             choices = c("Density",
                         "Net Movement",
-                        #"Median Distance Traveled",
                         "Movement Into Districts",
-                        "Movement Out of Districts"),
+                        "Movement Out of Districts",
+                        "Mean Distance Traveled",
+                        "Std Dev Distance Traveled"),
             multiple = F
           )
         }

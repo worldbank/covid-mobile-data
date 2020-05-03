@@ -116,6 +116,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     group_by(date, region_origin) %>%
     dplyr::summarise(value = sum(value, na.rm=T)) %>%
     ungroup() %>%
+    tp_less15_NA(threshold = 0) %>% # summarize makes all NA 0, so back to NA here
     
     tp_standardize_vars("date", "region_origin", "value") %>%
     tp_add_baseline_comp_stats() %>%
@@ -133,6 +134,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     group_by(date, region_dest) %>%
     dplyr::summarise(value = sum(value, na.rm=T)) %>%
     ungroup() %>%
+    tp_less15_NA(threshold = 0) %>% # summarize makes all NA 0, so back to NA here
     
     tp_standardize_vars("date", "region_dest", "value") %>%
     tp_add_baseline_comp_stats() %>%
@@ -249,7 +251,6 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
     df_clean$value_zscore_base[is.na(df_clean$value)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value)] <- 0
     
-    df_clean$value[is.na(df_clean$value_base)] <- 0
     df_clean$value_zscore_base[is.na(df_clean$value_base)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value_base)] <- 0
     
@@ -306,7 +307,6 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
     df_clean$value_zscore_base[is.na(df_clean$value)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value)] <- 0
     
-    df_clean$value[is.na(df_clean$value_base)] <- 0
     df_clean$value_zscore_base[is.na(df_clean$value_base)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value_base)] <- 0
     
