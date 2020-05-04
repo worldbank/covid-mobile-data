@@ -39,3 +39,8 @@ I5_Adm3_path = I5_path + "admin3/"
 FLOWM_path = DATA_DB_raw_indicators + "flowminder indicators/"
 FLOWM_adm2_path = FLOWM_path + "admin2/"
 FLOWM_adm3_path = FLOWM_path + "admin3/"
+
+#---------------#
+# Outputs
+OUT_path = DATA_path + "outputs/"
+OUT_hfcs = OUT_path + "data-checks/"
