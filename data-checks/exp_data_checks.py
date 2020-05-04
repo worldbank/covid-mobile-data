@@ -4,6 +4,7 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import datetime
 import os
 
 
@@ -19,39 +20,40 @@ nd = pd.read_csv(path + 'HOURLY_SUMMARY.txt', sep = '|')
 # Processing Indicator 1
 
 i1['date'] = pd.to_datetime(i1['hour']).dt.date
-i1['hour'] = pd.to_datetime(i1['hour']).dt.hour
+
+# Formated time
+i1['time'] = pd.to_datetime(i1['hour']).dt.strftime('%d-%m %H')
 
 #-----------------------------------------------------------------#
 # Processing new data
+
+# Remove duplicates
+nd = nd.drop_duplicates()
+# os. chdir('C:/Users/wb519128/Desktop')
+# nd.sort_values(by=['CALL_HOUR', 'ADMIN_REGION'])\
+#     .head(n=10000)\
+#     .to_html("temp.html")
+
 
 # Rename columns for easy of use
 nd = nd.rename(columns={'ADMIN_REGION' : 'region', 
                         'SUBSCRIBER_COUNT' : 'subs_count', 
                         'OBSERVATION_COUNT' : 'obs_count'})
 
-
 # Dates
 nd['date'] = pd.to_datetime(nd['CALL_HOUR']).dt.date
-nd['hour'] = pd.to_datetime(nd['CALL_HOUR']).dt.hour
 
-# Remove duplicates
+# Formated time
+nd['time'] = pd.to_datetime(nd['CALL_HOUR']).dt.strftime('%d-%m %H')
 
-nd = nd.drop_duplicates()
-# os. chdir('C:/Users/wb519128/Desktop')
-# nd.sort_values(by=['CALL_HOUR', 'ADMIN_REGION'])\
-#     .head(n=10000)\
-#     .to_html("temp.html")
- 
-# Dates
-# set(nd['date'])
+
+
 
 # Regions - only wards aparently
 # len(set(nd['ADMIN_REGION']))
 
 # Check values    
 
-#-----------------------------------------------------------------#
-# Comparissons with our own data
 
 #-----------------------------------------------------------------#
 # Time series plot
@@ -62,7 +64,7 @@ day_data = nd.groupby(['region','date'])\
     .reset_index()
 
 # Average across all wars
-avg_day_data = day_data = nd.groupby(['date'])\
+avg_day_data = day_data.groupby(['date'])\
     .mean()\
     .reset_index()
 
@@ -84,3 +86,76 @@ p_obs = plt_data.plot(y = 'obs_count',
 p_obs.figure.savefig(OUT_hfcs + 'sdataApr20_avg_n_obs.png')
 
 # plt.show()
+
+
+
+
+#-----------------------------------------------------------------#
+# Whole country plots
+
+# Total number of calls (whole country)
+wc_data = nd.groupby(['date'])\
+    .sum()\
+    .reset_index()
+
+wc_data_i1 = i1.groupby(['date'])\
+    .sum()\
+    .reset_index()
+
+wc_plot = wc_data.plot(y = 'obs_count',
+          x = 'date',
+          rot=45,
+          legend= False)
+
+wc_plot.figure.savefig(OUT_hfcs + 'sdataApr20_total_n_obs_zwe.png')
+
+
+#-----------------------------------------------------------------#
+# Comparissons with our own data
+
+
+# Plot hourly calls for 27-29 of march
+startdate = pd.to_datetime('2020-03-27').date()
+enddate = pd.to_datetime('2020-03-30').date()
+mask = 
+
+# Restrict dates
+late_march = nd[(nd['date'] >= startdate) & (nd['date'] <= enddate)]
+late_march_i1 = i1[(i1['date'] >= startdate) & (i1['date'] <= enddate)]
+
+# Make sure data is comparable
+pcomp_dat = late_march.drop(['subs_count'], axis=1)\
+    .groupby('time')\
+    .sum()\
+    .rename(columns = {'obs_count' : 'new_data_count'})\
+    .reset_index()
+# pcomp_dat['data_source'] = 'new data'
+    
+pcomp_dat_i1 = late_march_i1.groupby('time').sum()\
+    .rename(columns = {'count' : 'indicator 1'})\
+    .reset_index()
+# pcomp_dat_i1['data_source'] = 'indicator 1'
+
+# Append data
+# plot_data = pcomp_dat.append(pcomp_dat_i1)
+
+plot_data = pcomp_dat.merge(pcomp_dat_i1, on = 'time')
+
+# Plot
+plot =  plot_data.plot(x='time',
+               y = ['count', 'new_data_count'],
+               rot=45)
+
+
+figure.savefig(OUT_hfcs + 'sdataApr20_i1_late_march_comp.png')
+
+
+
+# fig, ax = plt.subplots(figsize=(8,6))
+# foo = plot_data.groupby('data_source')\
+#     .plot(y = 'count',
+#           x = 'time',
+#           ax = ax,
+#           rot=45)
+    
+# fig.savefig(OUT_hfcs + 'foo.png')
