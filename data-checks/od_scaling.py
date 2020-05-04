@@ -246,7 +246,6 @@ add_plts(od1_top_dest[8], gs[2, 2], y_axis = var)
 fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
 
 
-<<<<<<< Updated upstream
 # df = p1_df
 # dest_value = od1_top_dest[0]
 # dest_var = 'region_to'
@@ -259,31 +258,3 @@ fig.savefig('C:/Users/wb519128/Desktop/' + var + '.png')
 #          fontsize=6,
 #          rot= 30)
 # plt.show()
-=======
-df = p1_df
-dest_value = od1_top_dest[0]
-dest_var = 'region_to'
-x_axis = 'connection_date'
-y_axis = 'total_count_w2'
-grid_pos =  gs[2, 2]
-
-fig, ax = plt.subplots(nrows=3,ncols=3)
-fig = plt.figure()
-gs = fig.add_gridspec(3, 3)
-
-df[df[dest_var] == dest_value].\
-    plot(y= y_axis,
-         legend= False,
-         fontsize=6,
-         rot= 30,
-         ax = fig.add_subplot(grid_pos))
-plt.show()
-
-df[df[dest_var] == dest_value].\
-plot(y= y_axis,
-     legend= False,
-     ax = fig.add_subplot(grid_pos))
-plt.show()
-
-add_plts(od1_top_dest[0], gs[0, 0], y_axis = var)
->>>>>>> Stashed changes
