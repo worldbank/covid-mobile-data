@@ -22,7 +22,7 @@ nd = pd.read_csv(path + 'HOURLY_SUMMARY.txt', sep = '|')
 i1['date'] = pd.to_datetime(i1['hour']).dt.date
 
 # Formated time
-i1['time'] = pd.to_datetime(i1['hour']).dt.strftime('%d-%m %H')
+i1['time'] = pd.to_datetime(i1['hour']).dt.strftime('%m-%d %H')
 
 #-----------------------------------------------------------------#
 # Processing new data
@@ -44,7 +44,7 @@ nd = nd.rename(columns={'ADMIN_REGION' : 'region',
 nd['date'] = pd.to_datetime(nd['CALL_HOUR']).dt.date
 
 # Formated time
-nd['time'] = pd.to_datetime(nd['CALL_HOUR']).dt.strftime('%d-%m %H')
+nd['time'] = pd.to_datetime(nd['CALL_HOUR']).dt.strftime('%m-%d %H')
 
 
 
@@ -117,7 +117,6 @@ wc_plot.figure.savefig(OUT_hfcs + 'sdataApr20_total_n_obs_zwe.png')
 # Plot hourly calls for 27-29 of march
 startdate = pd.to_datetime('2020-03-27').date()
 enddate = pd.to_datetime('2020-03-30').date()
-mask = 
 
 # Restrict dates
 late_march = nd[(nd['date'] >= startdate) & (nd['date'] <= enddate)]
@@ -142,20 +141,36 @@ pcomp_dat_i1 = late_march_i1.groupby('time').sum()\
 plot_data = pcomp_dat.merge(pcomp_dat_i1, on = 'time')
 
 # Plot
-plot =  plot_data.plot(x='time',
-               y = ['count', 'new_data_count'],
-               rot=45)
+plot =  plot_data.plot(
+    x='time',
+    y = ['indicator 1', 'new_data_count'],
+    rot=45)
 
 
-figure.savefig(OUT_hfcs + 'sdataApr20_i1_late_march_comp.png')
+plot.figure.savefig(OUT_hfcs + 'sdataApr20_i1_late_march_comp.png')
 
 
+#-----------------------------------------------------------------#
+# Check for district differences in comparable data
 
-# fig, ax = plt.subplots(figsize=(8,6))
-# foo = plot_data.groupby('data_source')\
-#     .plot(y = 'count',
-#           x = 'time',
-#           ax = ax,
-#           rot=45)
+# Make sure data is comparable
+comp_nd = late_march.drop(['subs_count'], axis=1)\
+    .groupby(['time', 'region'])\
+    .sum()\
+    .rename(columns = {'obs_count' : 'new_data_count'})\
+    .reset_index()
     
-# fig.savefig(OUT_hfcs + 'foo.png')
+comp_i1 = late_march_i1\
+    .groupby(['time', 'region'])\
+    .sum()\
+    .rename(columns = {'count' : 'i1'})\
+    .reset_index()
+
+
+cd = comp_nd.merge(comp_i1, on = ['time', 'region'])
+
+# Diff wards
+diff = cd[cd.new_data_count != cd.i1]
+
+# How different is the data
+diff.mean()
