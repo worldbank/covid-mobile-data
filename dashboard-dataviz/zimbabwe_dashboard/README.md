@@ -57,7 +57,7 @@ variables:
 
 ## Dashboard Data Prep
 
-Due to the high volume of data, data transformations (e.g., aggregating, filtering, etc) are done outside of the dashboard in order to minimize the processing and data needed to be loaded in memory at any point as the dashboard is running. These scripts filter the cleaned telecom data into individual datasets so that no additional filtering or transformations need to be applied within the dashboard; the dashboard can just read the files then immediately use the data in the map, line graph and table. Here, we create smaller datasets that contain the same variables as above. Indicators include density, movement in, movement out, mean distance traveled, etc.
+The files in `03_dashboard_data_prep` further process data into datasets that are used for the dashboard. Due to the high volume of data, data transformations (e.g., aggregating, filtering, etc) are done outside of the dashboard in order to minimize the processing and data needed to be loaded in memory at any point as the dashboard is running. These scripts filter the cleaned telecom data into individual datasets so that no additional filtering or transformations need to be applied within the dashboard; the dashboard can just read the files then immediately use the data in the map, line graph and table. Here, we create smaller datasets that contain the same variables as above. Indicators include density, movement in, movement out, mean distance traveled, etc.
 
 The following datasets are made.
 
