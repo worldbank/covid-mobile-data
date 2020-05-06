@@ -1,11 +1,10 @@
-# Zimbabwe Movement Dashboard
+# Zimbabwe Mobility Dashboard
 
-# PACKAGES AND SETUP ===========================================================
+##### ******************************************************************** #####
+# 1. PACKAGES AND SETUP ========================================================
 
+#### R Shiny Deployment Options
 options(rsconnect.max.bundle.files = 300000)
-# options(rsconnect.max.bundle.size = 90000000)
-
-
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
@@ -21,9 +20,6 @@ if (Sys.info()[["user"]] == "wb519128") {
   setwd("C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
   )
 }
-
-# Globals ======================================================================
-
 
 #### Pacakges
 library(sparkline)
@@ -71,8 +67,9 @@ library(geosphere)
 #### Logged; make false to enable password
 Logged = F
 
-
-# LOAD/PREP DATA ===============================================================
+##### ******************************************************************** #####
+# 2. LOAD/PREP DATA ============================================================
+# Load files that only need to load once at the beginning.
 
 #### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
@@ -86,7 +83,6 @@ provinces <- c("All", provinces)
 obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
 subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.Rds"))
 
-
 #### Risk analysis Data 
 risk_an <- fread(file.path("data_inputs_for_dashboard", 
                            "severe_disease_risk_district.csv"))
@@ -98,16 +94,12 @@ data_methods_text <- read.table("text_inputs/data_methods.txt", sep="{")[[1]] %>
   as.character()
 data_source_description_text <- read.table("text_inputs/data_source_description.txt", sep="{")[[1]] %>%
   as.character()
-
-#### Risk analysis text
 risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
   as.character()
 
-# risk_analysis_text <- paste(risk_analysis_text[1],
-#                             risk_analysis_text[2],
-#                             sep = "<br>")
-
-#### Default parameters on load
+#### Dummy default parameters on load
+# These defaults aren't the first things to display. They are needed as the app
+# initially loads, before the capture the detauls defined later.
 unit_i <- "Wards"
 variable_i <- "Density"
 timeunit_i <- "Daily"
@@ -115,10 +107,10 @@ date_i <- "2020-02-01"
 previous_zoom_selection <- ""
 metric_i <- "Count"
 
+##### ******************************************************************** #####
+# 3. UIs =======================================================================
 
-# UIs ==========================================================================
-
-# * Password UI ---------------------------------------------------------------
+# ** 3.1 Password UI - - - - - - - - - - - - - - - - - - - - - - - - - - - -----
 ui_password <- function() {
   tagList(
     div(
@@ -150,13 +142,11 @@ ui_password <- function() {
 
 ui = (htmlOutput("page"))
 
-# * Main UI -------------------------------------------------------------------
+# ** 3.2 Main UI - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -----
 ui_main <- fluidPage(
-  #tags$head(includeHTML(("google-analytics.html"))),
+
   h4("WBG - COVID Mobility Analytics Task Force", align="center"),
-  #HTML("<h4> 
-  #      WBG - COVID Mobility Analytics Task Force 
-  #      </h4>"),
+
   navbarPage(
     theme = shinytheme("flatly"), # journal
     collapsible = TRUE,
@@ -164,14 +154,10 @@ ui_main <- fluidPage(
     
     id = "nav",
     
-    # World Bank COVID Mobility Analytics Task Force
-    
-    
-    # ** Telecom Data ----------------------------------------------------------
+    # **** 3.2.1 Telecom Data --------------------------------------------------
     tabPanel(
       "Density and Movement",
       tags$head(includeCSS("styles.css")),
-      
       
       dashboardBody(
         fluidRow(
@@ -197,14 +183,7 @@ ui_main <- fluidPage(
           column(
             width = 2,
             align = "center",
-            selectInput(
-              "select_metric",
-              label = h4("Select Metric"),
-              choices = c("Count",
-                          "% Change",
-                          "Z-Score"),
-              multiple = F
-            )
+            uiOutput("ui_select_metric")
           ),
           
           column(
@@ -226,9 +205,6 @@ ui_main <- fluidPage(
             
             h4(textOutput("map_title"),
                align = "center"),
-            
-            #strong(textOutput("metric_description"),
-            #  align = "center"),
             
             strong(textOutput("map_instructions"),
                    align = "center"),
@@ -252,7 +228,6 @@ ui_main <- fluidPage(
               
               uiOutput("ui_select_region_zoom"),
               
-              
               selectInput(
                 "select_province",
                 label = h5(textOutput("select_province_title")),
@@ -269,11 +244,11 @@ ui_main <- fluidPage(
               h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
-              #hr(),
+
               strong(htmlOutput("table_title"), align = "center"),
               
               div(style = 'height:425px; overflow-y: scroll',
-                  htmlOutput("ward_top_5_in")), # formattableOutput("ward_top_5_in"))
+                  htmlOutput("ward_top_5_in")), 
               h5(textOutput("rank_text"))
             )
           )
@@ -287,23 +262,19 @@ ui_main <- fluidPage(
       
     ),
     
-    # ** Risk analysis ------------------------------------------------------
+    # **** 3.2.2 Risk analysis -------------------------------------------------
     tabPanel(
       "Risk Analysis",
-      # Title and text
-      
+
       dashboardBody(
         fluidRow(
           
           column(2,
-                 #wellPanel(
-                 #align = "center",
                  column(12,
                         align="center",
                         selectInput(
                           "select_risk_indicator",
                           label = h4("Select Indicator"),
-                          
                           
                           # Cambiarra braba arrumar isso dai
                           choices = c("HIV prevalence quintile", 
@@ -318,15 +289,12 @@ ui_main <- fluidPage(
                  
                  p(risk_analysis_text[1]),
                  p(risk_analysis_text[2])
-                 #)
+
                  
           ),
           
           column(7, 
-                 
                  fluidRow(
-                   #column(3,
-                   #        " "),
                    column(3, align="center", offset=3,
                           
                           selectInput(
@@ -366,7 +334,7 @@ ui_main <- fluidPage(
                  wellPanel(
                    h3("District Rankings"),
                    div(style = 'height:720px; overflow-y: scroll',
-                       formattableOutput("risk_table2"))
+                       formattableOutput("risk_table"))
                  )
                  
           )
@@ -377,7 +345,7 @@ ui_main <- fluidPage(
       
     ),
     
-    # ** Data Description ------------------------------------------------------
+    # **** 3.2.3 Data Description ----------------------------------------------
     tabPanel("Data Description",
              fluidRow(column(12,
                              ""),
@@ -423,15 +391,17 @@ ui_main <- fluidPage(
   selected = "Dashboard"
 )
 
-
-# SERVER =======================================================================
+##### ******************************************************************** #####
+# 4. SERVER ====================================================================
 server = (function(input, output, session) {
-  # ** Password ----------------------------------------------------------------
+  
+  # ** 4.1 Password - - - - - - - - - - - - - - - - - - - - - - - - - - - - -----
   USER <- reactiveValues(Logged = Logged)
   
   #### Check password details
   # If user is not logged in, check their username and password inputs. If the
   # username/password is correct, set Logged to true
+  
   observe({
     if (USER$Logged == FALSE) {
       if (!is.null(input$Login)) {
@@ -460,7 +430,7 @@ server = (function(input, output, session) {
     }
   })
   
-  #### Toggle between UIs
+  #### Toggle between UIs (password vs main)
   observe({
     # If not logged in, go to password UI
     if (USER$Logged == FALSE) {
@@ -476,9 +446,9 @@ server = (function(input, output, session) {
         div(ui_main)
       })
       
-      # ** Reactives and Observes ----------------------------------------------
+      # ** 4.2 Reactives - - - - - - - - - - - - - - - - - - - - - - - - - -----
       
-      ##### **** Basemap Filtering ##### 
+      # **** 4.2.1 Basemap Filtering -------------------------------------------
       ward_sp_filter <- reactive({
         
         #### Default
@@ -507,40 +477,54 @@ server = (function(input, output, session) {
           
         }
         
-        
         out
       })
       
-      
-      
-      
-      ##### **** Telecom Data Filtering ##### 
+    
+      # **** 4.2.2 Telecom Data Filtering --------------------------------------
       ward_data_sp_filtered <- reactive({
-        #### Determine the selected ward.
-        # This is relevant only in O-D matrices when select an origin ward
-        ward_i <- "Harare 6"
-        if (!is.null(input$mapward_shape_click$id)){
-          ward_i <- input$mapward_shape_click$id
-        }
         
-        # When shiny starts, inputs are null
+        # ****** 4.2.2.1 Grab inputs and define defaults -----------------------
         
+        #### Grab inputs
         unit_i <- input$select_unit
         variable_i <- input$select_variable 
         timeunit_i <- input$select_timeunit 
         date_i <- input$date_ward
         metric_i <- input$select_metric
         
+        #### Define Defaults
+        # When shiny starts, defaults are NULL.
+        
+        ## Main inputs
         if(is.null(unit_i)) unit_i <- "Wards"
         if(is.null(variable_i)) variable_i <- "Density"
         if(is.null(timeunit_i)) timeunit_i <- "Daily"
         if(is.null(date_i)) date_i <- "2020-02-01"
         if(is.null(metric_i)) metric_i <- "Count"
         
+        ## Only update ward_i if user has clicked; otherwise, use default
+        ward_i <- "Harare 6"
+        
+        if (!is.null(input$mapward_shape_click$id)){
+          ward_i <- input$mapward_shape_click$id
+        }
+        
+        #### Clean Inputs
+        # Some variables have names that include the unit (eg, Movement Into
+        # District). For remaining code in this section, we rely on these named
+        # varsions that don't include the
         variable_i <- variable_i %>% str_replace_all(" Districts| Wards", "") 
+        
+        # The input value is plural (Districts / Wards), but for some titles
+        # we use the singular
         unit_i_singular <- substr(unit_i, 1, nchar(unit_i) - 1)
         
-        #### Switch default admin_unit if switch to wards/districts
+        #### Deal with input switching
+        # When some inputs are switched, we need to update another input. 
+        
+        # Update ward based on unit input If a user switches from Wards to 
+        # Districts, a specific ward will still be selected
         if(unit_i %in% "Wards"){
           if(!(ward_i %in% ward_sp$name)){
             ward_i <- "Harare 6"
@@ -553,10 +537,18 @@ server = (function(input, output, session) {
           }
         }
         
+        # Accounts for user going from, for example, zscore density to net
+        # movement; server would fail as net movement only set up for counts.
+        if(variable_i %in% "Net Movement"){
+          metric_i <- "Count"
+        }
+        
         
         # Because date_i is a function of renderUI, updates later which causes
-        # a problem when switching time unti types
-        
+        # a problem when switching time units. Consequently, check the selected
+        # time unit and make sure the selected date matches the time unit. For 
+        # example, if a "Weekly" is selected, make sure the date inptu is in
+        # a week format.
         if( (timeunit_i %in% "Weekly") & 
             (substring(date_i,1,4) %in% "2020")){
           date_i <- "Feb 01 - Feb 07"
@@ -567,13 +559,8 @@ server = (function(input, output, session) {
           date_i <- "2020-02-01"
         }
         
-        # Density - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        # ****** 4.2.2.2 Density -----------------------------------------------
         if(variable_i %in% c("Density")){
-          
-          # Need to check for 2020 in case weekly
-          if(substring(date_i,1,4) %in% "2020"){
-            #if(date_i > "2020-02-29") date_i <- "2020-02-01"
-          }
           
           ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
@@ -638,7 +625,7 @@ server = (function(input, output, session) {
                                date_i),
             table_title = paste0("Top ",
                                  unit_i,
-                                 ": ", # by Total Number of Subscribers: 
+                                 ": ", 
                                  date_i),
             table_subtitle = "",
             line_title = paste0("Trends in Subscribers in ", ward_i)
@@ -646,16 +633,11 @@ server = (function(input, output, session) {
           
         }
         
-        # Density - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        # ****** 4.2.2.3 Net Movement/Dist Travled -----------------------------
         # TODO: Can more cleanly integrtate into Density / Non-OD all together
         if(variable_i %in% c("Net Movement", 
                              "Mean Distance Traveled", 
                              "Std Dev Distance Traveled")){
-          
-          # Need to check for 2020 in case weekly
-          if(substring(date_i,1,4) %in% "2020"){
-            #if(date_i > "2020-02-29") date_i <- "2020-02-01"
-          }
           
           ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
@@ -668,7 +650,6 @@ server = (function(input, output, session) {
                                                     variable_i, "_",
                                                     timeunit_i, "_",
                                                     ward_i,".Rds")))
-          
           
           
           if(metric_i %in% "Count"){
@@ -721,7 +702,7 @@ server = (function(input, output, session) {
                                date_i),
             table_title = paste0("Top ",
                                  unit_i,
-                                 ": ", # by Total Number of Subscribers: 
+                                 ": ", 
                                  date_i),
             table_subtitle = "",
             line_title = paste0("Trends in ",variable_i," in ", ward_i)
@@ -729,7 +710,7 @@ server = (function(input, output, session) {
           
         }
         
-        # Movement - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        # ****** 4.2.2.4 Movement In/Out ---------------------------------------
         if(variable_i %in% c("Movement Into",
                              "Movement Out of")){
           
@@ -835,9 +816,9 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Map -----------------------------------------------------------------
-      legend_colors <- rev(viridis(5))
-      legend_labels <- c("High", "", "", "", "Low")
+      # ** 4.3 Figures - - - - - - - - - - - - - - - - - - - - - - - - - - -----
+      
+      # **** 4.3.1 Indicator Map -----------------------------------------------
       
       #### Basemap
       output$mapward <- renderLeaflet({
@@ -859,11 +840,17 @@ server = (function(input, output, session) {
       #### Add polygons to map reactively
       observe({
         
+        #### Grab polygon
+        map_data <- ward_sp_filter()
+        
+        #### Grab data, and create vector for values and labels
         ward_data_sp_react <- ward_data_sp_filtered()
         map_values <- ward_data_sp_react$map_data$value
         map_labels <- ward_data_sp_react$map_data$html_label
         
         #### If limit to province
+        # If user selected a province, limited the values and labels to that 
+        # province
         if(!is.null(input$select_province)){
           if(!(input$select_province %in% "All")){
             
@@ -880,22 +867,25 @@ server = (function(input, output, session) {
           }
         }
         
-        #### NAs/O-D
-        # Integrate this all into processing so don't have to do here in a kinda
-        # hacky way.
+        #### Grab Origin/Destination Index
+        # For Movement In/Out, grab the index of the origin/destional region.
+        # Needed when adding the origin/destination polygon in red to the map.
         if(!is.null(input$select_variable)){
           if(input$select_variable %in% c("Movement Into Wards",
                                           "Movement Out of Wards",
                                           "Movement Into Districts",
                                           "Movement Out of Districts")){
-            #od_index <- which(is.na(map_values))
-            
+
             od_index <- which(grepl("Origin|Destination", map_labels))
             
           }
         }
         
-        # For values with label of 15 or less to be NA. /
+        #### Define observed value with value is 15 or less
+        # When value is "masked" (typically 15 or less), decide whether the
+        # value should be 0 or NA when shown on map. In cases where the value can
+        # range from negative to positive, masked value should be NA. In cases where
+        # the value can only be positive, masked value should be 0.
         if(!is.null(input$select_metric)){
           if(input$select_metric %in% c("% Change", "Z-Score")){
             
@@ -921,8 +911,10 @@ server = (function(input, output, session) {
           }
         }
         
-        map_data <- ward_sp_filter()
-        
+
+        #### Log values with negatives
+        # Define function to take the log of values that can deal with negative
+        # values. Just takes the absoltue value, logs, then reapplies negative
         log_neg <- function(values){
           # Log that takes into account zero. Only for logging values for
           # displaying!
@@ -958,9 +950,19 @@ server = (function(input, output, session) {
           }
         }
         
-        
+        #### Cases where all NAs
+        # In some cases, all the values will be NA (eg, Movement In/Out % change
+        # where there was no movement out of district, and we define masked value
+        # as NA). Here, make all values 0.
         if(sum(!is.na(map_values)) %in% 0) map_values <- rep(0, length(map_values))
         
+        #### Map Aesthetics
+        # Legend color and labels. Not used in map, just to define the legend, 
+        # so should mimic what we do with palette applied to map. 
+        legend_colors <- rev(viridis(5))
+        legend_labels <- c("High", "", "", "", "Low")
+        
+        # Define pallete
         pal_ward <- colorNumeric(
           palette = "viridis",
           domain = c(map_values), # c(0, map_values)
@@ -968,13 +970,16 @@ server = (function(input, output, session) {
           reverse = F
         )
         
+        # Alpha value. Originally had if map is zoomed in (few units), we made 
+        # more transparent. As of now not doing that, but including here in 
+        # case want to change.
         if (nrow(map_data) > 700) {
           alpha = 1
         } else{
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
-        # 
+        #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
             label = ~ lapply(map_labels, htmltools::HTML),
@@ -1015,6 +1020,7 @@ server = (function(input, output, session) {
             na.label = "Origin"
           )
         
+        #### Add Origin/Desintation Polygon in Red
         if(!is.null(input$select_variable)){
           if(input$select_variable %in% c("Movement Into Wards",
                                           "Movement Out of Wards",
@@ -1039,28 +1045,15 @@ server = (function(input, output, session) {
           }
         }
         
-        #towers_down_i <- towers_down[towers_down$date %in% input$date_ward,]
-        #ward_sp_towerdown <- ward_sp[ward_sp$region %in% towers_down_i$region,]
-        
-        #if(nrow(ward_sp_towerdown) > 0){
-        #  
-        #  ward_sp_towerdown_c <- gCentroid(ward_sp_towerdown, byid=T)
-        #  ward_sp_towerdown_c$id <- 1:length(ward_sp_towerdown_c)
-        #  ward_sp_towerdown_c@data <- ward_sp_towerdown@data
-        #  
-        #  l <- l %>%
-        #    addCircles(data=ward_sp_towerdown_c,
-        #               color="red", weight=3)
-        #}
-        
         #### Further Zoom to Region
-        # Only change if choose something different
+        # Only change if choose something different than what is previously
+        # selected.
         if(!is.null(input$select_region_zoom)){
           if(previous_zoom_selection != input$select_region_zoom){
             if(input$select_region_zoom %in% map_data$name){
               
               loc_i <- which(map_data$name %in% input$select_region_zoom)
-              #map_labels_zoom <- map_labels[loc_i]
+
               map_data_zoom <- map_data[loc_i,] 
               
               map_data_zoom_extent <- map_data_zoom %>% extent()
@@ -1071,32 +1064,36 @@ server = (function(input, output, session) {
                   lat1 = map_data_zoom_extent@ymin,
                   lng2 = map_data_zoom_extent@xmax,
                   lat2 = map_data_zoom_extent@ymax
-                ) #%>%
+                ) 
+              
+              # Tried to highlight the zoomed region, but encountered issues
+              # Keeping here in case useful when fixing.
+              #%>%
               #addPolygons(data=map_data_zoom,
               #            #label = ~ lapply(map_labels, htmltools::HTML),
               #            #layerId = ~ name_id,
               #            color="yellow",
               #            opacity = 1.0, fillOpacity = 0)
               
-              
-              
-              
+              # Create a global of the previous zoom selected. Without this,
+              # the map would always zoom to the region if the user changes
+              # any other input - which is annoying. By grabing the selected
+              # region and only zooming when this value changes, we avoid
+              # that annoying, unwanted zooming.
               previous_zoom_selection <<- input$select_region_zoom
               
             }
           }
         }
         
-        
         l
-        
-        
         
       })
       
-      # ** Line Graph: ---------------------------------------------------------
+      # **** 4.3.2 Line Graph --------------------------------------------------
       output$ward_line_time <- renderPlotly({
         
+        #### Grab data
         ward_data_sp_react <- ward_data_sp_filtered()
         data_line <- ward_data_sp_react$line_data
         
@@ -1105,9 +1102,12 @@ server = (function(input, output, session) {
           dplyr::rename(Date = date,
                         N = value)
         
-        #### Figure
-        # Slight difference in how constructed depending on daily/weekly value
+        # Line graph is made slightly differently depending on daily or weekly
+        
+        # Daily - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if (input$select_timeunit %in% "Daily") {
+          
+          #### Main Line Graph Element
           p <- ggplot(data_line,
                       aes(x = Date, 
                           y = N)) +
@@ -1131,33 +1131,28 @@ server = (function(input, output, session) {
                   axis.text.x = element_text(angle = 45))
           
           
+          #### If % change or baseline, add dots showing baseline values and
+          # a line for mean
           if(!(input$select_metric %in% "Count")){
             
             dow_i <- input$date_ward %>% as.Date() %>% wday()
             data_dow_i <- data_line[data_line$dow %in% dow_i,] 
             
             data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 2,]
-            
-            #data_dow_i <- data_dow_i %>%
-            #  arrange(Date) %>%
-            #  head(-1)
-            
+
             p <- p + 
               geom_point(data=data_dow_i, aes(x = Date,
                                               y = N), color="orange4") +
               geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
-            
-            
-            
+
           }
-          
-          
-          
-          
+ 
         }
         
+        # Weekly - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         if (input$select_timeunit %in% "Weekly") {
           
+          #### Main Line Graph Element
           data_line <- data_line[!grepl("Mar 28", data_line$Date),]
           
           p <- ggplot(data_line,
@@ -1187,9 +1182,7 @@ server = (function(input, output, session) {
                   axis.text.x = element_text(angle = 45))
         }
         
-        
-        
-        #### To plotly
+        # Define Plotly - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         ggplotly(p, tooltip = c("Date", "N")) %>%
           layout(legend = list(
             orientation = "h",
@@ -1201,18 +1194,16 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Table ---------------------------------------------------------------
-      # renderFormattable
+      # **** 4.3.3 Table of Top Areas ------------------------------------------
+      
       output$ward_top_5_in <- renderUI({
         
-        data <- readRDS(file.path("data_inputs_for_dashboard",
-                                  paste0("Districts","_",
-                                         "Density", "_",
-                                         "Daily", "_",
-                                         "2020-02-20",".Rds")))
-        
-        
-        #### Define Colors
+        #### Grab Data
+        ward_data_sp_react <- ward_data_sp_filtered()
+        data <- ward_data_sp_react$table_data 
+        data <- data[!is.na(data$value),]
+      
+        #### Define Parameters
         customGreen = "#71CA97"
         customGreen0 = "#DeF7E9"
         customRed = "#ff7f7f"
@@ -1220,14 +1211,8 @@ server = (function(input, output, session) {
         customGreen0 = "#DeF7E9"
         customYellow = "goldenrod2"
         
-        #### Grab Data
-        ward_data_sp_react <- ward_data_sp_filtered()
-        data <- ward_data_sp_react$table_data 
-        
-        data <- data[!is.na(data$value),]
-        
         table_max <- 20
-        
+
         #### Restrict to Province
         if(!is.null(input$select_province)){
           if(!(input$select_province %in% "All")){
@@ -1329,16 +1314,15 @@ server = (function(input, output, session) {
           )
         )
         
-        
+        ### Apply varable names
         names(f_list)[1] <- admin_name
         names(f_list)[2] <- var_name
         
         names(data_for_table)[1] <- admin_name
         names(data_for_table)[2] <- var_name
         
-        
+        # Make table
         # https://github.com/renkun-ken/formattable/issues/89
-        
         l <- formattable(
           data_for_table[1:table_max,] %>% as.data.table(),
           align = c("l", "l", "l"),
@@ -1357,7 +1341,8 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Totals Figures ------------------------------------------------------
+      # **** 4.3.4 Total Observations/Subscribers ------------------------------
+      #### Total Observations
       output$obs_total <- renderPlotly({
         p <- ggplot(data=obs_total, 
                     aes(x=Date, y=Observations)) +
@@ -1375,6 +1360,7 @@ server = (function(input, output, session) {
           config(displayModeBar = F)
       })
       
+      #### Total Subscribers
       output$subs_total <- renderPlotly({
         p <- ggplot(data=subs_total, 
                     aes(x=Date, y=Subscribers)) +
@@ -1391,8 +1377,256 @@ server = (function(input, output, session) {
           config(displayModeBar = F)
       })
       
+      # **** 4.3.5 Risk Map ----------------------------------------------------
+      #### Indicator Data
+      risk_dist_sp <- reactive({
+        
+        data <- 
+          merge(district_sp, 
+                risk_an, 
+                by.x = "name",
+                by.y = "NAME_2")
+        
+        
+        data[["risk_var"]] <- data[["severe_covid_risk"]]
+        if(!is.null(input$select_risk_indicator)){
+          # Select variable based on UI input
+          data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
+          
+        } 
+        
+        # Return final data
+        data
+        
+      })
       
-      # ** Titles --------------------------------------------------------------
+      # O/D Movement Lines - - - - - - - - - - - - - - - - - - - - - - - - - - -
+      risk_map_move_data <- reactive({
+        
+        #### Grab district
+        district_i <- "Harare"
+        if (!is.null(input$riskmap_shape_click$id)){
+          district_i <- input$riskmap_shape_click$id
+        }
+        
+        move_date_i <- "Feb 15 - Feb 21"
+        if (!is.null(input$move_date_risk)){
+          move_date_i <- input$move_date_risk
+        }
+        
+        move_type_i <- "Movement Out of"
+        if (!is.null(input$move_type_risk)){
+          move_type_i <- input$move_type_risk %>% str_replace_all(" Districts", "")
+        }
+        
+        #### Make lines
+        dist_o <- district_sp[district_sp$name %in% district_i,]
+        
+        # https://www.stat.auckland.ac.nz/~paul/Reports/VWline/vwline-intro/power-curve.html
+        l_all <- lapply(1:nrow(district_sp), function(i){
+          
+          N_lines <- 15 # must be even
+          
+          l <- gcIntermediate(dist_o %>% 
+                                coordinates() %>%
+                                as.vector(),
+                              district_sp[i,] %>% 
+                                coordinates %>% 
+                                as.vector(),
+                              n=N_lines,
+                              addStartEnd=TRUE,
+                              sp=T)
+          
+          
+          return(l)
+        }) %>% do.call(what="rbind")
+        
+        #### Grab data
+        move_df <- readRDS(file.path("data_inputs_for_dashboard",
+                                     paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")))
+        l_all$id <- 1:length(l_all)
+        l_all$value <- move_df$value
+        
+        #### Format Data
+        
+        l_all$value_alpha <- log(l_all$value + 1)
+        l_all$value_alpha <- l_all$value_alpha / max(l_all$value_alpha,na.rm=T)
+        l_all$value_weight <- l_all$value_alpha * 6
+        
+        if(move_type_i %in% "Movement Out of"){
+          l_all$label <- paste0(district_i, " to ", district_sp$name, ": ", l_all$value) 
+        } else{
+          l_all$label <- paste0(district_sp$name , " to ", district_i, ": ", l_all$value) 
+        }
+        
+        
+        l_all <- l_all[!is.na(l_all$value),]
+        
+        #### Return
+        l_all
+      })
+      
+      # Basemap - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      output$riskmap <- renderLeaflet({
+        
+        map_extent <- district_sp %>% extent()
+        
+        leaflet() %>%
+          addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+          fitBounds(
+            lng1 = map_extent@xmin,
+            lat1 = map_extent@ymin,
+            lng2 = map_extent@xmax,
+            lat2 = map_extent@ymax
+          ) 
+      })
+      
+      # Main Map - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+      observe({
+        
+        req(input$nav == "Risk Analysis") # This makes leaflet show up; before no defaults.
+        
+        #### Prep Movement Data
+        move_data <- risk_map_move_data()
+        
+        pal_move_lines <- colorNumeric(
+          palette = "Greys",
+          domain = c(-1, move_data$value_alpha), # c(0, map_values)
+          na.color = "gray",
+          reverse = F
+        )
+        
+        #### Prep Main Map Data
+        risk_map <- risk_dist_sp()
+        
+        wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
+          as.vector()
+        
+        pal <- 
+          colorNumeric(
+            palette = wes,
+            domain = c(risk_dist_sp()@data$risk_var), # c(0, map_values)
+            na.color = "gray",
+            reverse = F)
+        
+        # legend parameters
+        leg_labels = sort(unique(risk_map@data$risk_var)) %>% rev()
+        lg_colors = pal(sort(unique(risk_map@data$risk_var))) %>% rev()
+
+        map_label <- risk_map@data$name
+        
+        leafletProxy("riskmap", data = risk_map) %>%
+          
+          clearShapes()  %>% 
+          
+          addPolygons(
+            data = risk_map,
+            label = ~ map_label,
+            layerId = ~ name,
+            fillColor = ~pal(risk_var),
+            weight = 2,
+            opacity = 1,
+            color = "white",
+            fillOpacity = 0.7,
+            labelOptions = labelOptions(
+              style = list("font-weight" = "normal",
+                           padding = "3px 8px"),
+              textsize = "15px",
+              direction = "auto"
+            ))  %>% 
+          
+          addPolylines(data = move_data,
+                       opacity = ~ sqrt(value_alpha),
+                       weight = ~ value_weight,
+                       color = ~ pal_move_lines(value_alpha),
+                       label = ~ label,
+                       group = "Movement",
+                       labelOptions = labelOptions(
+                         style = list("font-weight" = "normal",
+                                      padding = "3px 8px"),
+                         textsize = "15px",
+                         direction = "auto"
+                       )) %>%
+          
+          
+          clearControls() %>% 
+          addLegend(title = input$select_risk_indicator,
+                    position = 'bottomleft',
+                    colors = lg_colors,
+                    labels = leg_labels) %>%
+          addLayersControl(
+            overlayGroups = c("Movement"),
+            position = 'bottomleft',
+            options = layersControlOptions(collapsed = FALSE)
+          )
+        
+      })
+      
+      # **** 4.3.6 Risk Table --------------------------------------------------
+      output$risk_table <- renderFormattable({
+        
+        risk_var_i <- "HIV prevalence quintile"
+        if(!is.null(input$select_risk_indicator)){
+          if(input$select_risk_indicator %in% "HIV prevalence quintile") risk_var_i <- "mean_hiv_pop_weighted_cat"
+          if(input$select_risk_indicator %in% "Anaemia prevalence quintile") risk_var_i <- "mean_anaemia_pop_weighted_cat"
+          if(input$select_risk_indicator %in% "Respiratory illness prevalence quintile") risk_var_i <- "mean_resp_risk_pop_weighted_cat"
+          if(input$select_risk_indicator %in% "Overweight prevalence quintile") risk_var_i <- "mean_overweight_pop_weighted_cat"
+          if(input$select_risk_indicator %in% "Smoking prevalence quintile") risk_var_i <- "mean_smoker_pop_weighted_cat"
+          if(input$select_risk_indicator %in% "Severe COVID-19 risk") risk_var_i <- "severe_covid_risk"
+        }
+        
+        risk_an_df <- as.data.frame(risk_an)
+        risk_an_i <- risk_an_df[,c("NAME_2",risk_var_i )]
+        names(risk_an_i) <- c("name", "value")
+        
+        
+        #### Prep Data for Table
+        data_for_table <- risk_an_i %>%
+          dplyr::select(name, value) %>%
+          mutate(value = value %>% round(2)) %>%
+          arrange(name) %>%
+          arrange(desc(value)) 
+        
+        #### Make Table
+        # https://stackoverflow.com/questions/49885176/is-it-possible-to-use-more-than-2-colors-in-the-color-tile-function
+        color_tile2 <- function (...) {
+          formatter("span", style = function(x) {
+            style(display = "block",
+                  padding = "0 4px", 
+                  font.weight = "bold",
+                  `border-radius` = "4px", 
+                  `background-color` = csscolor(matrix(as.integer(colorRamp(...)(normalize(as.numeric(x)))), 
+                                                       byrow=TRUE, dimnames=list(c("red","green","blue"), NULL), nrow=3)))
+          })}
+        
+
+        f_list <- list(
+          `name` = formatter("span", style = ~ style(color = "black")),
+          `value` = color_tile2(c("#95C6D3", "#ECDC87", "#EA7E71"))
+        )
+        
+        names(f_list)[1] <- "District"
+        names(f_list)[2] <- input$select_risk_indicator
+        
+        names(data_for_table)[1] <- "District"
+        names(data_for_table)[2] <- input$select_risk_indicator
+        
+        l <- formattable(
+          data_for_table[1:60,],
+          align = c("l", "l"),
+          f_list
+        )
+        
+        l
+        
+        
+      })
+      
+      # ** 4.4 Titles - - - - - - - - - - - - - - - - - - - - - - - - - - - -----
+      
+      # Define titles that dynamically changed depending on inputs
+      
+      # ****** 4.4.1 Map Title -------------------------------------------------
       output$map_title <- renderText({
         ward_data_sp_react <- ward_data_sp_filtered()
         title <- ward_data_sp_react$map_title
@@ -1409,6 +1643,7 @@ server = (function(input, output, session) {
         
       })
       
+      # ****** 4.4.2 Metric Description ----------------------------------------
       output$metric_description <- renderText({
         
         out <- ""
@@ -1425,6 +1660,8 @@ server = (function(input, output, session) {
         
       })
       
+      # ****** 4.4.3 Text for Top Units Table ----------------------------------
+      # Nothing here, but still here in case need to include some text
       output$rank_text <- renderText({
         
         out <- ""
@@ -1437,13 +1674,12 @@ server = (function(input, output, session) {
             out <- ""
           }
         }
-        
-        
-        
+
         out
         
       })
       
+      # ****** 4.4.4 Table Title -----------------------------------------------
       output$table_title <- renderText({
         ward_data_sp_react <- ward_data_sp_filtered()
         paste0(ward_data_sp_react$table_title,
@@ -1451,11 +1687,13 @@ server = (function(input, output, session) {
                ward_data_sp_react$table_subtitle)
       })
       
+      # ****** 4.4.5 Line Title -----------------------------------------------
       output$line_title <- renderText({
         ward_data_sp_react <- ward_data_sp_filtered()
         ward_data_sp_react$line_title
       })
       
+      # ****** 4.4.6 Map Instructions ------------------------------------------
       output$map_instructions <- renderText({
         
         out <- ""
@@ -1480,7 +1718,7 @@ server = (function(input, output, session) {
         
       })
       
-      #### Line Title Instructions
+      # ****** 4.4.7 Line Title Instructions -----------------------------------
       output$line_instructions <- renderText({
         
         if(input$select_unit %in% "Wards"){
@@ -1495,7 +1733,8 @@ server = (function(input, output, session) {
         
       })
       
-      #### Line Title Instructions
+      # ****** 4.4.8 Select Province Instructions ------------------------------
+      
       output$select_province_title <- renderText({
         
         if(input$select_unit %in% "Wards"){
@@ -1511,12 +1750,10 @@ server = (function(input, output, session) {
       })
       
       
-      # ** Controls ------------------------------------------------------------
-      # Right now movement we have feb-march, other for just feb. adjust controls
-      # accordinly
+      # ** 4.5 Controls - - - - - - - - - - - - - - - - - - - - - - - - - -----
+      # Define controls that dynamically change based on inputs
       
-      #### Zoom to Region
-      
+      # **** 4.5.1 Zoom to Region ----------------------------------------------
       output$ui_select_region_zoom <- renderUI({
         
         if(input$select_unit %in% "Wards"){
@@ -1550,9 +1787,35 @@ server = (function(input, output, session) {
         
       })
       
+      # **** 4.5.2 Select Metric -----------------------------------------------
+      output$ui_select_metric <- renderUI({
+        
+        out <- selectInput(
+          "select_metric",
+          label = h4("Select Metric"),
+          choices = c("Count",
+                      "% Change",
+                      "Z-Score"),
+          multiple = F
+        )
+        
+        
+        if(!is.null(input$select_variable)){
+          if(input$select_variable %in% "Net Movement"){
+            out <- selectInput(
+              "select_metric",
+              label = h4("Select Metric"),
+              choices = c("Count"),
+              multiple = F
+            )
+          }
+        }
+        
+        out
+        
+      })
       
-      
-      #### Select Date/Week
+      # **** 4.5.3 Select Date/Week --------------------------------------------
       output$ui_select_timeunit <- renderUI({
         
         #### Initialize
@@ -1626,7 +1889,7 @@ server = (function(input, output, session) {
         
       })
       
-      #### Select Unit
+      # **** 4.5.4 Select Unit -------------------------------------------------
       output$ui_select_variable <- renderUI({
         
         #### Initialize
@@ -1674,285 +1937,12 @@ server = (function(input, output, session) {
         
       })
       
-      # ** Risk map -----------------------------------------------------------------
-      #### Indicator Data
-      risk_dist_sp <- reactive({
-        
-        data <- 
-          merge(district_sp, 
-                risk_an, 
-                by.x = "name",
-                by.y = "NAME_2")
-        
-        
-        data[["risk_var"]] <- data[["severe_covid_risk"]]
-        if(!is.null(input$select_risk_indicator)){
-          # Select variable based on UI input
-          data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
-          
-        } 
-        
-        # Return final data
-        data
-        
-      })
-      
-      #### Movement Data
-      risk_map_move_data <- reactive({
-        
-        #### Grab district
-        district_i <- "Harare"
-        if (!is.null(input$riskmap_shape_click$id)){
-          district_i <- input$riskmap_shape_click$id
-        }
-        
-        move_date_i <- "Feb 15 - Feb 21"
-        if (!is.null(input$move_date_risk)){
-          move_date_i <- input$move_date_risk
-        }
-        
-        move_type_i <- "Movement Out of"
-        if (!is.null(input$move_type_risk)){
-          move_type_i <- input$move_type_risk %>% str_replace_all(" Districts", "")
-        }
-        
-        #### Make lines
-        dist_o <- district_sp[district_sp$name %in% district_i,]
-        
-        # https://www.stat.auckland.ac.nz/~paul/Reports/VWline/vwline-intro/power-curve.html
-        l_all <- lapply(1:nrow(district_sp), function(i){
-          
-          N_lines <- 15 # must be even
-          
-          l <- gcIntermediate(dist_o %>% 
-                                coordinates() %>%
-                                as.vector(),
-                              district_sp[i,] %>% 
-                                coordinates %>% 
-                                as.vector(),
-                              n=N_lines,
-                              addStartEnd=TRUE,
-                              sp=T)
-          
-          
-          return(l)
-        }) %>% do.call(what="rbind")
-        
-        #### Grab data
-        move_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                     paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")))
-        l_all$id <- 1:length(l_all)
-        l_all$value <- move_df$value
-        
-        #### Format Data
-        
-        l_all$value_alpha <- log(l_all$value + 1)
-        l_all$value_alpha <- l_all$value_alpha / max(l_all$value_alpha,na.rm=T)
-        l_all$value_weight <- l_all$value_alpha * 6
-        
-        if(move_type_i %in% "Movement Out of"){
-          l_all$label <- paste0(district_i, " to ", district_sp$name, ": ", l_all$value) 
-        } else{
-          l_all$label <- paste0(district_sp$name , " to ", district_i, ": ", l_all$value) 
-        }
-        
-        
-        l_all <- l_all[!is.na(l_all$value),]
-        
-        #### Return
-        l_all
-      })
-      
-      
-      
-      
-      #### Basemap
-      output$riskmap <- renderLeaflet({
-        
-        map_extent <- district_sp %>% extent()
-        
-        leaflet() %>%
-          addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-          fitBounds(
-            lng1 = map_extent@xmin,
-            lat1 = map_extent@ymin,
-            lng2 = map_extent@xmax,
-            lat2 = map_extent@ymax
-          ) 
-      })
-      
-      #### Main Map
-      
-      observe({
-        
-        req(input$nav == "Risk Analysis") # This makes leaflet show up; before no defaults.
-        
-        #### Prep Movement Data
-        move_data <- risk_map_move_data()
-        
-        pal_move_lines <- colorNumeric(
-          palette = "Greys",
-          domain = c(-1, move_data$value_alpha), # c(0, map_values)
-          na.color = "gray",
-          reverse = F
-        )
-        
-        #### Prep Main Map Data
-        risk_map <- risk_dist_sp()
-        
-        wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
-          as.vector()
-        
-        pal <- 
-          colorNumeric(
-            palette = wes,
-            domain = c(risk_dist_sp()@data$risk_var), # c(0, map_values)
-            na.color = "gray",
-            reverse = F)
-        
-        # legend parameters
-        leg_labels = sort(unique(risk_map@data$risk_var)) %>% rev()
-        lg_colors = pal(sort(unique(risk_map@data$risk_var))) %>% rev()
-        
-        #map_label = paste0(risk_dist_sp()@data$name, "; ",
-        #                   risk_dist_sp()@data$risk_var)
-        map_label <- risk_map@data$name
-        
-        #if(is.null(input$select_risk_indicator)){
-        #  leafletProxy("riskmap", data = risk_dist_sp()) %>%
-        #    clearShapes()  %>% 
-        #    addPolygons(
-        #      data = risk_dist_sp(),
-        #      layerId = ~ name,
-        #      label = ~name,
-        #      fillColor = ~pal(risk_var),
-        #      weight = 2,
-        #      opacity = 1,
-        #      color = "white",
-        #      fillOpacity = 0.7)  %>% 
-        #    clearControls() %>% 
-        #    addLegend(title = input$select_risk_indicator,
-        #              position = 'bottomleft',
-        #              colors = lg_colors,
-        #              labels = leg_labels)
-        #} 
-        
-        leafletProxy("riskmap", data = risk_map) %>%
-          
-          clearShapes()  %>% 
-          
-          addPolygons(
-            data = risk_map,
-            label = ~ map_label,
-            layerId = ~ name,
-            fillColor = ~pal(risk_var),
-            weight = 2,
-            opacity = 1,
-            color = "white",
-            fillOpacity = 0.7,
-            labelOptions = labelOptions(
-              style = list("font-weight" = "normal",
-                           padding = "3px 8px"),
-              textsize = "15px",
-              direction = "auto"
-            ))  %>% 
-          
-          addPolylines(data = move_data,
-                       opacity = ~ sqrt(value_alpha),
-                       weight = ~ value_weight,
-                       color = ~ pal_move_lines(value_alpha),
-                       label = ~ label,
-                       group = "Movement",
-                       labelOptions = labelOptions(
-                         style = list("font-weight" = "normal",
-                                      padding = "3px 8px"),
-                         textsize = "15px",
-                         direction = "auto"
-                       )) %>%
-          
-          
-          clearControls() %>% 
-          addLegend(title = input$select_risk_indicator,
-                    position = 'bottomleft',
-                    colors = lg_colors,
-                    labels = leg_labels) %>%
-          addLayersControl(
-            overlayGroups = c("Movement"),
-            position = 'bottomleft',
-            options = layersControlOptions(collapsed = FALSE)
-          )
-        
-      })
-      
-      # ** Risk table ----------------------------------------------------------
-      
-      output$risk_table2 <- renderFormattable({
-        
-        risk_var_i <- "HIV prevalence quintile"
-        if(!is.null(input$select_risk_indicator)){
-          if(input$select_risk_indicator %in% "HIV prevalence quintile") risk_var_i <- "mean_hiv_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Anaemia prevalence quintile") risk_var_i <- "mean_anaemia_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Respiratory illness prevalence quintile") risk_var_i <- "mean_resp_risk_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Overweight prevalence quintile") risk_var_i <- "mean_overweight_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Smoking prevalence quintile") risk_var_i <- "mean_smoker_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Severe COVID-19 risk") risk_var_i <- "severe_covid_risk"
-        }
-        
-        risk_an_df <- as.data.frame(risk_an)
-        risk_an_i <- risk_an_df[,c("NAME_2",risk_var_i )]
-        names(risk_an_i) <- c("name", "value")
-        
-        
-        #### Prep Data for Table
-        data_for_table <- risk_an_i %>%
-          dplyr::select(name, value) %>%
-          mutate(value = value %>% round(2)) %>%
-          arrange(name) %>%
-          arrange(desc(value)) 
-        
-        #### Make Table
-        # https://stackoverflow.com/questions/49885176/is-it-possible-to-use-more-than-2-colors-in-the-color-tile-function
-        color_tile2 <- function (...) {
-          formatter("span", style = function(x) {
-            style(display = "block",
-                  padding = "0 4px", 
-                  font.weight = "bold",
-                  `border-radius` = "4px", 
-                  `background-color` = csscolor(matrix(as.integer(colorRamp(...)(normalize(as.numeric(x)))), 
-                                                       byrow=TRUE, dimnames=list(c("red","green","blue"), NULL), nrow=3)))
-          })}
-        
-        # formattable(mtcars, list(mpg = color_tile2(c("blue", "green", "pink") ) ))
-        
-        f_list <- list(
-          `name` = formatter("span", style = ~ style(color = "black")),
-          `value` = color_tile2(c("#95C6D3", "#ECDC87", "#EA7E71"))
-        )
-        
-        names(f_list)[1] <- "District"
-        names(f_list)[2] <- input$select_risk_indicator
-        
-        names(data_for_table)[1] <- "District"
-        names(data_for_table)[2] <- input$select_risk_indicator
-        
-        l <- formattable(
-          data_for_table[1:60,],
-          align = c("l", "l"),
-          f_list
-        )
-        
-        l
-        
-        
-      })
-      
-      
-      
       
     }
   })
   
 })
 
-# RUN THE APP ==================================================================
+##### ******************************************************************** #####
+# 5. RUN THE APP ===============================================================
 shinyApp(ui, server)

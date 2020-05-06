@@ -61,19 +61,26 @@ tp_standardize_vars_od <- function(data,
 tp_complete_date_region <- function(data,
                                     date_var = "date",
                                     region_var = "region",
-                                    value_var = "value"){
+                                    value_var = "value",
+                                    keep_other_vars = NULL){
   
-  data <- data.frame(
+  data_new <- data.frame(
     date = data[date_var],
     region = data[region_var],
     value = data[value_var]
   )
   
-  data <- data %>%
+  if(!is.null(keep_other_vars)){
+    for(var in keep_other_vars){
+      data_new[[keep_other_vars]] <- data[[keep_other_vars]]
+    }
+  }
+  
+  data_new <- data_new %>%
     as.data.frame() %>%
     tidyr::complete(region, date) 
   
-  return(data)
+  return(data_new)
 }
 
 tp_complete_date_region_od <- function(data,

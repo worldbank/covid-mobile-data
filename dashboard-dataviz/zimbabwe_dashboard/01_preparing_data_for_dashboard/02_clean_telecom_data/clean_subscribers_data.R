@@ -2,6 +2,9 @@
 
 EXPORT <- T
 
+
+unit <- "district"
+
 for(unit in c("district", "ward")){
   
   # Set parameters -------------------------------------------------------------
@@ -21,8 +24,9 @@ for(unit in c("district", "ward")){
   print("day")
   
   df_day <- read.csv(file.path(RAW_DATA_PATH, 
-                           "count_unique_subscribers_per_region_per_day.csv"), 
-                 stringsAsFactors=F)
+                               "count_unique_subscribers_per_region_per_day.csv"), 
+                     stringsAsFactors=F)
+  
   
   ## For wards, remove if tower is down
   if(unit %in% "ward"){
@@ -41,7 +45,7 @@ for(unit in c("district", "ward")){
     df_day <- df_day %>%
       left_join(towers_down, 
                 by = c("visit_date" = "date",
-                   "region" = "region"))
+                       "region" = "region"))
     
     df_day$subscriber_count[df_day$tower_down %in% TRUE] <- NA
   }
@@ -65,7 +69,7 @@ for(unit in c("district", "ward")){
     # Percent change
     tp_add_baseline_comp_stats() %>%
     tp_add_percent_change() %>%
-
+    
     # Add labels
     tp_add_label_level(timeunit = "day", OD = F) %>%
     tp_add_label_baseline(timeunit = "day", OD = F) %>%
@@ -75,18 +79,18 @@ for(unit in c("district", "ward")){
   
   if(EXPORT){
     saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
-                                "count_unique_subscribers_per_region_per_day.Rds"))
+                                    "count_unique_subscribers_per_region_per_day.Rds"))
     write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
-                                  "count_unique_subscribers_per_region_per_day.csv"), 
+                                      "count_unique_subscribers_per_region_per_day.csv"), 
               row.names=F)
   }
-
+  
   # Weekly ---------------------------------------------------------------------
   print("week")
-
+  
   df_week <- read.csv(file.path(RAW_DATA_PATH, 
-                               "count_unique_subscribers_per_region_per_week.csv"), 
-                     stringsAsFactors=F)
+                                "count_unique_subscribers_per_region_per_week.csv"), 
+                      stringsAsFactors=F)
   
   df_week_clean <- df_week %>% 
     
@@ -116,11 +120,12 @@ for(unit in c("district", "ward")){
   
   if(EXPORT){
     saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,
-                                "count_unique_subscribers_per_region_per_week.Rds"))
+                                     "count_unique_subscribers_per_region_per_week.Rds"))
     write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, 
-                                  "count_unique_subscribers_per_region_per_week.csv"), 
+                                       "count_unique_subscribers_per_region_per_week.csv"), 
               row.names=F)
   }
   
 }
+
 
