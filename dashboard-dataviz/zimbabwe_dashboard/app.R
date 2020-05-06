@@ -1626,7 +1626,7 @@ server = (function(input, output, session) {
       
       # Define titles that dynamically changed depending on inputs
       
-      # ****** 4.4.1 Map Title -------------------------------------------------
+      # **** 4.4.1 Map Title ---------------------------------------------------
       output$map_title <- renderText({
         ward_data_sp_react <- ward_data_sp_filtered()
         title <- ward_data_sp_react$map_title
@@ -1643,7 +1643,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ****** 4.4.2 Metric Description ----------------------------------------
+      # **** 4.4.2 Metric Description ------------------------------------------
       output$metric_description <- renderText({
         
         out <- ""
@@ -1660,7 +1660,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ****** 4.4.3 Text for Top Units Table ----------------------------------
+      # **** 4.4.3 Text for Top Units Table ------------------------------------
       # Nothing here, but still here in case need to include some text
       output$rank_text <- renderText({
         
@@ -1679,7 +1679,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ****** 4.4.4 Table Title -----------------------------------------------
+      # **** 4.4.4 Table Title -------------------------------------------------
       output$table_title <- renderText({
         ward_data_sp_react <- ward_data_sp_filtered()
         paste0(ward_data_sp_react$table_title,
@@ -1687,13 +1687,13 @@ server = (function(input, output, session) {
                ward_data_sp_react$table_subtitle)
       })
       
-      # ****** 4.4.5 Line Title -----------------------------------------------
+      # **** 4.4.5 Line Title --------------------------------------------------
       output$line_title <- renderText({
         ward_data_sp_react <- ward_data_sp_filtered()
         ward_data_sp_react$line_title
       })
-      
-      # ****** 4.4.6 Map Instructions ------------------------------------------
+    
+      # **** 4.4.6 Map Instructions --------------------------------------------
       output$map_instructions <- renderText({
         
         out <- ""
@@ -1718,7 +1718,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ****** 4.4.7 Line Title Instructions -----------------------------------
+      # **** 4.4.7 Line Title Instructions -------------------------------------
       output$line_instructions <- renderText({
         
         if(input$select_unit %in% "Wards"){
@@ -1733,7 +1733,7 @@ server = (function(input, output, session) {
         
       })
       
-      # ****** 4.4.8 Select Province Instructions ------------------------------
+      # **** 4.4.8 Select Province Instructions --------------------------------
       
       output$select_province_title <- renderText({
         
