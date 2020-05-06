@@ -3,8 +3,6 @@
 EXPORT <- T
 
 
-unit <- "district"
-
 for(unit in c("district", "ward")){
   
   # Set parameters -------------------------------------------------------------
@@ -127,5 +125,4 @@ for(unit in c("district", "ward")){
   }
   
 }
-
 
