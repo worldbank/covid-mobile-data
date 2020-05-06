@@ -61,11 +61,11 @@ Due to the high volume of data, data transformations (e.g., aggregating, filteri
 
 The following datasets are made.
 
-* __ward-level:__ Ward-level datasets use the following naming convention: [Wards/Districts]_[Indicator Name]_[Daily/Weekly]_[Date/Week].Rds For a given day or week, this dataset contains information for all wards or districts for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into ward from all other wards).
-
-* __time-level:__ Time-level datsaets use the following naming convention: [Wards/Districts]_[Indicator Name]_[Daily/Weekly]_[Ward/District Name].Rds For a given admin unit, this dataset contains a time series of values for a specified indicator.
-
-* __ward-time-level:__ Ward-time level datasets use the following naming convention: [Ward/Districts]_[Indicator Name]_[Daily/Weekly]_[Ward/District Name]_[Date/Week].Rds These datasets are only used for O-D variables. The show, for a given origin or destination unit, the movement in or out of that unit to all other units for the specified day/week.
+| Dataset Type | Naming Convention | Description |
+| --- | --- | --- |
+| ward-level | [Wards/Districts]_[Indicator Name]_[Daily/Weekly]_[Date/Week].Rds | For a given day or week, this dataset contains information for all wards or districts for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into ward from all other wards). |
+| time-level |  [Wards/Districts]_[Indicator Name]_[Daily/Weekly]_[Ward/District Name].Rds | For a given admin unit, this dataset contains a time series of values for a specified indicator. |
+| ward-time-level |  [Ward/Districts]_[Indicator Name]_[Daily/Weekly]_[Ward/District Name]_[Date/Week].Rds | These datasets are only used for O-D variables. The show, for a given origin or destination unit, the movement in or out of that unit to all other units for the specified day/week. |
 
 
 
