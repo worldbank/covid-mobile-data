@@ -92,6 +92,8 @@ passwords.*
 password/
 passwords/
 
+generate_password.R
+
 #######################
 # Explicitly exclude data methods and sources description which should
 # be kept private. These are already excluded from above lines, just
