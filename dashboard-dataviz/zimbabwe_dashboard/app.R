@@ -412,7 +412,7 @@ server = (function(input, output, session) {
           passwords_df <- readRDS("passwords.Rds")
           
           if (Username %in% passwords_df$username) {
-            passwords_df_i <- passwords_df[passwords_df$username %in% Username, ]
+            passwords_df_i <- passwords_df[passwords_df$username %in% Username,]
             
             if(checkpw(Password, passwords_df_i$hashed_password) %in% TRUE){
               USER$Logged <- TRUE
