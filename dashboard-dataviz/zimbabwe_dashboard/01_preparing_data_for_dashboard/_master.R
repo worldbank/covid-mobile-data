@@ -1,7 +1,5 @@
 #### Settings #### =============================================================
 
-rm(list = ls())
-
 CLEAN_SPATIAL_DATA <- F
 CLEAN_TELECOM_DATA <- F
 PREP_DATA_FOR_DASH <- F
@@ -14,6 +12,7 @@ library(plotly)
 library(stargazer)
 library(knitr)
 library(gridExtra)
+library(leaflet)
 library(ggpubr)
 library(purrr)
 library(parallel)
@@ -26,6 +25,7 @@ library(raster)
 library(geosphere)
 library(lubridate)
 library(data.table)
+library(mapview)
 
 #### File paths #### ===========================================================
 
@@ -42,6 +42,7 @@ if(Sys.info()[["user"]] == "WB521633") GITHUB_PATH <- "C:/Users/wb521633/Documen
 GEO_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "geo_files")
 RISK_ANALYSIS_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "risk-analysis")
 DATABRICKS_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw")
+PROOF_CONCEPT_PATH   <- file.path(PROJECT_PATH, "proof-of-concept")
 
 CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm2")
 CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm3")

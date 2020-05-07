@@ -29,12 +29,27 @@ crs(tower_cluster_df) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +
 # Load District Data for Mapping IDs -------------------------------------------
 district_sp <- readOGR(dsn = file.path(GEO_PATH),
                        layer = "ZWE_adm2")
+district_sp$ID_2 <- district_sp$ID_2 %>% as.character() %>% as.numeric()
+district_sp$NAME_2 <- district_sp$NAME_2 %>% as.character()
 
-ward_sp_centroids <- gCentroid(ward_sp, byid=T)
+# Find district match for each ward. Use distance of centroid of ward to distract.
+# For all but one ward, this will find a distance of 0 -- finding ward centroid
+# within a district. One ward on edge has centroid that doesn't overlap, so
+# where distance will be slightly larger than 0.
+dist_match <- lapply(1:nrow(ward_sp), function(i){
+  
+  if((i %% 100) == 0) print(i)
+  
+  ward_sp_i <- ward_sp[i,] %>% gCentroid(byid=T)
+  close_dist_id <- gDistance(ward_sp_i, district_sp, byid=T) %>% as.numeric %>% which.min()
+  
+  df_out <- data.frame(district_id = district_sp$ID_2[close_dist_id],
+             district_name = district_sp$NAME_2[close_dist_id])
+  
+  return(df_out)
+}) %>% bind_rows()
 
-ward_OVER_district <- over(ward_sp_centroids, district_sp)
-ward_sp$district_id <- ward_OVER_district$ID_2 %>% as.character() %>% as.numeric()
-ward_sp$district_name <- ward_OVER_district$NAME_2 %>% as.character()
+ward_sp@data <- bind_cols(ward_sp@data, dist_match)
 
 # Aggregate Wards --------------------------------------------------------------
 
