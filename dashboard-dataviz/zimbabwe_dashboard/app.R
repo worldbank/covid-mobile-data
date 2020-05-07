@@ -409,18 +409,12 @@ server = (function(input, output, session) {
           Username <- isolate(input$userName)
           Password <- isolate(input$passwd)
           
-          passwords_df <- read.csv("passwords.csv")
-          
-          passwords_df$username <-
-            passwords_df$username %>% as.character()
-          passwords_df$password <-
-            passwords_df$password %>% as.character()
+          passwords_df <- readRDS("passwords.Rds")
           
           if (Username %in% passwords_df$username) {
             passwords_df_i <- passwords_df[passwords_df$username %in% Username, ]
             
-            #if(checkpw(Password, passwords_df_i$HashedPassword) %in% TRUE){
-            if ((Password %in% passwords_df$password) %in% TRUE) {
+            if(checkpw(Password, passwords_df_i$hashed_password) %in% TRUE){
               USER$Logged <- TRUE
             }
             
