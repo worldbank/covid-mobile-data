@@ -93,6 +93,7 @@ password/
 passwords/
 
 generate_password.R
+generate_password*
 
 #######################
 # Explicitly exclude data methods and sources description which should
