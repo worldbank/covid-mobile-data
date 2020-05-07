@@ -11,7 +11,6 @@ percent_active_df <- percent_active_df %>%
   dplyr::rename(region = home_region) %>%
   dplyr::select(region, day, percent_active)
   
-unit <- "district"
 for(unit in c("ward", "district")){
   
   # Set parameters -------------------------------------------------------------
@@ -190,6 +189,5 @@ for(unit in c("ward", "district")){
             "count_unique_subscribers_per_region_per_week_orig_and_scaled.csv") %>% print()
   
 }
-
 
 
