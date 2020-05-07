@@ -1,10 +1,8 @@
 #### Settings #### =============================================================
 
-rm(list = ls())
-
-CLEAN_SPATIAL_DATA <- T
-CLEAN_TELECOM_DATA <- T
-PREP_DATA_FOR_DASH <- T
+CLEAN_SPATIAL_DATA <- F
+CLEAN_TELECOM_DATA <- F
+PREP_DATA_FOR_DASH <- F
 
 #### Packages #### =============================================================
 library(tidyverse)
@@ -14,6 +12,7 @@ library(plotly)
 library(stargazer)
 library(knitr)
 library(gridExtra)
+library(leaflet)
 library(ggpubr)
 library(purrr)
 library(parallel)
@@ -26,6 +25,7 @@ library(raster)
 library(geosphere)
 library(lubridate)
 library(data.table)
+library(mapview)
 
 #### File paths #### ===========================================================
 
@@ -39,20 +39,19 @@ if(Sys.info()[["user"]] == "wb519128") GITHUB_PATH <- "C:/Users/wb519128/Github/
 if(Sys.info()[["user"]] == "WB521633") GITHUB_PATH <- "C:/Users/wb521633/Documents/Github/covid-mobile-data"
 
 # Define Paths from Root -------------------------------------------------------
-RAW_DATA_ADM2_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin2", "flowminder")
-RAW_DATA_ADM3_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin3", "flowminder")
+GEO_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "geo_files")
+RISK_ANALYSIS_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "risk-analysis")
+DATABRICKS_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw")
+PROOF_CONCEPT_PATH   <- file.path(PROJECT_PATH, "proof-of-concept")
 
-CUSTOM_DATA_ADM2_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin2", "custom")
-CUSTOM_DATA_ADM3_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin3", "custom")
+CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm2")
+CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm3")
 
-CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin2", "data_clean")
-CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin3", "data_clean")
-
-GEO_ADM2_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin2", "geo_files")
-GEO_ADM3_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw", "admin3", "geo_files")
+DASHBOARD_DATA_ONEDRIVE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_dashboard")
 
 DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard")
-DASHBOARD_DATA_PATH     <- file.path(DASHBOARD_PATH, "data_inputs_for_dashboard")
+DASHBOARD_DATA_GITHUB_PATH     <- file.path(DASHBOARD_PATH, "data_inputs_for_dashboard")
+
 DASHBOARD_CLEAN_SPATIAL_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "01_clean_spatial_data")
 DASHBOARD_CLEAN_TELECOM_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "02_clean_telecom_data")
 DASHBOARD_PREP_DASHBOARD_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "03_dashboard_data_prep")

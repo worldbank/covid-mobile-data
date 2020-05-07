@@ -7,7 +7,7 @@
 # (2) Order by region
 
 # Load Data --------------------------------------------------------------------
-district_sp <- readOGR(dsn = file.path(GEO_ADM2_PATH),
+district_sp <- readOGR(dsn = file.path(GEO_PATH),
                        layer = "ZWE_adm2")
 
 # Clean Data -------------------------------------------------------------------
@@ -28,4 +28,4 @@ district_sp <- district_sp[order(district_sp$region),]
 
 # Export -----------------------------------------------------------------------
 saveRDS(district_sp, file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
-saveRDS(district_sp, file.path(DASHBOARD_DATA_PATH, "districts.Rds"))
+saveRDS(district_sp, file.path(DASHBOARD_DATA_ONEDRIVE_PATH, "districts.Rds"))

@@ -43,7 +43,7 @@ prep_nonod_date_i <- function(date_i,
     arrange(region) %>%
     dplyr::select(keep_vars) 
   
-  saveRDS(df, file.path(DASHBOARD_DATA_PATH,
+  saveRDS(df, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                         paste0(unit, "_",varname,"_",timeunit,"_", date_i, ".Rds")))
 }
 
@@ -88,7 +88,7 @@ prep_nonod_admin_i <- function(name_i,
     df$date <- df$date %>% as.Date()
   }
   
-  saveRDS(df, file.path(DASHBOARD_DATA_PATH,
+  saveRDS(df, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                         paste0(unit, "_",varname,"_",timeunit,"_", name_i, ".Rds")))
 }
 
@@ -116,6 +116,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     group_by(date, region_origin) %>%
     dplyr::summarise(value = sum(value, na.rm=T)) %>%
     ungroup() %>%
+    tp_less15_NA(threshold = 0) %>% # summarize makes all NA 0, so back to NA here
     
     tp_standardize_vars("date", "region_origin", "value") %>%
     tp_add_baseline_comp_stats() %>%
@@ -125,7 +126,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     arrange(desc(value)) %>%
     dplyr::select(name, value, value_zscore_base, value_perchange_base, province)
   
-  saveRDS(df_out_of, file.path(DASHBOARD_DATA_PATH,
+  saveRDS(df_out_of, file.path(DASHBOARD_DATA_GITHUB_PATH,
                                paste0(unit, "_Movement Out of_",timeunit,"_", date_i, ".Rds")))
   
   #### Into Admin Unit
@@ -133,6 +134,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     group_by(date, region_dest) %>%
     dplyr::summarise(value = sum(value, na.rm=T)) %>%
     ungroup() %>%
+    tp_less15_NA(threshold = 0) %>% # summarize makes all NA 0, so back to NA here
     
     tp_standardize_vars("date", "region_dest", "value") %>%
     tp_add_baseline_comp_stats() %>%
@@ -142,7 +144,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     arrange(desc(value)) %>%
     dplyr::select(name, value, value_zscore_base, value_perchange_base, province)
   
-  saveRDS(df_into, file.path(DASHBOARD_DATA_PATH,
+  saveRDS(df_into, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                              paste0(unit, "_Movement Into_",timeunit,"_", date_i, ".Rds")))
   
 }
@@ -183,7 +185,7 @@ prep_od_adminname_i <- function(name_i, df, unit, timeunit){
   
   df_origin <- df_origin %>% as.data.frame()
   
-  saveRDS(df_origin, file.path(DASHBOARD_DATA_PATH,
+  saveRDS(df_origin, file.path(DASHBOARD_DATA_GITHUB_PATH,
                               paste0(unit, "_Movement Out of_",timeunit,"_", name_i, ".Rds")))
   
   #### Into Ward
@@ -201,7 +203,7 @@ prep_od_adminname_i <- function(name_i, df, unit, timeunit){
   
   df_dest <- df_dest %>% as.data.frame()
 
-  saveRDS(df_dest, file.path(DASHBOARD_DATA_PATH,
+  saveRDS(df_dest, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                               paste0(unit, "_Movement Into_",timeunit,"_", name_i, ".Rds")))
   
 }
@@ -249,7 +251,6 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
     df_clean$value_zscore_base[is.na(df_clean$value)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value)] <- 0
     
-    df_clean$value[is.na(df_clean$value_base)] <- 0
     df_clean$value_zscore_base[is.na(df_clean$value_base)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value_base)] <- 0
     
@@ -281,7 +282,7 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
                         "value_zscore_base",
                         "value_perchange_base",
                         "label_level",
-                        "label_base")], file.path(DASHBOARD_DATA_PATH,
+                        "label_base")], file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                                                   paste0(unit, "_Movement Out of_",timetype,"_", name_i,"_",date_i,".Rds")))
     
   }
@@ -306,7 +307,6 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
     df_clean$value_zscore_base[is.na(df_clean$value)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value)] <- 0
     
-    df_clean$value[is.na(df_clean$value_base)] <- 0
     df_clean$value_zscore_base[is.na(df_clean$value_base)] <- 0
     df_clean$value_perchange_base[is.na(df_clean$value_base)] <- 0
     
@@ -337,7 +337,7 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
                         "value_zscore_base",
                         "value_perchange_base",
                         "label_level",
-                        "label_base")], file.path(DASHBOARD_DATA_PATH,
+                        "label_base")], file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                                                   paste0(unit, "_Movement Into_",timetype,"_", name_i,"_",date_i,".Rds")))
     
   }

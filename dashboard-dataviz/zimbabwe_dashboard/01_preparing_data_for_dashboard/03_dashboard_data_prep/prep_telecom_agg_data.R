@@ -14,21 +14,24 @@ N_CORES <- 1
 
 #### Select which datasets to process
 # Non-OD
-PROCESS_DENSITY_DATA      <- T
-PROCESS_DISTANCE_DATA     <- F
-PROCESS_MOVEMENT_NET_DATA <- T
+PROCESS_DENSITY_DATA       <- F
+PROCESS_MOVEMENT_NET_DATA  <- F
+PROCESS_DISTANCE_MEAN_DATA <- F
+PROCESS_DISTANCE_STD_DATA  <- F
 
 # OD
-PROCESS_MOVEMENT_DATA     <- T
+PROCESS_MOVEMENT_DATA      <- T
 
 #### Delete previous files before running? Useful if change naming conventions
 # of files, so need to get rid of old files. Otherwise will just add or overwrite.
 REMOVE_PREVIOUS_FILES <- F
 
 ##### Remove Previous Files ##### ----------------------------------------------
+# THIS IS NOT STABLE. Will also ignore district and ward polygon files,
+# and other files not added here. should ignore these other files
 
 if(REMOVE_PREVIOUS_FILES){
-  temp <- list.files(DASHBOARD_DATA_PATH, 
+  temp <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, 
                      full.names = T, 
                      pattern = "*.Rds") %>%
     lapply(file.remove)
@@ -101,30 +104,58 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
 
     }
     
-    # Process Distance Data ----------------------------------------------------
-    if(PROCESS_DISTANCE_DATA){
+    # Process Mean Distance Data -----------------------------------------------
+    if(PROCESS_DISTANCE_MEAN_DATA){
       
       ## Load data
-      df_distance <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                       paste0("median_distance_per_",
+      df_distance_mean <- readRDS(file.path(CLEAN_DATA_PATH, 
+                                       paste0("indicator_7_",
                                               timeunit_short,
+                                              "_mean_distance",
                                               ".Rds")))
       
       ### prep_density_date_i
-      temp <- lapply(unique(df_distance$date),
+      temp <- lapply(unique(df_distance_mean$date),
                      prep_nonod_date_i,
-                     df = df_distance,
+                     df = df_distance_mean,
                      unit = unit,
                      timeunit = timeunit,
-                     varname = "Median Distance Traveled")
+                     varname = "Mean Distance Traveled")
       
       ### prep_density_admin_i
-      temp <- lapply(unique(df_distance$name),
+      temp <- lapply(unique(df_distance_mean$name),
                      prep_nonod_admin_i,
-                     df = df_distance,
+                     df = df_distance_mean,
                      unit = unit,
                      timeunit = timeunit,
-                     varname = "Median Distance Traveled")
+                     varname = "Mean Distance Traveled")
+    }
+    
+    # Process Standard Dev Distance Data ---------------------------------------
+    if(PROCESS_DISTANCE_STD_DATA){
+      
+      ## Load data
+      df_distance_stdev <- readRDS(file.path(CLEAN_DATA_PATH, 
+                                            paste0("indicator_7_",
+                                                   timeunit_short,
+                                                   "_stdev_distance",
+                                                   ".Rds")))
+      
+      ### prep_density_date_i
+      temp <- lapply(unique(df_distance_stdev$date),
+                     prep_nonod_date_i,
+                     df = df_distance_stdev,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Std Dev Distance Traveled")
+      
+      ### prep_density_admin_i
+      temp <- lapply(unique(df_distance_stdev$name),
+                     prep_nonod_admin_i,
+                     df = df_distance_stdev,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Std Dev Distance Traveled")
     }
     
     # Process Net Movement Data ------------------------------------------------
@@ -172,6 +203,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      timeunit,
                      admin_sp)
       
+      if(F){
       ### prep_movement_adminname_i
       temp <- lapply(unique(unique(df_movement$name_dest),
                             unique(df_movement$name_origin)),  
@@ -179,10 +211,11 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      df_movement,  
                      unit,
                      timeunit)
-      
+      }
       ### prep_movement_adminname_i_date_i
       # Loop through units and dates; apply function separately for moving in 
       # and out
+      if(F){
       i <- 1
       t <- Sys.time()
       for(name_i in unique(unique(df_movement$name_dest),
@@ -215,6 +248,8 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
         i <- i + 1
         difftime(Sys.time(), t, units="secs") %>% print()
         t <- Sys.time()
+      }
+      
       }
     
     }

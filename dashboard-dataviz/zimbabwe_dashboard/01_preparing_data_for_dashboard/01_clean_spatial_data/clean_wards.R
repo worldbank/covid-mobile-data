@@ -16,15 +16,40 @@
 # Load / Prep Data -------------------------------------------------------------
 
 #### Load all wards
-ward_sp <- read_sf(file.path(GEO_ADM3_PATH, "zimbabwe_admin3.geojson")) %>% 
+ward_sp <- read_sf(file.path(GEO_PATH, "zimbabwe_admin3.geojson")) %>% 
   as("Spatial")
 
 ####  Load tower clusters. Spatially set as centroid cluster
-tower_cluster_df <- read.csv(file.path(GEO_ADM3_PATH, 
+tower_cluster_df <- read.csv(file.path(GEO_PATH, 
                                        "towers_to_wards_clusters.csv"), 
                              stringsAsFactors=F) 
 coordinates(tower_cluster_df) <- ~centroid_LNG+centroid_LAT
 crs(tower_cluster_df) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+# Load District Data for Mapping IDs -------------------------------------------
+district_sp <- readOGR(dsn = file.path(GEO_PATH),
+                       layer = "ZWE_adm2")
+district_sp$ID_2 <- district_sp$ID_2 %>% as.character() %>% as.numeric()
+district_sp$NAME_2 <- district_sp$NAME_2 %>% as.character()
+
+# Find district match for each ward. Use distance of centroid of ward to distract.
+# For all but one ward, this will find a distance of 0 -- finding ward centroid
+# within a district. One ward on edge has centroid that doesn't overlap, so
+# where distance will be slightly larger than 0.
+dist_match <- lapply(1:nrow(ward_sp), function(i){
+  
+  if((i %% 100) == 0) print(i)
+  
+  ward_sp_i <- ward_sp[i,] %>% gCentroid(byid=T)
+  close_dist_id <- gDistance(ward_sp_i, district_sp, byid=T) %>% as.numeric %>% which.min()
+  
+  df_out <- data.frame(district_id = district_sp$ID_2[close_dist_id],
+             district_name = district_sp$NAME_2[close_dist_id])
+  
+  return(df_out)
+}) %>% bind_rows()
+
+ward_sp@data <- bind_cols(ward_sp@data, dist_match)
 
 # Aggregate Wards --------------------------------------------------------------
 
@@ -83,7 +108,8 @@ ward_agg_sp@data <- ward_agg_sp@data %>%
                      str_replace_all("/", "-")) %>%
   dplyr::rename(province = ADM1_EN,
                 region   = ADM3_PCODE) %>%
-  dplyr::select(name, region, province) 
+  dplyr::select(name, region, province,
+                district_id, district_name) 
 
 #### Calculate Area
 ward_agg_sp$area <- geosphere::areaPolygon(ward_agg_sp) / 1000^2
@@ -100,6 +126,21 @@ ward_agg_sp <- ward_agg_sp[order(ward_agg_sp$region),]
 saveRDS(ward_agg_sp, file.path(CLEAN_DATA_ADM3_PATH, 
                                "wards_aggregated.Rds"))
 
-saveRDS(ward_agg_sp, file.path(DASHBOARD_DATA_PATH, 
+saveRDS(ward_agg_sp, file.path(DASHBOARD_DATA_ONEDRIVE_PATH, 
                                "wards_aggregated.Rds"))
+
+ward_agg_sf <- ward_agg_sp %>% st_as_sf()
+ward_agg_sf$district_id <- ward_agg_sf$district_id %>% as.character() %>% as.numeric()
+
+ward_agg_sf <- ward_agg_sf %>%
+  dplyr::rename(ward_name = name,
+                ward_id = region,
+                province_name = province)
+
+st_write(ward_agg_sf, file.path(GEO_PATH, "wards_aggregated.geojson"),
+         delete_dsn=T)
+
+ward_agg_df <- ward_agg_sf
+ward_agg_df$geometry <- NULL
+write.csv(ward_agg_df, file.path(GEO_PATH, "wards_aggregated.csv"), row.names = F)
 

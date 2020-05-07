@@ -61,19 +61,26 @@ tp_standardize_vars_od <- function(data,
 tp_complete_date_region <- function(data,
                                     date_var = "date",
                                     region_var = "region",
-                                    value_var = "value"){
+                                    value_var = "value",
+                                    keep_other_vars = NULL){
   
-  data <- data.frame(
+  data_new <- data.frame(
     date = data[date_var],
     region = data[region_var],
     value = data[value_var]
   )
   
-  data <- data %>%
+  if(!is.null(keep_other_vars)){
+    for(var in keep_other_vars){
+      data_new[[keep_other_vars]] <- data[[keep_other_vars]]
+    }
+  }
+  
+  data_new <- data_new %>%
     as.data.frame() %>%
     tidyr::complete(region, date) 
   
-  return(data)
+  return(data_new)
 }
 
 tp_complete_date_region_od <- function(data,
@@ -378,7 +385,7 @@ tp_add_label_baseline <- function(data,
   
   #### Current Value
   label_value <- paste0("This ", timeunit, "'s value: ",
-                        data[[value_var]], ".")
+                        data[[value_var]] %>% round(2), ".")
   
   label_value <- ifelse(is.na(data[[value_var]]),
                         "15 or fewer<br>or information not available",
@@ -390,10 +397,10 @@ tp_add_label_baseline <- function(data,
                     "decrease")
   
   label_base <- paste0("The baseline February value was: ",
-                       data[[value_base_var]], ".<br>",
+                       data[[value_base_var]] %>% round(2), ".<br>",
                        "Compared to baseline, this ", timeunit, "<br>",
                        "had a ", 
-                       data[[perchange_base_var]] %>% round(2) %>% abs(),
+                       data[[perchange_base_var]] %>% abs() %>% round(2),
                        "% ",
                        inc_dec,
                        " (a ",
@@ -463,7 +470,7 @@ tp_add_label_level <- function(data,
   }
   
   #### Value
-  label_value <- paste0("This ", timeunit, "'s value: ",data$value, ".")
+  label_value <- paste0("This ", timeunit, "'s value: ",data$value  %>% round(2), ".")
   
   label_value <- ifelse(is.na(data$value),
                         "15 or fewer<br>or information not available",
@@ -475,10 +482,10 @@ tp_add_label_level <- function(data,
                     "decrease") 
   
   label_change <- paste0("Last ", timeunit, "'s value: ", 
-                         data$value_lag, ".", 
+                         data$value_lag %>% round(2), ".", 
                          "<br>", 
                          "This ", timeunit, " had a ",
-                         abs(data$value - data$value_lag), 
+                         abs(data$value - data$value_lag) %>% round(2), 
                          " ",
                          "(",
                          data$value_perchange %>% round(2) %>% abs(),
@@ -635,6 +642,8 @@ tp_interpolate_outliers <- function(data,
     data_orig[[paste0(value_var, "_scale")]] <- data$value_scale
   } 
   
+  print("Done: tp_interpolate_outliers")
+  
   return(data_orig)
 }
 
@@ -734,6 +743,29 @@ tp_add_baseline_comp_stats <- function(data,
   #                value_dow_base_sd   = sd(value[month %in% baseline_months], na.rm=T)) %>%
   #  dplyr::ungroup() 
   
+  mean_NA <- function(x){
+    
+    if(length(x) == sum(is.na(x))){
+      out <- NA
+    } else{
+      out <- mean(x, na.rm=T)
+    }
+    
+    return(out)
+  }
+  
+  sd_NA <- function(x){
+    # Could have... if have 1 value
+    
+    if(length(x) == sum(is.na(x))){
+      out <- NA
+    } else{
+      out <- sd(x, na.rm=T)
+    }
+    
+    return(out)
+  }
+  
   data_sub_dt <- as.data.table(data_sub)
   
   data_sub_base_dt <- data_sub_dt[(data_sub_dt$month %in% baseline_months),]
@@ -745,17 +777,21 @@ tp_add_baseline_comp_stats <- function(data,
   
   data_sub <- as.data.frame(data_sub_dt)
   
+  #### Make sure NA // CHECK IF NEEDED, MIGHT BE CASES WHERE 0 OK.
+  # Better... if all NA, keep NA
+  data_sub$value_dow_base_mean[data_sub$value_dow_base_mean %in% 0] <- NA
+  
   #### Percent Change
   # If baseline value is NA or less than 15, make 15 
   #data_sub$value_dow_base_mean[is.na(data_sub$value_dow_base_mean)] <- 0
   #data_sub$value_dow_base_mean[data_sub$value_dow_base_mean < 15] <- 15
   
   data_sub <- data_sub %>%
-    mutate(value_perchange_base = (value - value_dow_base_mean)/(value_dow_base_mean) * 100)
+    mutate(value_perchange_base = (value - value_dow_base_mean)/(abs(value_dow_base_mean)) * 100)
   
   #### Z-Score
   # For standard deviations that are zero, replace with minimum standard
-  # deviation that isn't zero. 
+  # deviation that isn't zero. If NA, should stay NA. 
   min_sd <- min(data_sub$value_dow_base_sd[data_sub$value_dow_base_sd > 0], na.rm=T)
   data_sub$value_dow_base_sd[data_sub$value_dow_base_sd < min_sd] <- min_sd
   
@@ -771,6 +807,22 @@ tp_add_baseline_comp_stats <- function(data,
   
   data_sub$value_zscore_base[is.na(data_sub$value_zscore_base) |
                                data_sub$value_zscore_base %in% c(Inf, -Inf)] <- NA
+  
+  # Remove baseline values and comparisson if month is baseline
+  if(F){
+    # Apparently this did mess up something downstream. Not sure how / will need to check
+  data_sub <- data_sub %>%
+    mutate(value_dow_base_mean =  ifelse(month == baseline_months,
+                                         NA,
+                                         value_dow_base_mean),
+           value_perchange_base =  ifelse(month == baseline_months,
+                                          NA,
+                                          value_perchange_base),
+           value_zscore_base =  ifelse(month == baseline_months,
+                                       NA,
+                                       value_zscore_base) )
+  }
+  
   
   #### Add variables to data
   
@@ -792,9 +844,10 @@ tp_add_baseline_comp_stats <- function(data,
 
 
 tp_less15_NA <- function(data,
-                         value_var = "value"){
+                         value_var = "value",
+                         threshold = 15){
   
-  data[[value_var]][data[[value_var]] <= 15] <- NA
+  data[[value_var]][data[[value_var]] <= threshold] <- NA
   
   print("Done: tp_less15_NA")
   
