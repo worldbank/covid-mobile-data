@@ -9,10 +9,12 @@
 #-----------------------------------------------------------------#
 #### Set file paths
 
-DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/"
+DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/"
+DATA_POC = DATA_path + "proof-of-concept/"
 
-DATA_DB_raw_indicators = DATA_path + "databricks-results/zw/"
-DATA_dashboad_clean = DATA_path + "/files_for_dashboard/files_clean/"
+
+DATA_DB_raw_indicators = DATA_POC + "databricks-results/zw/"
+DATA_dashboad_clean = DATA_POC + "/files_for_dashboard/files_clean/"
 
 DATA_dash_clean_a2 = DATA_dashboad_clean + "adm2/"
 DATA_dash_clean_a3 = DATA_dashboad_clean + "adm3/"
@@ -42,5 +44,5 @@ FLOWM_adm3_path = FLOWM_path + "admin3/"
 
 #---------------#
 # Outputs
-OUT_path = DATA_path + "outputs/"
+OUT_path = DATA_POC + "outputs/"
 OUT_hfcs = OUT_path + "data-checks/"
