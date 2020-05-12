@@ -27,49 +27,42 @@
 
 # # Import code
 
-# In[ ]:
+# In[2]:
 
 
-get_ipython().run_line_magic('load_ext', 'autoreload')
-get_ipython().run_line_magic('autoreload', '2')
+from modules.DataSource import *
 
 
-# In[ ]:
-
-
-from modules.setup import *
-
-
-# In[ ]:
-
-
-spark
-
-
-# # Import data
-
-# ## Set up the configuration for data standardization
-
-# In[ ]:
+# In[3]:
 
 
 config_file = '../config_file.py'
 
 
-# In[ ]:
+# In[4]:
 
 
 exec(open(config_file).read())
 
 
-# In[ ]:
+# In[10]:
 
 
 ds = DataSource(datasource_configs)
 ds.show_config()
 
 
-# ## Standardize raw csv files
+# In[11]:
+
+
+from modules.setup import *
+
+
+# # Import data
+
+# ## Load CDR data
+
+# ### Process/standardize raw data, save as parquet, and then load it
 
 # In[ ]:
 
@@ -84,19 +77,35 @@ ds.show_config()
 #ds.load_standardized_parquet_file()
 
 
+# ### Alternatively, specify and load hive table
+
 # In[ ]:
+
+
+# Specify and load hive data
+ds.parquet_df = ds.spark.sql("""SELECT {} AS msisdn, 
+                                       {} AS call_datetime, 
+                                       {} AS location_id FROM {}""".format(ds.hive_vars['msisdn'],
+                                                                           ds.hive_vars['call_datetime'],
+                                                                           ds.hive_vars['location_id'],
+                                                                           ds.hive_vars['calls']))
+
+
+# ### Or load a sample file
+
+# In[14]:
 
 
 ## Use this in case you want to sample the data and run the code on the sample
 
-#ds.sample_and_save(number_of_ids=1000)
-ds.load_sample('sample_feb_mar2020')
-ds.parquet_df = ds.sample_df
+# #ds.sample_and_save(number_of_ids=1000)
+# ds.load_sample('sample_feb_mar2020')
+# ds.parquet_df = ds.sample_df
 
 
 # ## Load geo data
 
-# In[ ]:
+# In[13]:
 
 
 ds.load_geo_csvs()
@@ -153,7 +162,7 @@ agg_flowminder.attempt_aggregation()
 
 # ## Priority indicators for admin2
 
-# In[ ]:
+# In[15]:
 
 
 agg_custom = custom_aggregator(result_stub = '/admin2/custom',
@@ -185,12 +194,4 @@ agg_custom = scaled_aggregator(result_stub = '/admin2/scaled',
                                regions = 'admin2_tower_map')
 
 agg_custom.attempt_aggregation()
-
-
-# # Produce script
-
-# In[ ]:
-
-
-get_ipython().system('jupyter nbconvert --to script *.ipynb')
 

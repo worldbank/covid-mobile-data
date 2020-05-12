@@ -79,10 +79,11 @@ class custom_aggregator(aggregator):
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
               .withColumn('constant', F.lit(1).cast('byte'))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
+              .withColumn('call_date', F.date_trunc('day', F.col('call_datetime')))\
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
             self.df = save_and_load_parquet(self.df,
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'), self)
 
         else:
             self.df = self.spark.read.format("parquet").load(
@@ -99,10 +100,10 @@ class custom_aggregator(aggregator):
         # indicator 3
         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
         # indicator 4
-        self.table_names.append(self.save_and_report(self.percent_of_all_subscribers_active(time_filter, frequency), 'percent_of_all_subscribers_active_per_' + frequency))
+#         self.table_names.append(self.save_and_report(self.percent_of_all_subscribers_active(time_filter, frequency), 'percent_of_all_subscribers_active_per_' + frequency))
 #         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency ,exlusion_start = dt.datetime(2020,4,1)), 'percent_of_all_subscribers_active_option1_per_' + frequency))
 #         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency), 'percent_of_all_subscribers_active_option2_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency, active_only_at_home = False), 'percent_of_all_subscribers_active_option3_per_' + frequency))
+        self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency, active_only_at_home = False), 'percent_of_all_subscribers_active_option3_per_' + frequency))
         # indicator 5
         self.table_names.append(self.save_and_report(self.origin_destination_connection_matrix(time_filter, frequency), 'origin_destination_connection_matrix_per_' + frequency))
         # indicator 7
