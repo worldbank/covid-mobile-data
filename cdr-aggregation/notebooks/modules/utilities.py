@@ -8,11 +8,11 @@ if os.environ['HOME'] != '/root':
 else:
     databricks = True
 
-def save_and_load_parquet(df, filename):
+def save_and_load_parquet(df, filename, ds):
     # write parquet
     df.write.mode('overwrite').parquet(filename)
     #load parquet
-    df = spark.read.format("parquet").load(filename)
+    df = ds.spark.read.format("parquet").load(filename)
     return df
 
 def save_csv(matrix, path, filename):

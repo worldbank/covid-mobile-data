@@ -35,15 +35,14 @@ class scaled_aggregator(custom_aggregator):
 
         super().__init__(result_stub,datasource,regions,re_create_vars)
 
-        if self.level == 'admin2':
-            self.weight = getattr(datasource, 'admin2_weight')\
-                .withColumnRenamed('region', 'weight_region')
-            self.df = self.df\
-                .withColumn('constant', F.lit(1).cast('byte'))\
-                .join(self.weight.select('weight_region', 'weight'),
+
+        self.weight = getattr(datasource, self.level + '_weight')\
+            .withColumnRenamed('region', 'weight_region')
+        self.df = self.df\
+            .join(self.weight.select('weight_region', 'weight'),
                                     on = (self.df.home_region == self.weight.weight_region),
                                     how = 'left')\
-                .drop('weight_region')
+            .drop('weight_region')
 
     ## Indicator 1
     def transactions(self, time_filter, frequency):
