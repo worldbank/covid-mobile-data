@@ -396,8 +396,8 @@ tp_add_label_baseline <- function(data,
                     "increase",
                     "decrease")
   
-  label_base <- paste0("The baseline February value was: ",
-                       data[[value_base_var]] %>% round(2), ".<br>",
+  label_base <- paste0(#"The baseline February value was: ",
+                       #data[[value_base_var]] %>% round(2), ".<br>",
                        "Compared to baseline, this ", timeunit, "<br>",
                        "had a ", 
                        data[[perchange_base_var]] %>% abs() %>% round(2),
@@ -481,9 +481,9 @@ tp_add_label_level <- function(data,
                     "increase",
                     "decrease") 
   
-  label_change <- paste0("Last ", timeunit, "'s value: ", 
-                         data$value_lag %>% round(2), ".", 
-                         "<br>", 
+  label_change <- paste0(#"Last ", timeunit, "'s value: ", 
+                         #data$value_lag %>% round(2), ".", 
+                         #"<br>", 
                          "This ", timeunit, " had a ",
                          abs(data$value - data$value_lag) %>% round(2), 
                          " ",

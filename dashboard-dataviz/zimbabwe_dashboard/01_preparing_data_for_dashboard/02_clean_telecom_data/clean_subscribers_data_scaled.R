@@ -5,11 +5,11 @@
 EXPORT <- T
 
 #### Load / Prep Percent Active
-percent_active_df <- read.csv(file.path(DATABRICKS_PATH, "indicator 4", "admin2", "percent_of_all_subscribers_active_option3_per_day.csv"),
-                              stringsAsFactors=F)
-percent_active_df <- percent_active_df %>% 
-  dplyr::rename(region = home_region) %>%
-  dplyr::select(region, day, percent_active)
+#percent_active_df <- read.csv(file.path(DATABRICKS_PATH, "indicator 4", "admin2", "percent_of_all_subscribers_active_option3_per_day.csv"),
+#                              stringsAsFactors=F)
+#percent_active_df <- percent_active_df %>% 
+#  dplyr::rename(region = home_region) %>%
+#  dplyr::select(region, day, percent_active)
   
 unit <- "district"
 for(unit in c("ward", "district")){
@@ -27,10 +27,10 @@ for(unit in c("ward", "district")){
                        stringsAsFactors=F)
     df_day <- df_day[!(df_day$region %in% 99999),]
     
-    df_day <- merge(df_day, percent_active_df, by=c("region", "day"), all.x=T, all.y=F)
+    #df_day <- merge(df_day, percent_active_df, by=c("region", "day"), all.x=T, all.y=F)
     
-    df_day_clean <- df_day %>% 
-      tp_standardize_vars("day", "region", "weighted_count_population_scale")
+    #df_day_clean <- df_day %>% 
+    #  tp_standardize_vars("day", "region", "weighted_count_population_scale")
   }
   
   #### Wards
@@ -64,60 +64,81 @@ for(unit in c("ward", "district")){
                        "region" = "region"))
     
     # If the tower is down, make the value NA
-    df_day$subscriber_count[df_day$tower_down %in% TRUE] <- NA
+    df_day$count[df_day$tower_down %in% TRUE] <- NA
+    df_day$weighted_count_population_scale[df_day$tower_down %in% TRUE] <- NA
     
     #### Merge in district_id
     # Percent active only at the district level
-    admin_sp_sub <- admin_sp@data %>%
-      dplyr::select(region, district_id)
+    #admin_sp_sub <- admin_sp@data %>%
+    #  dplyr::select(region, district_id)
     
-    df_day <- merge(df_day, admin_sp_sub, by="region")
+    #df_day <- merge(df_day, admin_sp_sub, by="region")
     
     #### Merge in percent_active
-    percent_active_df_ward <- percent_active_df %>%
-      dplyr::rename(district_id = region) %>%
-      mutate(day = day %>% substring(1,10))
+    #percent_active_df_ward <- percent_active_df %>%
+    #  dplyr::rename(district_id = region) %>%
+    #  mutate(day = day %>% substring(1,10))
       
-    df_day <- merge(df_day, percent_active_df_ward, by=c("district_id", "day"),
-                    all.x=T,
-                    all.y=F)
+    #df_day <- merge(df_day, percent_active_df_ward, by=c("district_id", "day"),
+    #                all.x=T,
+    #                all.y=F)
     
     #### Prep
-    df_day_clean <- df_day %>% 
-      tp_standardize_vars("day", "region", "subscriber_count")
+    #df_day_clean <- df_day %>% 
+    #  tp_standardize_vars("day", "region", "subscriber_count")
     
   }
   
   # Daily ----------------------------------------------------------------------
   print("day")
   
-  df_day_clean <- df_day_clean %>%
+  df_day_clean <- df_day %>%
+    
+    # Prep Data
+    tp_standardize_vars("day", "region", "count") %>%
+    dplyr::rename(value_scale = weighted_count_population_scale) %>%
     
     # Clean datset
     tp_clean_date() %>%
     tp_fill_regions(admin_sp) %>%
-    tp_complete_date_region(keep_other_vars = "percent_active") %>% 
+    tp_complete_date_region(keep_other_vars = "value_scale") %>% 
     tp_add_polygon_data(admin_sp) %>%
     
-    # Interpolate/Clean Values
+    # Interpolate/Clean - Values
     tp_interpolate_outliers(NAs_as_zero = T) %>%
     tp_replace_zeros(NAs_as_zero = T) %>%
     tp_less15_NA() %>%
+      
+    # Interpolate/Clean - value_scale
+    tp_interpolate_outliers(newvar_name = "value_scale",
+                            value_var = "value_scale",
+                            NAs_as_zero = T) %>%
+    tp_replace_zeros(newvar_name = "value_scale",
+                     value_var = "value_scale",
+                     NAs_as_zero = T) %>%
+    tp_less15_NA(value_var = "value_scale") %>%
     
     # Create adjusted value to use for percent change and zscore
     #mutate(value_scale = value / percent_active) %>%
     
     # Percent change
-    tp_add_baseline_comp_stats(value_var = "value_scale") %>%
+    tp_add_baseline_comp_stats() %>%
     tp_add_percent_change() %>% 
-    dplyr::rename(value_base = value_scale_base,
-                  value_perchange_base = value_scale_perchange_base,
-                  value_zscore_base = value_scale_zscore_base) %>%
+    #dplyr::rename(value_base = value_scale_base,
+    #              value_perchange_base = value_scale_perchange_base,
+    #              value_zscore_base = value_scale_zscore_base,
+    #              value_lag = value_scale_lag,
+    #              value_perchange = value_scale_perchange) %>%
     
     # Add labels
     tp_add_label_level(timeunit = "day", OD = F) %>%
     tp_add_label_baseline(timeunit = "day", OD = F) %>%
     
+    # Use scaled value for counts 
+    # Keep unscaled value
+    dplyr::rename(value_not_scaled = value,
+                  value = value_scale) %>%
+
     # Add density
     mutate(density = value / area) 
   
@@ -196,6 +217,5 @@ for(unit in c("ward", "district")){
   
 }
 
-
-adm2_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm2/count_unique_subscribers_per_region_per_week_orig_and_scaled.csv")
-adm3_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm3/count_unique_subscribers_per_region_per_week_orig_and_scaled.csv")
+adm2_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm2/count_unique_subscribers_per_region_per_day_scaled.csv")
+adm3_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm3/count_unique_subscribers_per_region_per_day_scaled.csv")
