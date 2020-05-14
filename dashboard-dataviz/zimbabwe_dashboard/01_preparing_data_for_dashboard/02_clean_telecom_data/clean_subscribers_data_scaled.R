@@ -11,36 +11,42 @@ percent_active_df <- percent_active_df %>%
   dplyr::rename(region = home_region) %>%
   dplyr::select(region, day, percent_active)
   
+unit <- "district"
 for(unit in c("ward", "district")){
   
   # Set parameters -------------------------------------------------------------
+  
+  #### Districts
   if(unit %in% "district"){
-    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "scaled indicators")
+    
+    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "scaled indicators", "admin2")
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
     
     df_day <- read.csv(file.path(RAW_DATA_PATH, "unique_subscribers_per_day.csv"),
                        stringsAsFactors=F)
     df_day <- df_day[!(df_day$region %in% 99999),]
+    
     df_day <- merge(df_day, percent_active_df, by=c("region", "day"), all.x=T, all.y=F)
     
     df_day_clean <- df_day %>% 
-      
       tp_standardize_vars("day", "region", "weighted_count_population_scale")
   }
   
+  #### Wards
   if(unit %in% "ward"){
-    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "flowminder indicators", "admin3")
+    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "scaled indicators", "admin3")
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
     
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
-                                 "count_unique_subscribers_per_region_per_day.csv"), 
+                                 "unique_subscribers_per_day.csv"), 
                        stringsAsFactors=F)
     
-    #### Account for towers
-    df_day$visit_date <- df_day$visit_date %>% substring(1,10) %>% as.Date()
+    #### Account for towers being down
+    # If tower is down
+    df_day$day <- df_day$day %>% substring(1,10) %>% as.Date()
     
     towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
                                       "outputs", 
@@ -54,12 +60,14 @@ for(unit in c("ward", "district")){
     
     df_day <- df_day %>%
       left_join(towers_down, 
-                by = c("visit_date" = "date",
+                by = c("day" = "date",
                        "region" = "region"))
     
+    # If the tower is down, make the value NA
     df_day$subscriber_count[df_day$tower_down %in% TRUE] <- NA
     
     #### Merge in district_id
+    # Percent active only at the district level
     admin_sp_sub <- admin_sp@data %>%
       dplyr::select(region, district_id)
     
@@ -67,18 +75,16 @@ for(unit in c("ward", "district")){
     
     #### Merge in percent_active
     percent_active_df_ward <- percent_active_df %>%
-      dplyr::rename(district_id = region,
-                    visit_date = day) %>%
-      mutate(visit_date = visit_date %>% substring(1,10))
+      dplyr::rename(district_id = region) %>%
+      mutate(day = day %>% substring(1,10))
       
-    df_day <- merge(df_day, percent_active_df_ward, by=c("district_id", "visit_date"),
+    df_day <- merge(df_day, percent_active_df_ward, by=c("district_id", "day"),
                     all.x=T,
                     all.y=F)
     
     #### Prep
     df_day_clean <- df_day %>% 
-      
-      tp_standardize_vars("visit_date", "region", "subscriber_count")
+      tp_standardize_vars("day", "region", "subscriber_count")
     
   }
   
@@ -99,7 +105,7 @@ for(unit in c("ward", "district")){
     tp_less15_NA() %>%
     
     # Create adjusted value to use for percent change and zscore
-    mutate(value_scale = value / percent_active) %>%
+    #mutate(value_scale = value / percent_active) %>%
     
     # Percent change
     tp_add_baseline_comp_stats(value_var = "value_scale") %>%
@@ -191,3 +197,5 @@ for(unit in c("ward", "district")){
 }
 
 
+adm2_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm2/count_unique_subscribers_per_region_per_week_orig_and_scaled.csv")
+adm3_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm3/count_unique_subscribers_per_region_per_week_orig_and_scaled.csv")
