@@ -65,106 +65,109 @@ def compare_dfs(df1,df2, filename = None, outputdf = True):
 # Separate a few for manual merge
 sep_list = ['percent_of_all_subscribers_active_per_day.csv', # Diff coliumn names
             'origin_destination_connection_matrix_per_day.csv',
-            'mean_distance_per_day.csv'] # More indexes
+            'mean_distance_per_day.csv',
+            'mean_distance_per_week.csv',
+            'origin_destination_matrix_time_per_day.csv',
+            'count_unique_active_residents_per_region_per_day.csv',
+            'count_unique_active_residents_per_region_per_week.csv',
+            'count_unique_subscribers_per_region_per_day.csv',
+            'count_unique_subscribers_per_region_per_week.csv',
+            'count_unique_visitors_per_region_per_day.csv',
+            'count_unique_visitors_per_region_per_week.csv'] 
 loop_df = internal_indicators[~internal_indicators['file'].isin(sep_list)]
 
-for i in loop_df.index:
-    print(i) 
-    # Load data
-    file_name = loop_df['file'][i]
+remaining = [25, 26, 27, 28,
+            31, 32, 33, 34, 35, 36, 37, 38]
+
+
+# Load files function
+def loadfiles(idx, files_df = internal_indicators):
+    file_name = files_df['file'][idx]
+    print(file_name)
     d = None
-    d = pd.read_csv(loop_df['path'][i] + file_name)
+    d = pd.read_csv(files_df['path'][idx] + file_name)
     # Load external
-    if loop_df['indicator'][i] == 'flow':
+    if files_df['indicator'][idx] == 'flow':
         ext_path = IFLOW_path
     else:
         ext_path = ICUST_path
-    ext_folder = ext_path + 'admin' + str(loop_df['level'][i]) + '/' 
+    ext_folder = ext_path + 'admin' + str(files_df['level'][idx]) + '/' 
     de = None
     de = pd.read_csv(ext_folder + file_name)
-    # Patch cleannig of headers in the middle of the data
-    c1_name = d.columns[0]
-    d = d[~(d[c1_name].str.contains(c1_name))]
-    de = de[~de[c1_name].str.contains(c1_name)]
+    return([d, de])
+
+# Clean function
+def clean(d):
     # Remove missins
     d = d.dropna()
-    de = de.dropna()
     # All but the last column
     index_cols = list(d.columns[0:-1])
     d = drop_custna(d, index_cols)
-    de = drop_custna(de, index_cols)
-    # Create differences DF
-    diff_df = compare_dfs(d,de, outputdf = True)
+    return(d)
+
+
+# Comparisson outputs function
+def compare_dfs(df1,df2, index_cols):
+    cdf = df1.merge(df2, on = index_cols)
+    #--------------------#
+    # Calculate differeces
+    # Make sure values are numeric
+    cdf[cdf.columns[-1]] = cdf[cdf.columns[-1]].astype(int)
+    cdf[cdf.columns[-2]] = cdf[cdf.columns[-2]].astype(int)
+    # Create differences df
+    diff_df = cdf[cdf[cdf.columns[-1]] != cdf[cdf.columns[-2]]]
+    # Value difference
+    # Proportion of mismatches
+    p_rows_diff = sum(cdf[cdf.columns[-1]] != cdf[cdf.columns[-2]])/cdf.shape[0]
+    p_rows_diff = str(round(p_rows_diff, 4)*100)
+    # Return outputs
+    return(diff_df)
+
+
+# Complete pipeline function
+def process_pipeline(idx, 
+                     index_cols =['region', 'hour'],
+                     files_df = internal_indicators):
+    # Laod and clean data
+    d,de =  loadfiles(idx)
+    d = clean(d)
+    de = clean(de)
+    # Merge
+    cdf_diff = compare_dfs(i1,i1i, index_cols = index_cols )
     # Export
-    export_name = 'diff_' + 'admin_' + str(files_df['level'][i]) + '_' +file_name
-    diff_df.to_csv(OUT_hfcs_sheets + export_name,
-                index = False)
+    export_prefix = 'diff_' + 'admin' + str(files_df['level'][idx]) + '_'
+    export_name = export_prefix + files_df['file'][idx]
+    cdf_diff.to_csv(OUT_hfcs_sheets + export_name,
+                    index = False)
 
 
-i = 6
+# 
+process_pipeline(1)
+process_pipeline(2)
+process_pipeline(3)
+process_pipeline(4)
+process_pipeline(5)
+process_pipeline(6)
+process_pipeline(7)
+process_pipeline(8)
+process_pipeline(9)
+process_pipeline(10)
+process_pipeline(11)
+process_pipeline(12)
+process_pipeline(13)
+process_pipeline(14)
+process_pipeline(15)
+process_pipeline(16)
+# process_pipeline(17)
 
-df1 = d
-df2 = de
-
-foo =
 
 
-df1['region'].str.replace('.0', '', regex=True)
 
-type(df1[index_cols[1:]])
-type(df1['region'])
-file_name = internal_indicators['file'][38]
+i1,i1i =  loadfiles(1)
+i1 = clean(i1)
+i1i = clean(i1i)
 
-# Load data
-d = pd.read_csv(internal_indicators['path'][i] + file_name)
-de = pd.read_csv(fileinternal_indicatorss_df['path_e'][i] + file_name)
-
-
-# Create differences DF
-diff_df = compare_dfs(d,de, outputdf = True)
+i1_diff = compare_dfs(i1,i1i, index_cols =['region', 'hour'] )
 
 # Export
-export_name = 'diff_' + 'admin_' + str(files_df['level'][i]) + '_' +file_name
-
-diff_df.to_csv(OUT_hfcs_sheets + export_name,
-               index = False)
-
-
-
-
-
-
-
-i1i = pd.read_csv(ICUST_adm3_path + file_name) 
-i1 = pd.read_csv(I1_Adm3_path + file_name) 
-i1 = pd.read_csv(files_df['path'][i] + file_name)
-i1i = pd.read_csv(files_df['path_e'][i] + file_name)
-
-
-
-im = i1.merge(i1i, on = ['region', 'hour'],
-                how='inner')
-
-im = i1.merge(i1i, on = ['region', 'hour'])
-
-idff = im[im['count_x'] != im['count_x']]
-
-
-
-
-#-----------------------------------------------------------------#
-# Flowminder csvs
-for i in range(0, len(filenames)-1):
-    file_i = files_df[i]
-    file_path_i = 
-    # print(i)
-    # print(filenames[i])
-    # Our file
-    d1 = pd.read_csv(FLOWM_adm3_path + file_i) 
-    # I's file
-    d2 = pd.read_csv(IFLOW + file_i) 
-    
-    # Run comparisson
-    print(i)
-    print(filenames[i])
-    compare_dfs(d1,d2)
+#export_name = 'diff_' + 'admin_' + str(files_df['level'][i]) + '_' +file_name
