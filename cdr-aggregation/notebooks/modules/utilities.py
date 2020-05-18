@@ -1,4 +1,4 @@
-# Databricks notebook source
+
 ############# Utility functions used throughout
 import os
 if os.environ['HOME'] != '/root':

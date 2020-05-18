@@ -12,13 +12,36 @@ class voronoi_maker:
 
     Attributes
     ----------
-    spark : an initialised spark connection
-    spark_df : a spark dataframe that holds the raw data
-    network : which provider
+    datasource :  an instance of DataSource class.
+    shape : a geopandas dataframe. Shapefile to use for clustering
+    region_var : a string. Name of the region variable in the shapefile.
+    sites :  a string. Name of the attribute of datasource that holds the tower coordinates.
+    spark_df : a pyspark dataframe. Holds the cdr data
+    result_path : a string. Where to save results.
+    clusterer : an instance of tower_clusterer.
+    sites_df :  a pyspark dataframe. Holds clustered sites.
+    distances_pd_long : a pyspark dataframe. Holds distances between sites.
+    sites : a pyspark dataframe. Clustered sites without NAs.
 
     Methods
     -------
-    add
+    make_voronoi()
+        orchestrates all methods
+
+    filter_towers_for_voronoi()
+        we can't run on duplicates (location duplicates), so we have to filter them out first
+
+    make_shape(towers_for_voronoi)
+        makes a buffer around towers to create bubble shapes
+
+    create_voronoi(towers_for_voronoi, shape)
+        creats voronoi cells from tower list
+
+    save_voronoi(poly_shapes)
+        saves voronoi shape file and voronoi-tower mapping
+
+    assign_to_spark_df()
+        adds voronoi id to cdr records (not used currently)
     """
 
     def __init__(self,

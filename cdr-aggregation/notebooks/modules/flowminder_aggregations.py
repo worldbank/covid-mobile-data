@@ -13,19 +13,30 @@ class aggregator:
 
     Attributes
     ----------
-    calls : a dataframe. This should hold the CDR data to be processed
-    result_path : where to save results
-    dates_sql : from when to when to run the queries
-    intermediate_tables : tables that we don't want written to csv
-    spark : An initialised spark connection
+    result_stub : a string. File path where to save results
+    datasource : an instance of DataSource class. Holds all dataframes and paths required
+    regions : a pyspark dataframe. Admin level this aggregator will be used for
+    intermediate_tables : a list. Names of tables that we don't want written to csv
+    calls : a pyspark dataframe. pyspcdr data
+    cells : a pyspark dataframe. admin region to tower mapping
+    spark : an initialised spark connection. spark connection this aggregator should use
+    dates : a dictionary. dates the aggregator should run over
+    sql_code : a string. the flowminder sql code to be used
+
 
     Methods
     -------
-    create_view(table_name)
+    create_sql_dates()
+        Convert the dates to strings to be used in the flowminder sql queries
+
+    create_view(df, table_name)
         Creates a view of a dataframe
 
     save(table_name)
-      repartitions a dataframe into a single partition and writes it to a csv file
+      Repartitions a dataframe into a single partition and writes it to a csv file
+
+    save_and_report(table_name)
+        Checks whether csv file exists before saving table_name to csv
 
     run_and_save_sql(table_name)
         - programmatically runs an sql query and produces a dataframe
@@ -33,21 +44,27 @@ class aggregator:
         - creates a view
 
     run_and_save_all_sql(table_name)
-        - runs run_and_save_sql on the list of all flowminder queries at once
+        runs run_and_save_sql on the list of all flowminder queries at once
 
     run_save_and_rename_all_sql()
-        - runs run_and_save_all_sql and then renames the csv files created and moves them to their parent folder
+        runs run_and_save_all_sql and then renames the csv files created and moves them to their parent folder
 
     rename_csv(table_name)
         - rename a specific csv
         - move a csv to parent folder, rename it, then delete its remaining folder
-        # This currently uses databricks utils - need to change this to work with shell tools if not in databricks env
 
-    rename_all_csvs()
-        - renames all csvs at once
+    rename_all_csvs(table_name)
+        renames all csvs at once
+
+    rename_if_not_existing(table_name)
+        rename only if the file doesn't exist as csv yet, handles errors
 
     check_if_file_exists(table_name)
-        - checks whether a csv exists before we re-create
+        checks whether a csv exists before we re-create
+
+    attempt_aggregation(indicators_to_produce = 'all', no_of_attempts = 4)
+        - attempts aggregation of all flowminder indicators
+        - tries mutiple times (this is relevant for databricks env, but should be dropped going forward and replaced by a more solid handling of databricks timeouts)
 
 
     """
@@ -60,6 +77,10 @@ class aggregator:
         """
         Parameters
         ----------
+        result_stub : where to save results
+        datasource : holds all dataframes and paths required
+        regions : admin level this aggregator will be used for
+        intermediate_tables : tables that we don't want written to csv
         """
         self.datasource = datasource
         self.result_path = datasource.results_path + result_stub
