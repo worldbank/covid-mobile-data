@@ -81,9 +81,12 @@ remaining = [25, 26, 27, 28,
 
 
 # Load files function
-def loadfiles(idx, files_df = internal_indicators):
-    file_name = files_df['file'][idx]
+def loadfiles(file_name, 
+    files_df = internal_indicators):
     print(file_name)
+    # Set intex
+    idx = files_df[files_df['file'] == file_name].index.values[0]
+    # Load internal
     d = None
     d = pd.read_csv(files_df['path'][idx] + file_name)
     # Load external
@@ -91,6 +94,7 @@ def loadfiles(idx, files_df = internal_indicators):
         ext_path = IFLOW_path
     else:
         ext_path = ICUST_path
+    # Load external file
     ext_folder = ext_path + 'admin' + str(files_df['level'][idx]) + '/' 
     de = None
     de = pd.read_csv(ext_folder + file_name)
@@ -125,21 +129,50 @@ def compare_dfs(df1,df2, index_cols):
 
 
 # Complete pipeline function
-def process_pipeline(idx, 
-                     index_cols =['region', 'hour'],
+def process_pipeline(file_name, 
+                     index_cols,
                      files_df = internal_indicators):
     # Laod and clean data
-    d,de =  loadfiles(idx)
+    d,de =  loadfiles(file_name)
     d = clean(d)
     de = clean(de)
     # Merge
     cdf_diff = compare_dfs(i1,i1i, index_cols = index_cols )
-    # Export
+    # output
+    return(cdf)
+
+# Export
+def export(diff_data, files_df, idx):
     export_prefix = 'diff_' + 'admin' + str(files_df['level'][idx]) + '_'
     export_name = export_prefix + files_df['file'][idx]
-    cdf_diff.to_csv(OUT_hfcs_sheets + export_name,
+    diff_data.to_csv(OUT_hfcs_sheets + export_name,
                     index = False)
 
+
+
+process_pipeline
+
+i1, i1i = loadfiles('transactions_per_hour.csv')
+i1 = clean(i1)
+i1i = clean(i1i)
+i1_diff = compare_dfs(i1,i1i, index_cols =['region', 'hour'] )
+
+
+#d, de = loadfiles('transactions_per_hour.csv')
+
+
+process_pipeline('transactions_per_hour.csv',
+                 index_cols =['region', 'hour'])
+
+
+i2, i2i = loadfiles('unique_subscribers_per_day.csv')
+i2 = clean(i1)
+i2i = clean(i1i)
+
+
+i1_diff = compare_dfs(i2,i2i, index_cols =['region', 'hour'] )
+
+internal_indicators['file'][3]
 
 # 
 process_pipeline(1)
@@ -164,10 +197,17 @@ process_pipeline(16)
 
 
 i1,i1i =  loadfiles(1)
-i1 = clean(i1)
-i1i = clean(i1i)
-
-i1_diff = compare_dfs(i1,i1i, index_cols =['region', 'hour'] )
 
 # Export
 #export_name = 'diff_' + 'admin_' + str(files_df['level'][i]) + '_' +file_name
+
+
+
+
+i1, i1i = loadfiles('transactions_per_hour.csv')
+
+filename = 
+files_df = internal_indicators
+
+
+internal_indicators[internal_indicators.file == 'transactions_per_hour.csv'].index
