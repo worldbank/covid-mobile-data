@@ -4,14 +4,14 @@
 
 # Settings
 
-EXPORT = True
+EXPORT = False
 
 #-----------------------------------------------------------------#
 # F
 
-# load list of internal indicators
-temp_path = 'C:/Users/wb519128/Desktop/'
-internal_indicators = pd.read_csv(temp_path + 'int_files.csv')
+# # load list of internal indicators
+# temp_path = 'C:/Users/wb519128/Desktop/'
+# internal_indicators = pd.read_csv(temp_path + 'int_files.csv')
 
 #-----------------------------------------------------------------#
 # Function definitions

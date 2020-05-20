@@ -11,7 +11,10 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-import matplotlib.pyplot as plt 
+import seaborn as sns; sns.set()
+from matplotlib import rcParams
+import matplotlib.pyplot as plt
+ 
 
 #-----------------------------------------------------------------#
 #### Set file paths
@@ -112,7 +115,16 @@ ICUST_adm3_path = ICUST_path + "admin3/"
 # Outputs
 OUT_path = DATA_POC + "outputs/"
 OUT_hfcs = OUT_path + "data-checks/"
-OUT_hfcs_sheets =  OUT_hfcs + "Sheet differences/"
+# OUT_hfcs_sheets =  OUT_hfcs + "Sheet differences/"
 
 #-----------------------------------------------------------------#
 # Indicator dataframes
+
+# Load list of internal indicators to make it
+# easier to bulk load files
+internal_indicators = pd\
+    .read_csv(DATA_POC + 'indicators_list.csv')
+
+# Since sheet contains relative paths add path global
+# to have absolute paths    
+internal_indicators['path'] = DATA_path + internal_indicators['path']   
