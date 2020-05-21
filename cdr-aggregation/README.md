@@ -18,7 +18,7 @@ that will be read by the [DataSource](https://github.com/worldbank/covid-mobile-
 
 #### DataSource class and config file
 
-The [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class reads raw pseudonymized CDR data using a config dict as the only constructor argument. We recommend setting up the config dict by adapting the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py).
+The [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class reads raw pseudonymized CDR data using a config dict as the only constructor argument. We recommend setting up the config dict by adapting the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/config_file_template.py).
 
 ###### Required parameters
 
