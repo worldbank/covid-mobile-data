@@ -126,7 +126,8 @@ class custom_aggregator(aggregator):
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
             self.df = save_and_load_parquet(self.df,
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'),
+                                           self.datasource)
 
         ## When we don't want to re-create the variables parquet, we just load it
         else:
