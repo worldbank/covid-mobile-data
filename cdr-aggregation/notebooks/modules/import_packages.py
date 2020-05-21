@@ -1,4 +1,4 @@
-# Databricks notebook source
+# Imports necessary packages and sets some global vars
 ### spark etc
 # import rarfile
 

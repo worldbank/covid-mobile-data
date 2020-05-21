@@ -1,24 +1,21 @@
 # Databricks notebook source
 # Class to help counting outliers
 class outlier_counter:
-    """Class to handle sql aggregations
+    """Class to count outliers
 
     Attributes
     ----------
-    table_name : name of the table we are trying to create
-    dates : from when to when to run query
-    calls : which data to process
-    spark : an initialised spark connection
+    calls : a dataframe. which data to process
+    spark : an initialised spark connection.
+    thresholds : a dictionary with outlier thresholds to be used.
 
     Methods
     -------
-    create_view()
-        creates a view in the internal store
+    count()
+        count outliers and print results
 
-    run_and_save_sql(df)
-        - applies the sql and produces a dataframe
-        - saves the result to a csv
-        - creates a view
+    print_results(df)
+        print results of outlier counts
     """
 
     def __init__(self,
@@ -30,6 +27,7 @@ class outlier_counter:
         """
         Parameters
         ----------
+        
         """
         self.calls = calls
         self.spark = spark
@@ -70,13 +68,13 @@ class outlier_counter:
       self.counts['too_many_transactions_in_single_day_fraction'] = self.counts['too_many_transactions_in_single_day'] / self.counts['distinct_ids']
 
       # Keep only ids that aren't among the outlier accounts
-      self.filtered_transactions = self.calls.join(self.dfs['too_few_transactions'], 
+      self.filtered_transactions = self.calls.join(self.dfs['too_few_transactions'],
                                    self.calls['msisdn'] == self.dfs['too_few_transactions']['msisdn'],
                                    how ='leftanti').select(self.calls.columns[0:])
-      self.filtered_transactions = self.filtered_transactions.join(self.dfs['too_many_avg_transactions'], 
+      self.filtered_transactions = self.filtered_transactions.join(self.dfs['too_many_avg_transactions'],
                                    self.filtered_transactions['msisdn'] == self.dfs['too_many_avg_transactions']['msisdn'],
                                    how ='leftanti').select(self.filtered_transactions.columns[0:])
-      self.filtered_transactions = self.filtered_transactions.join(self.dfs['too_many_transactions_in_single_day'], 
+      self.filtered_transactions = self.filtered_transactions.join(self.dfs['too_many_transactions_in_single_day'],
                                    self.filtered_transactions['msisdn'] == self.dfs['too_many_transactions_in_single_day']['msisdn'],
                                    how ='leftanti').select(self.filtered_transactions.columns[0:])
 
@@ -84,8 +82,8 @@ class outlier_counter:
       self.counts['filtered_transactions'] = self.filtered_transactions.count()
       self.counts['dropped_calls'] = self.counts['all_records'] - self.counts['filtered_transactions']
       self.print_results()
-    
-    
+
+
     def print_results(self):
       print('Total number of unique SIMs: {:,}'.format(self.counts['distinct_ids']))
       print('Number of SIMs with less than {} transactions: {:,}'.format(self.thresholds['min_transactions'], self.counts['too_few_transactions']))

@@ -1,4 +1,4 @@
-# Databricks notebook source
+# Load modules depending whether we are on docker or on databricks
 import os
 if os.environ['HOME'] != '/root':
     from modules.flowminder_aggregations import *
@@ -8,20 +8,40 @@ else:
     databricks = True
 
 class custom_aggregator(aggregator):
-    """Class to handle custom aggregations
+    """This class inherits from the aggregator class. It is the main class to handle custom indicators.
+
     Attributes
     ----------
-    calls : a dataframe. This should hold the CDR data to be processed
-    sites_handler : instance of tower_clusterer.
-    result_path : a string. Where to save results
-    dates_sql : a dictionary. From when to when to run the queries
-    intermediate_tables : a list. Tables that we don't want written to csv
-    spark : An initialised spark connection
+    [check inherited attributes described in aggregator class]
+
+    re_create_vars : a boolean. Whether to re-create/create a parquet file with intermediary steps to save computation. Do this whenever you've changed code.
+    level : a string. Level this aggregator is supposed to run on, to hande level-specific queries such as incidence or weighting
+    distances_df : a pyspark dataframe. Matrix of distances to be used for distance calculation
+    table_names : a list. Keep a list of all tables we creat for re-naming
+    period_filter : a pyspark filter. Time filter for hourly, daily and monthly indicators
+    weeks_filter :  a pyspark filter. Time filter for weekly queries, includes only full weeks
+    incidence : a pyspark dataframe. Incididence observed; for admin2 only
+
     Methods
     -------
-    run_and_save_sql(df)
-        - applies the aggregation and produces a dataframe
-        - saves the result to a csv
+    [check inherited methods described in aggregator class]
+
+    run_and_save_all(time_filter, frequency)
+        - as opposed to flowminder indicators, we don not produce all indicators this aggregator has to offer
+        - we cherry pick only priority indicators in this method
+        - for this we need to supply filter and frequency
+
+    run_and_save_all_frequencies()
+        convenience method to run over all frequencies, instead of looping in the run_and_save_all method
+
+    run_save_and_rename_all()
+        run all frequencies, then rename the resulting table
+
+    attempt_aggregation(indicators_to_produce = 'all', no_of_attempts = 4)
+        - run all priority indicators
+        - handle errors and retries
+        - we can drop this method when we find a better way of dealing with databrick time-out problems
+
     """
 
     def __init__(self,
@@ -32,25 +52,47 @@ class custom_aggregator(aggregator):
         """
         Parameters
         ----------
+        result_stub : where to save results
+        datasource : holds all dataframes and paths required
+        regions : admin level this aggregator will be used for
+        intermediate_tables : tables that we don't want written to csv
+        re_create_vars : whether to re-create/create a parquet file with intermediary steps to save computation
         """
+
+        # initiate with parent init
         super().__init__(result_stub,datasource,regions)
 
+        # set the admin level
         if regions == 'admin2_tower_map':
             self.level = 'admin2'
         elif regions == 'admin3_tower_map':
             self.level = 'admin3'
         else:
             self.level = 'voronoi'
+
+        # set the distance matrix for distance-based queries
         self.distances_df = datasource.distances
+
+        # initiate a list for names of tables we produce
         self.table_names = []
+
+        # set time filter based on date range given in config file, add one day to end date to make it inclusive
         self.period_filter = (F.col('call_datetime') >= self.dates['start_date']) &\
                              (F.col('call_datetime') <= self.dates['end_date'] + dt.timedelta(1))
+
+        # we only include full weeks, these have been calculated in the parent init
         self.weeks_filter = (F.col('call_datetime') >= self.dates['start_date_weeks']) &\
                             (F.col('call_datetime') <= self.dates['end_date_weeks'] + dt.timedelta(1))
 
+        # for admin 2, we also have an incidence file
         if self.level == 'admin2':
-            self.incidence = getattr(datasource, 'admin2_incidence')
+            try:
+                self.incidence = getattr(datasource, 'admin2_incidence')
+            except Exception as e:
+                print('No incidence file added.')
+                pass
 
+        # Check whether a parquet file with variable has already been created, this differs from databricks to docker
         if databricks:
           try:
             # does the file exist?
@@ -64,6 +106,8 @@ class custom_aggregator(aggregator):
             create_vars = (os.path.exists(os.path.join(self.datasource.standardize_path,
                 self.datasource.parquetfile_vars + self.level + '.parquet')) == False)
 
+        # If the variable file doesn't exist yet, and we don't want to recreate it, create it
+        ## These vars are used in most queries so we save them to disk to save on query execution time
         if (re_create_vars | create_vars):
             print('Creating vars parquet-file...')
             self.df = self.calls.join(self.cells, self.calls.location_id == self.cells.cell_id, how = 'left').drop('cell_id')\
@@ -82,12 +126,14 @@ class custom_aggregator(aggregator):
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
             self.df = save_and_load_parquet(self.df,
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'), self.datasource)
 
+        ## When we don't want to re-create the variables parquet, we just load it
         else:
             self.df = self.spark.read.format("parquet").load(
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'), self.datasource)
 
+    # Run and save all priority indicators (list keeps on changing so there's some commented lines)
     def run_and_save_all(self, time_filter, frequency):
       if frequency == 'hour':
         # indicator 1
@@ -131,21 +177,24 @@ class custom_aggregator(aggregator):
 #         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time(time_filter, frequency), 'origin_destination_matrix_time_per_' + frequency))
       elif frequency == 'month':
         # indicator 11
-        self.table_names.append(self.save_and_report(self.unique_subscriber_home_locations(time_filter, frequency), 'unique_subscriber_home_locations_per_' + frequency))            
+        self.table_names.append(self.save_and_report(self.unique_subscriber_home_locations(time_filter, frequency), 'unique_subscriber_home_locations_per_' + frequency))
 #         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
       else:
         print('What is the frequency')
 
+    # run all priority indicators for all frequencies
     def run_and_save_all_frequencies(self):
       self.run_and_save_all(self.period_filter, 'day')
       self.run_and_save_all(self.period_filter, 'hour')
       self.run_and_save_all(self.weeks_filter, 'week')
       self.run_and_save_all(self.weeks_filter, 'month')
 
+    # run all priority indicators for all frequencies, rename them afterwards
     def run_save_and_rename_all(self):
       self.run_and_save_all_frequencies()
       self.rename_all_csvs()
 
+    # Handle errors and retries. We can drop this method soon, as I don't think we have the time-out problems on Databricks anymore
     def attempt_aggregation(self, indicators_to_produce = 'all', no_of_attempts = 4):
         attempts = 0
         while attempts < no_of_attempts:
@@ -339,6 +388,8 @@ class custom_aggregator(aggregator):
     ## Indicator10
     def origin_destination_matrix_time(self, time_filter, frequency):
       user_frequency_window = Window.partitionBy('msisdn').orderBy('call_datetime')
+
+      # create duration vars used for all vars
       prep = self.df.where(time_filter)\
         .where((F.col('region_lag') != F.col('region')) | (F.col('region_lead') != F.col('region')) | (F.col('call_datetime_lead').isNull()))\
         .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
@@ -348,6 +399,7 @@ class custom_aggregator(aggregator):
         .withColumn('duration_change_only', F.when(F.col('duration_change_only') > (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))
 
+      # first create vars for full period
       prep2 = prep\
             .where(F.col('region_lag') != F.col('region'))\
             .groupby(frequency, 'region', 'region_lag')\
@@ -360,6 +412,7 @@ class custom_aggregator(aggregator):
                F.count('duration_change_only_lag').alias('count_origin'),
                F.stddev_pop('duration_change_only_lag').alias('stddev_duration_origin'))
 
+      # then create vars for last seven day period
       prep3 = prep\
             .where((F.col('region_lag') != F.col('region')) &\
                    ((F.col('call_datetime').cast('long') - F.col('call_datetime_lag').cast('long')) <= (7 * 24 * 60 * 60)))\
@@ -375,6 +428,8 @@ class custom_aggregator(aggregator):
             .withColumnRenamed('region', 'region3')\
             .withColumnRenamed('region_lag', 'region_lag3')\
             .withColumnRenamed(frequency, frequency + '3')
+
+      # combine the results
       result = prep2.join(prep3, (prep2.region == prep3.region3)\
                            & (prep2.region_lag == prep3.region_lag3)\
                            & (prep2[frequency] == prep3[frequency + '3']), 'full')\
@@ -382,7 +437,7 @@ class custom_aggregator(aggregator):
 
       return result
 
-    ##### Non-priority Indicators
+    ##### Non-priority Indicators - not used at the moment, but kept just in case
 
     def origin_destination_matrix(self, time_filter, frequency):
       result = self.df.where(time_filter)\

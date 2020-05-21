@@ -13,19 +13,17 @@ class scaled_aggregator(custom_aggregator):
 
     Attributes
     ----------
-    calls : a dataframe. This should hold the CDR data to be processed
-    sites_handler : instance of tower_clusterer.
-    result_path : a string. Where to save results
-    dates_sql : a dictionary. From when to when to run the queries
-    intermediate_tables : a list. Tables that we don't want written to csv
-    spark : An initialised spark connection
+    [check inherited attributes described in aggregator class]
+
+    weight : a pyspark dataframe. This should hold the weights to be used per admin unit
+    df : a pyspark dataframe. Merges in weight to all observation based on home_location
+
 
     Methods
     -------
+    [check inherited methods described in aggregator class]
 
-    run_and_save_sql(df)
-        - applies the aggregation and produces a dataframe
-        - saves the result to a csv
+    This class takes over all methods from the custom_aggregator, but scales some of the results using the weight attribute
     """
     def __init__(self,
                  result_stub,
