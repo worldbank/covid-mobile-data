@@ -25,6 +25,12 @@ class scaled_aggregator(custom_aggregator):
 
     This class takes over all methods from the custom_aggregator, but scales some of the results using the weight attribute
     """
+
+    # Class variables 
+    obs_cutoff = 15
+    missing_region = 99999
+
+
     def __init__(self,
                  result_stub,
                  datasource,
@@ -48,7 +54,7 @@ class scaled_aggregator(custom_aggregator):
         .groupby(frequency, 'region')\
         .agg(F.sum('constant').alias('count'),
              F.sum('weight').alias('weighted_count_population_scale'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
       sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
       result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
@@ -67,7 +73,7 @@ class scaled_aggregator(custom_aggregator):
         .groupby(frequency, 'region')\
         .agg(F.count('msisdn').alias('count'),
              F.sum('weight').alias('weighted_count_population_scale'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
       sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
       result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
@@ -86,7 +92,7 @@ class scaled_aggregator(custom_aggregator):
         .groupby(frequency)\
         .agg(F.count('msisdn').alias('count'),
              F.sum('weight').alias('weighted_count_population_scale'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
       sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
       result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
@@ -157,7 +163,7 @@ class scaled_aggregator(custom_aggregator):
         .withColumn('total_weighted_count_observed_scale', F.col('weighted_count_observed_scale') + F.col('weighted_od_count_observed_scale'))\
         .withColumn('total_weighted_count_population_scale', F.col('weighted_count_population_scale') + F.col('weighted_od_count_population_scale'))\
         .drop('region').drop('region_lag').drop('day')\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       return result
 
     ## Indicator 6 helper method
@@ -169,7 +175,7 @@ class scaled_aggregator(custom_aggregator):
         .orderBy(F.desc_nulls_last('last_region_count'))\
         .partitionBy('msisdn', frequency)
       result = self.df.where(time_filter)\
-        .na.fill({'region' : 99999})\
+        .na.fill({'region' : self.missing_region})\
         .withColumn('last_timestamp', F.first('call_datetime').over(user_day))\
         .withColumn('last_region', F.when(F.col('call_datetime') == F.col('last_timestamp'), 1).otherwise(0))\
         .orderBy('call_datetime')\
@@ -191,7 +197,7 @@ class scaled_aggregator(custom_aggregator):
         .groupby(frequency, 'home_region')\
         .agg(F.sum('constant').alias('count'),
              F.sum('weight').alias('weighted_count_population_scale'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
       sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
       result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
@@ -235,13 +241,13 @@ class scaled_aggregator(custom_aggregator):
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
       result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) &\
             (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
-        .na.fill({'home_region' : 99999})\
+        .na.fill({'home_region' : self.missing_region})\
         .groupby(frequency, 'region', 'home_region')\
         .agg(F.mean('duration').alias('mean_duration'),
              F.stddev_pop('duration').alias('stdev_duration'),
              F.sum('constant').alias('count'),
              F.sum('weight').alias('weighted_count_population_scale'))\
-        # .where(F.col('count') > 15)
+        # .where(F.col('count') > self.obs_cutoff)
       sum_of_counts = result.select('count').groupby().agg(F.sum('count')).collect()[0][0]
       sum_of_weights = result.select('weighted_count_population_scale').groupby().agg(F.sum('weighted_count_population_scale')).collect()[0][0]
       result = result.withColumn('weighted_count_observed_scale', F.col('weighted_count_population_scale') / sum_of_weights * sum_of_counts)
