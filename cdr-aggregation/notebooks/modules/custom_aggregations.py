@@ -147,9 +147,6 @@ class custom_aggregator(aggregator):
         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
         # indicator 4
         self.table_names.append(self.save_and_report(self.percent_of_all_subscribers_active(time_filter, frequency), 'percent_of_all_subscribers_active_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency ,exlusion_start = dt.datetime(2020,4,1)), 'percent_of_all_subscribers_active_option1_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency), 'percent_of_all_subscribers_active_option2_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.active_residents_from_specific_period(time_filter, frequency, active_only_at_home = False), 'percent_of_all_subscribers_active_option3_per_' + frequency))
         # indicator 5
         self.table_names.append(self.save_and_report(self.origin_destination_connection_matrix(time_filter, frequency), 'origin_destination_connection_matrix_per_' + frequency))
         # indicator 7
@@ -159,27 +156,14 @@ class custom_aggregator(aggregator):
         self.table_names.append(self.save_and_report(self.home_vs_day_location(time_filter, frequency, home_location_frequency = 'month'), 'month_home_vs_day_location_per_' + frequency))
         # indicator 10
         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time(time_filter, frequency), 'origin_destination_matrix_time_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time_longest_only(time_filter, frequency), 'origin_destination_matrix_time_longest_only_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_unique_users_matrix(time_filter, frequency), 'origin_destination_unique_users_matrix_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_matrix(time_filter, frequency), 'origin_destination_matrix_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.percent_residents_day_equal_night_location(time_filter, frequency), 'percent_residents_day_equal_night_location_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.different_areas_visited(time_filter, frequency), 'different_areas_visited_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.median_distance(time_filter, frequency), 'median_distance_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.only_in_one_region(time_filter, frequency), 'only_in_one_region_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.new_sim(time_filter, frequency), 'new_sims_per_' + frequency))
       elif frequency == 'week':
         # indicator 6
         self.table_names.append(self.save_and_report(self.unique_subscriber_home_locations(time_filter, frequency), 'unique_subscriber_home_locations_per_' + frequency))
         # indicator 8
         self.table_names.append(self.save_and_report(self.mean_distance(time_filter, frequency), 'mean_distance_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_matrix(time_filter, frequency), 'origin_destination_matrix_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time_longest_only(time_filter, frequency), 'origin_destination_matrix_time_longest_only_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_unique_users_matrix(time_filter, frequency), 'origin_destination_unique_users_matrix_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.origin_destination_matrix_time(time_filter, frequency), 'origin_destination_matrix_time_per_' + frequency))
       elif frequency == 'month':
         # indicator 11
         self.table_names.append(self.save_and_report(self.unique_subscriber_home_locations(time_filter, frequency), 'unique_subscriber_home_locations_per_' + frequency))
-#         self.table_names.append(self.save_and_report(self.unique_subscribers(time_filter, frequency), 'unique_subscribers_per_' + frequency))
       else:
         print('What is the frequency')
 
