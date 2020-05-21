@@ -126,12 +126,12 @@ class custom_aggregator(aggregator):
               .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
 
             self.df = save_and_load_parquet(self.df,
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'), self.datasource)
 
         ## When we don't want to re-create the variables parquet, we just load it
         else:
             self.df = self.spark.read.format("parquet").load(
-                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'))
+                os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'), self.datasource)
 
     # Run and save all priority indicators (list keeps on changing so there's some commented lines)
     def run_and_save_all(self, time_filter, frequency):
