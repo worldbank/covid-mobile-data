@@ -43,6 +43,9 @@ class custom_aggregator(aggregator):
         - we can drop this method when we find a better way of dealing with databrick time-out problems
 
     """
+    # Class variables 
+    obs_cutoff = 15
+    missing_region = 99999
 
     def __init__(self,
                  result_stub,
@@ -123,7 +126,7 @@ class custom_aggregator(aggregator):
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
               .withColumn('constant', F.lit(1).cast('byte'))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
-              .na.fill({'region' : 99999, 'region_lag' : 99999, 'region_lead' : 99999})
+              .na.fill({'region' : self.missing_region, 'region_lag' : self.missing_region, 'region_lead' : self.missing_region})
 
             self.df = save_and_load_parquet(self.df,
                 os.path.join(self.datasource.standardize_path,self.datasource.parquetfile_vars + self.level + '.parquet'),
@@ -236,7 +239,7 @@ class custom_aggregator(aggregator):
       result = self.df.where(time_filter)\
         .groupby(frequency, 'region')\
         .count()\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       return result
 
     ## Indicator 2 + 3
@@ -244,7 +247,7 @@ class custom_aggregator(aggregator):
       result = self.df.where(time_filter)\
         .groupby(frequency, 'region')\
         .agg(F.countDistinct('msisdn').alias('count'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       return result
 
     ## Indicator 3
@@ -252,7 +255,7 @@ class custom_aggregator(aggregator):
       result = self.df.where(time_filter)\
         .groupby(frequency)\
         .agg(F.countDistinct('msisdn').alias('count'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       return result
 
     ## Indicator 4
@@ -274,21 +277,21 @@ class custom_aggregator(aggregator):
         .where((F.col('region_lag') != F.col('region')) & ((F.col('day') > F.col('day_lag'))))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.count(F.col('msisdn')).alias('od_count'))\
-        .where(F.col('od_count') > 15)
+        .where(F.col('od_count') > self.obs_cutoff)
       prep2 = self.df.where(time_filter)\
         .withColumn('day_lag', F.lag('day').over(user_window))\
         .withColumn('day_lag_seven', F.when((F.col('day').cast('long') - F.col('day_lag').cast('long')) <= (7 * 24 * 60 * 60), F.col('day_lag')).otherwise(F.col('day')))\
         .where((F.col('region_lag') != F.col('region')) & ((F.col('day') > F.col('day_lag_seven'))))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.count(F.col('msisdn')).alias('od_count_seven'))\
-        .where(F.col('od_count_seven') > 15)
+        .where(F.col('od_count_seven') > self.obs_cutoff)
       prep3 = self.df.where(time_filter)\
         .withColumn('day_lag', F.lag('day').over(user_window))\
         .withColumn('day_lag_one', F.when((F.col('day').cast('long') - F.col('day_lag').cast('long')) <= (1 * 24 * 60 * 60), F.col('day_lag')).otherwise(F.col('day')))\
         .where((F.col('region_lag') != F.col('region')) & ((F.col('day') > F.col('day_lag_one'))))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.count(F.col('msisdn')).alias('od_count_one'))\
-        .where(F.col('od_count_one') > 15)
+        .where(F.col('od_count_one') > self.obs_cutoff)
 
       def join_prep_and_drop(prep, result):
           result = result.join(prep, (prep.region == result.region_to)\
@@ -316,7 +319,7 @@ class custom_aggregator(aggregator):
         .orderBy(F.desc_nulls_last('last_region_count'))\
         .partitionBy('msisdn', frequency)
       result = self.df.where(time_filter)\
-        .na.fill({'region' : 99999})\
+        .na.fill({'region' : self.missing_region})\
         .withColumn('last_timestamp', F.first('call_datetime').over(user_day))\
         .withColumn('last_region', F.when(F.col('call_datetime') == F.col('last_timestamp'), 1).otherwise(0))\
         .orderBy('call_datetime')\
@@ -333,7 +336,7 @@ class custom_aggregator(aggregator):
       result = self.assign_home_locations(time_filter, frequency)\
         .groupby(frequency, 'home_region')\
         .count()\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       return result
 
     ## Indicator 7 + 8
@@ -364,10 +367,10 @@ class custom_aggregator(aggregator):
         .withColumnRenamed('msisdn', 'msisdn2')\
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
       result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) & (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
-        .na.fill({'home_region' : 99999})\
+        .na.fill({'home_region' : self.missing_region})\
         .groupby(frequency, 'region', 'home_region')\
         .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'), F.count('msisdn').alias('count'))\
-        .where(F.col('count') > 15)
+        .where(F.col('count') > self.obs_cutoff)
       return result
 
     ## Indicator10
