@@ -25,7 +25,7 @@ The [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-
 * **base_path** `<class 'str'>`: The top data folder, where all data sub-folders for new data, standardized data, and results go. See folder structure for more details
 * **country_code** and **telecom_alias** `<class 'str'>`: Within each data sub-folder, folders are organized after country and telecom, in case one setup is used for multiple countries or telecoms. See folder structure for more details
 * **filestub** `<class 'str'>`: The name stub that will be used for all files generated, for example `<filestub>.parquet`
-* **shapefiles** `<class list>`: A list of strings - SEBASTIAN
+* **shapefiles** `<class list>`: A list of strings with the name of the geo_files that contain the admin region shapes.
 * **dates** `<class dict>`: A dict that should have the two keys `"start_date"` and `"end_date"`, where the values are of type `datatime` and indicate the date range to be included
 * **schema** `<class 'StructType'>`: The [spark schema](https://spark.apache.org/docs/latest/sql-reference.html) with the data types and column names. The `StructType` should have three `StructFields` and the order of the three `StructField` should match the order of the columns in the raw data files. See example below:
 ```
