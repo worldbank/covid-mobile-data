@@ -46,16 +46,11 @@ f2 = loadfiles('unique_subscribers_per_day.csv')
 f5 = loadfiles('origin_destination_connection_matrix_per_day.csv')
 
 # Indicator 9
-f9 = loadfiles('mean_distance_per_week.csv', admin = 2)
+f9 = loadfiles('week_home_vs_day_location_per_day.csv', admin = 2)
 
 
 #-----------------------------------------------------------------#
-# Countrywide checks
-
-#-----------------------------#
-# Start by checking indicator 1
-
-# Process
+# Processing data
 
 # Remove missings
 reg_missings_bol = fi['region'].isin(['99999','']) 
@@ -70,8 +65,23 @@ fi_cl['date'] = pd.to_datetime(fi_cl['hour']).dt.date
 # fi_cl['hour'] = pd.to_datetime(fi_cl[timevar]).dt.hour
 # fi_cl['month'] = pd.to_datetime(fi_cl['date']).dt.month
 
+# Make sure dates are datetime
+fi_cl['hour'] = fi_cl['hour'].astype('datetime64') 
+
+
+# I5
+f5['date'] = pd.to_datetime(f5['connection_date']).dt.date
+
+
+
+
+
+
 #-----------------------------------------------------------------#
-# Countrywide checks
+# Create aggregated datasets
+
+#----------------------------
+# I1 - transactions per hour
 
 # Create plots data    
 f1_agg_hour = fi_cl\
@@ -90,70 +100,8 @@ f1_agg_date = fi_cl\
     .sort_values(['date'])\
     .rename(columns = {'region' : 'n_regions'})   
 
-
-
-# Number of regions plot
-plt.figure(figsize=(12, 6))
-date_plot = sns.lineplot(
-    f1_agg_date['date'],
-    f1_agg_date['n_regions'])
-# Export
-date_plot.figure.savefig(OUT_hfcs + "i1_dates_ward_count.png")
-
-
-# Number of transactions plot
-plt.figure(figsize=(12, 6))
-obs_per_day_plot = sns.lineplot(
-    f1_agg_date['date'],
-    f1_agg_date['count'])
-# Export
-obs_per_day_plot.figure.savefig(OUT_hfcs + "i1_dates_n_obs.png")
-
-
-
-
-#------------------#
-# Hours completeness
-
-# Create plot 
-plt.figure(figsize=(12, 6))
-hour_plot = sns.lineplot(fi_agg_hour.index.values,
-             fi_agg_hour['n_regions'])
-
-# Cosmetics
-x_ticks = list(set(fi_agg_hour['date'].astype(str)))[0:len(fi_agg_hour):5]
-x_ticks.sort()
-hour_plot.set_xticklabels(x_ticks)
-
-# Export
-hour_plot.figure.savefig(OUT_hfcs + "i1_hours_ward_count.png")
-
-
-# Create plot 
-plt.figure(figsize=(12, 6))
-obs_per_hour_plot = sns.lineplot(
-    f1_agg_hour.index.values,
-    f1_agg_hour['count'])
-
-# Cosmetics
-x_ticks = list(set(fi_agg_hour['date'].astype(str)))[0:len(fi_agg_hour):5]
-x_ticks.sort()
-obs_per_hour_plot.set_xticklabels(x_ticks)
-
-# Export
-obs_per_hour_plot.figure.savefig(OUT_hfcs + "i1_hours_n_obs.png")
-
-
-# Table with hours containing
-# fi_obs_per_hour[fi_obs_per_hour['date'] == dt.date(2020, 4, 30)]
-apr30 = f1_agg_hour[f1_agg_hour['date'] == dt.date(2020, 4, 30)]    
-
-apr30.to_csv(OUT_hfcs + "i1_hour_apr30.csv",
-             index = False)
-
-
-#-----------------#
-# Check indicator 5
+#----------------------------
+# I5 - OD matrix per day data
 
 f5['date'] = pd.to_datetime(f5['connection_date']).dt.date
 
@@ -166,7 +114,103 @@ f5_agg_date = f5\
         .sort_values('date')
 
 
-def
+#----------------------------
+# I9 - OD matrix per day data
+
+# f9_agg_date = f9\
+#         .groupby('week')\
+#         .agg({'home_region' : pd.Series.nunique ,
+#               'mean_distance' : pd.Series.mean})\
+#         .reset_index()\
+#         .sort_values('week')
+
+
+
+#----------------------------
+# Complete dates and time
+
+# This creates data sets with time indexes and fill blanks with 0s
+
+def time_complete(data, timevar, timefreq = 'D'):
+    data[timevar] = data[timevar].astype('datetime64')
+    full_time_range = pd.date_range(data[timevar].min(),  
+                                    data[timevar].max(), 
+                                    freq = timefreq)
+    data = data.set_index(timevar)
+    data = data.reindex(full_time_range,  fill_value=0)
+    return(data)
+
+f1_agg_date = time_complete(f1_agg_date, 'date')
+f1_agg_hour = time_complete(f1_agg_hour, 'hour', 'H')
+f5_agg_date = time_complete(f5_agg_date, 'date')
+
+
+
+#-----------------------------------------------------------------#
+# I1 - Day Plots
+
+
+# Number of regions plot
+plt.figure(figsize=(12, 6))
+date_plot = sns.lineplot(f1_agg_date.index,
+                         f1_agg_date['n_regions'])
+# Export
+date_plot.figure.savefig(OUT_hfcs + "i1_dates_ward_count.png")
+
+
+# Number of transactions plot
+plt.figure(figsize=(12, 6))
+obs_per_day_plot = sns.lineplot(
+    f1_agg_date.index,
+    f1_agg_date['count'])
+# Export
+obs_per_day_plot.figure.savefig(OUT_hfcs + "i1_dates_n_obs.png")
+
+
+#-----------------------------------------------------------------#
+# I1 - Hour Plots
+
+#------------------
+# Number of regions 
+plt.figure(figsize=(12, 6))
+hour_plot = sns.lineplot(
+    f1_agg_hour.index,
+    f1_agg_hour['n_regions'])
+
+# Cosmetics
+# x_ticks = list(set(fi_agg_hour['hour'].astype(str)))[0:len(fi_agg_hour):5]
+# x_ticks.sort()
+# hour_plot.set_xticklabels(x_ticks)
+
+# Export
+hour_plot.figure.savefig(OUT_hfcs + "i1_hours_ward_count.png")
+
+#----------------------------
+# Total count of transactions
+plt.figure(figsize=(12, 6))
+obs_per_hour_plot = sns.lineplot(
+    f1_agg_hour.index.values,
+    f1_agg_hour['count'])
+
+# Cosmetics
+# x_ticks = list(set(fi_agg_hour['date'].astype(str)))[0:len(fi_agg_hour):5]
+# x_ticks.sort()
+# obs_per_hour_plot.set_xticklabels(x_ticks)
+
+# Export
+obs_per_hour_plot.figure.savefig(OUT_hfcs + "i1_hours_n_obs.png")
+
+
+# Table with hours 
+# fi_obs_per_hour[fi_obs_per_hour['date'] == dt.date(2020, 4, 30)]
+# apr30 = f1_agg_hour[f1_agg_hour['date'] == dt.date(2020, 4, 30)]    
+
+# apr30.to_csv(OUT_hfcs + "i1_hour_apr30.csv",
+#              index = False)
+
+
+#-----------------------------------------------------------------#
+# I5 - Day Plots
 
 # plot total count
 f5_plot = sns.lineplot(
@@ -176,124 +220,12 @@ f5_plot = sns.lineplot(
 f5_plot.figure.savefig(OUT_hfcs + "i5_dates_total_count.png")
 
 
-#-----------------#
-# Check indicator 9
-f9_agg_date = f9\
-        .groupby('week')\
-        .agg({'home_region' : pd.Series.nunique ,
-              'mean_distance' : pd.Series.mean})\
-        .reset_index()\
-        .sort_values('week')
-
-f9_plot = sns.lineplot(
-    f9_agg_date['week'],
-    f9_agg_date['mean_distance'])
-# Export
-f9_plot.figure.savefig(OUT_hfcs + "i9_week_mean_distance.png")
+#-----------------------------------------------------------------#
+# I9 - Week plots
 
 
-
-# def agg_function(data,
-#                  group_vars,
-#                  count_vars,
-#                  sum_vars):
-#     agg_data = data\
-#         .groupby(group_vars)\
-#         .agg({count_vars : pd.Series.nunique ,
-#               sum_vars : np.sum})\
-#         .reset_index()\
-#         .sort_values(group_vars)
-#     return agg_data
-        
-# agg_function(fi_cl,
-#              group_vars =  ['date', 'hour'],
-#              sum_vars = 'count',
-#              count_vars = 'region')        
-
- 
-# agg_function(f5,
-#              group_vars =  ['connection_date', 'region_from', 'region_to'],
-#              sum_vars = 'total_count',
-#              count_vars = 'region_from')       
-
-
-# #-----------------------------------------------------------------#
-# # DRAFT
-
-  
-
-
-# # Check if all date and hour combinations are in the data
-# # fi_cl['date'].max() - fi_cl['date'].min()
-# # 88
-# fi_cl['date'].nunique()
-# sorted(fi_cl['date'].unique())
-
-# a.sort()
-
-# fi_cl.groupby(regvar).nunique()
-
-
-# # Get districts with lessthan 24 hours
-# foo = fi_cl\
-#     .groupby([regvar,'date'])\
-#     ['hour'].nunique()\
-#     .reset_index()
- 
-# foo = foo[foo['hour'] < 24].sort_values([regvar, 'date'])    
-# foo.to_csv(OUT_hfcs_sheets + 'i1_wards_with_less_than_24h.csv', index = False)
-
-
-# # Number of days per region
-# bar = fi_cl\
-#     .groupby([regvar, 'month'])\
-#     ['date'].nunique()\
-#     .reset_index()
-
-# bar.to_csv(OUT_hfcs_sheets + 'i1_ndays_per_ward.csv', index = False)
-
-
-# # Number of regions per date
-# fob = fi_cl\
-#     .groupby(['date'])\
-#     [regvar].nunique()\
-#     .reset_index()
-
-# fob.to_csv(OUT_hfcs_sheets + 'i1_nwards_per_date.csv', index = False)
-
-# #-----------------------------------------------------------------#
-# # Region specific checks
-
-# fi['date'] = pd.to_datetime(fi[timevar]).dt.date
-
-
-# fob = fi_cl\
-#     .groupby(['date'])\
-#     [regvar].nunique()\
-#     .reset_index()
-# fob.to_csv(OUT_hfcs_sheets + 'foo.csv', index = False)
-
-
-
-
-# fi_cl.sort_values([regvar, 'date'])
-
-
-# pd.to_datetime(fi[timevar][440000:445000])
-# pd.to_datetime(fi[timevar][440650:440700])
-# fi[440650:440700]
-
-
-
-# # new_data[timevar] = 
-# pd.to_pydatetime(fi[timevar])
-
-# pd.to_pydatetime('2020-02-17T19:00:00.000Z')
-
-# pd.to_datetime('2020-02-17T19:00:00.000Z').dt.date
-
-# pd.Timestamp('2020-02-17T19:00:00.000Z').date()
-
-# fi.hour.dt
-
-# pd.to_datetime(fi[timevar]).dt.hour
+# f9_plot = sns.lineplot(
+#     f9_agg_date['week'],
+#     f9_agg_date['mean_distance'])
+# # Export
+# f9_plot.figure.savefig(OUT_hfcs + "i9_week_mean_distance.png")
