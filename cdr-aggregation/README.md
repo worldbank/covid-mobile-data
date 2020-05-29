@@ -18,14 +18,14 @@ that will be read by the [DataSource](https://github.com/worldbank/covid-mobile-
 
 #### DataSource class and config file
 
-The [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class reads raw pseudonymized CDR data using a config dict as the only constructor argument. We recommend setting up the config dict by adapting the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py).
+The [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class reads raw pseudonymized CDR data using a config dict as the only constructor argument. We recommend setting up the config dict by adapting the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/config_file_template.py).
 
 ###### Required parameters
 
 * **base_path** `<class 'str'>`: The top data folder, where all data sub-folders for new data, standardized data, and results go. See folder structure for more details
 * **country_code** and **telecom_alias** `<class 'str'>`: Within each data sub-folder, folders are organized after country and telecom, in case one setup is used for multiple countries or telecoms. See folder structure for more details
 * **filestub** `<class 'str'>`: The name stub that will be used for all files generated, for example `<filestub>.parquet`
-* **shapefiles** `<class list>`: A list of strings - SEBASTIAN
+* **shapefiles** `<class list>`: A list of strings with the name of the geo_files that contain the admin region shapes.
 * **dates** `<class dict>`: A dict that should have the two keys `"start_date"` and `"end_date"`, where the values are of type `datatime` and indicate the date range to be included
 * **schema** `<class 'StructType'>`: The [spark schema](https://spark.apache.org/docs/latest/sql-reference.html) with the data types and column names. The `StructType` should have three `StructFields` and the order of the three `StructField` should match the order of the columns in the raw data files. See example below:
 ```
@@ -65,7 +65,7 @@ Unless you run a databricks/datalake set-up, the by far easiest way to get start
 1. Set up the folder structure using [folder_setup.ipynb](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation\notebooks\folder_setup.ipynb) file in the `\cdr-aggregation\notebooks` folder
 1. Add your raw data to the `<base_path>/new/<country_code>/<telecom_alias>` folder created in last step
 1. Add shapefiles and tower locations, or alternatively add the tower-admin region mapping directly, to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these
-1. Open the `aggregation_offsite.ipynb` notebook to run aggregations. If all went well, you should find the indicators in the `<base_path>/results/<country_code>/<telecom_alias>`
+1. Open the [aggregation_master.ipynb](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_master.ipynb) notebook to run aggregations. If all went well, you should find the indicators in the `<base_path>/results/<country_code>/<telecom_alias>`
 
 ##### Databricks/datalake set-up
 This is a manual tasks where the following steps need to be completed:
@@ -73,7 +73,7 @@ This is a manual tasks where the following steps need to be completed:
   1. Set up the config file. Use the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py) and after you have modified it, save it in the `cdr-aggregation` folder.
   1. Copy all the raw anonymized CDR data to the `<base_path>/new/<country_code>/<telecom_alias>` folder
   1. Add shapefiles and tower locations, or alternatively add the tower-admin region mapping directly, to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these.
-  1. Then you can run the [aggregation_notebook](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_notebook.py) in your spark cluster creating aggregates from your data.
+  1. Then you can run the [aggregation_master.py](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_master.py) notebook in your spark cluster creating aggregates from your data.
 
 ### Workflow description
 
@@ -104,6 +104,8 @@ In the _aggregation_ task the following is done:
 
 * The parquet files will be processed using spark to produce aggregate indicators. See list of indicators in the indicator section.
 * Save the aggregated indicators in normal unpartitioned csv files in the `<base_path>/results/<country_code>/<telecom_alias>`  folder.
+
+**To run the aggregation, either run the [aggregation_offiste.ipynb](./notebooks/agregation_offsite.ipynb) notebook or the [aggregation_offiste.py](./notebooks/agregation_offsite.py) script.**
 
 The aggregation  builds on much of the work that has been developed by [Flowminder](https://web.flowminder.org) for the purpose of supporting MNOs in producing basic indicators. Their code can be found in their [GitHub account](https://github.com/Flowminder).
 
