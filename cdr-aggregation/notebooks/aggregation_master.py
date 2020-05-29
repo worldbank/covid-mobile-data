@@ -27,39 +27,39 @@
 
 # # Import code
 
-# In[1]:
+# In[ ]:
 
 
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[2]:
+# In[ ]:
 
 
 from modules.DataSource import *
 
 
-# In[3]:
+# In[ ]:
 
 
 config_file = '../config_file.py'
 
 
-# In[4]:
+# In[ ]:
 
 
 exec(open(config_file).read())
 
 
-# In[5]:
+# In[ ]:
 
 
 ds = DataSource(datasource_configs)
 ds.show_config()
 
 
-# In[6]:
+# In[ ]:
 
 
 from modules.setup import *
@@ -100,7 +100,7 @@ from modules.setup import *
 
 # ### Or load a sample file
 
-# In[7]:
+# In[ ]:
 
 
 ## Use this in case you want to sample the data and run the code on the sample
@@ -112,13 +112,13 @@ ds.parquet_df = ds.sample_df
 
 # ## Load geo data
 
-# In[8]:
+# In[ ]:
 
 
 ds.load_geo_csvs()
 
 
-# In[9]:
+# In[ ]:
 
 
 ## Use this in case you want to cluster the towers and create a distance matrix
@@ -131,7 +131,7 @@ ds.load_geo_csvs()
 # ds.admin3_tower_map, ds.distances  = clusterer.cluster_towers()
 
 
-# In[10]:
+# In[ ]:
 
 
 ## Use this in case you want to create a voronoi tesselation
@@ -145,7 +145,7 @@ ds.load_geo_csvs()
 
 # ## Flowminder indicators for admin2
 
-# In[11]:
+# In[ ]:
 
 
 agg_flowminder_admin2 = flowminder_aggregator(result_stub = '/admin2/flowminder',
@@ -157,7 +157,7 @@ agg_flowminder_admin2.attempt_aggregation()
 
 # ## Flowminder indicators for admin3
 
-# In[12]:
+# In[ ]:
 
 
 agg_flowminder_admin3 = flowminder_aggregator(result_stub = '/admin3/flowminder',
@@ -169,63 +169,77 @@ agg_flowminder_admin3.attempt_aggregation()
 
 # ## Priority indicators for admin2
 
-# In[13]:
+# In[ ]:
 
 
-agg_priority_ad = priority_aggregator(result_stub = '/admin2/custom',
+agg_priority_admin2 = priority_aggregator(result_stub = '/admin2/priority',
                                datasource = ds,
                                regions = 'admin2_tower_map')
 
-agg_priority.attempt_aggregation()
+agg_priority_admin2.attempt_aggregation()
 
 
 # ## Priority indicators for admin3
 
-# In[14]:
+# In[ ]:
 
 
-agg_priority = priority_aggregator(result_stub = '/admin3/custom',
+agg_priority_admin3 = priority_aggregator(result_stub = '/admin3/priority',
                             datasource = ds,
                             regions = 'admin3_tower_map')
 
-agg_priority.attempt_aggregation()
+agg_priority_admin3.attempt_aggregation()
 
 
 # ## Scaled priority indicators for admin2
 
-# In[15]:
+# In[ ]:
 
 
-agg_scaled = scaled_aggregator(result_stub = '/admin2/scaled',
+agg_scaled_admin2 = scaled_aggregator(result_stub = '/admin2/scaled',
                                datasource = ds,
                                regions = 'admin2_tower_map')
 
-agg_scaled.attempt_aggregation()
+agg_scaled_admin2.attempt_aggregation()
 
 
 # ## Priority indicators for tower-cluster
 
-# In[20]:
+# In[ ]:
 
 
-agg_tower_cluster = priority_aggregator(result_stub = '/admin2/voronoi',
+agg_priority_tower = priority_aggregator(result_stub = '/voronoi/priority',
                                datasource = ds,
                                regions = 'voronoi_tower_map')
 
-agg_tower_cluster.attempt_aggregation(indicators_to_produce = {'unique_subscribers_per_hour' : ['unique_subscribers', 'hour'],
+agg_priority_tower.attempt_aggregation(indicators_to_produce = {'unique_subscribers_per_hour' : ['unique_subscribers', 'hour'],
                                                         'mean_distance_per_day' : ['mean_distance', 'day'],
                                                         'mean_distance_per_week' : ['mean_distance', 'week']})
 
 
-# In[19]:
+# In[ ]:
 
 
-agg_custom.save_and_report('mean_distance_per_week')
+agg_priority_tower_harare = priority_aggregator(result_stub = '/voronoi/priority/harare',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map_harare')
+
+agg_priority_tower_harare.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
+
+
+# In[ ]:
+
+
+agg_priority_tower_bulawayo = priority_aggregator(result_stub = '/voronoi/priority/bulawayo',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map_bulawayo')
+
+agg_priority_tower_bulawayo.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
 
 
 # # Produce script
 
-# In[17]:
+# In[ ]:
 
 
 get_ipython().system('jupyter nbconvert --to script *.ipynb')
