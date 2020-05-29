@@ -101,6 +101,7 @@ class priority_aggregator(aggregator):
                             self.dates['end_date_weeks'] + dt.timedelta(1))
 
         self.privacy_filter = 15
+        self.missing_value_code = 99999
 
         # for admin 2, we also have an incidence file
         if self.level == 'admin2':
@@ -149,9 +150,9 @@ class priority_aggregator(aggregator):
               .withColumn('month', F.date_trunc('month', F.col('call_datetime')))\
               .withColumn('constant', F.lit(1).cast('byte'))\
               .withColumn('day', F.date_trunc('day', F.col('call_datetime')))\
-              .na.fill({'region' : 99999,
-                        'region_lag' : 99999,
-                        'region_lead' : 99999})
+              .na.fill({'region' : self.missing_value_code ,
+                        'region_lag' : self.missing_value_code ,
+                        'region_lead' : self.missing_value_code })
 
             self.df = save_and_load_parquet(self.df,
                 os.path.join(self.datasource.standardize_path,
@@ -408,7 +409,7 @@ class priority_aggregator(aggregator):
         # Keep only one observation of that region
 
       result = self.df.where(time_filter)\
-        .na.fill({'region' : 99999})\
+        .na.fill({'region' : self.missing_value_code })\
         .withColumn('last_timestamp',
             F.first('call_datetime').over(user_day))\
         .withColumn('last_region',
@@ -515,7 +516,7 @@ class priority_aggregator(aggregator):
              home_locations[home_location_frequency]), 'left')\
              .drop('msisdn' + suffix)\
              .drop(home_location_frequency + suffix)\
-             .na.fill({'home_region' : 99999})\
+             .na.fill({'home_region' : self.missing_value_code })\
              .groupby(frequency + suffix, 'region', 'home_region')\
              .agg(F.mean('duration').alias('mean_duration' + suffix),
                   F.stddev_pop('duration').alias('stdev_duration' + suffix),

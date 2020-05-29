@@ -209,7 +209,7 @@ class scaled_aggregator(priority_aggregator):
         .orderBy(F.desc_nulls_last('last_region_count'))\
         .partitionBy('msisdn', frequency)
       result = self.df.where(time_filter)\
-        .na.fill({'region' : 99999})\
+        .na.fill({'region' : self.missing_value_code })\
         .withColumn('last_timestamp',
             F.first('call_datetime').over(user_day))\
         .withColumn('last_region',
@@ -302,7 +302,7 @@ class scaled_aggregator(priority_aggregator):
         (prep.msisdn2 == home_locations.msisdn) &\
         (prep[home_location_frequency + '2'] == \
         home_locations[home_location_frequency]), 'left')\
-        .na.fill({'home_region' : 99999})\
+        .na.fill({'home_region' : self.missing_value_code })\
         .groupby(frequency, 'region', 'home_region')\
         .agg(F.mean('duration').alias('mean_duration'),
              F.stddev_pop('duration').alias('stdev_duration'),
