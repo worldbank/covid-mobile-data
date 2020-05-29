@@ -106,6 +106,7 @@ generate_password*
 # including in case change.
 data_methods.txt
 data_source_description.txt
-/**/data*
+/**/
+/**/notebooks/ignored_scripts*
 /**/config_file.py
 /**/**/.DS_Storec

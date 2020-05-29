@@ -236,17 +236,3 @@ agg_priority_tower_bulawayo = priority_aggregator(result_stub = '/voronoi/priori
 
 agg_priority_tower_bulawayo.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
 
-
-# # Produce script
-
-# In[ ]:
-
-
-get_ipython().system('jupyter nbconvert --to script *.ipynb')
-
-
-# In[ ]:
-
-
-
-
