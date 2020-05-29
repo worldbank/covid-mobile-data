@@ -8,20 +8,19 @@ else:
 
 # Databricks notebook source
 class aggregator:
-    """Class to handle sql aggregations of flowminder code.
-    For the original sql code from flowminder see https://github.com/Flowminder/COVID-19
+    """Class to handle aggregations.
+
 
     Attributes
     ----------
     result_stub : a string. File path where to save results
     datasource : an instance of DataSource class. Holds all dataframes and paths required
     regions : a pyspark dataframe. Admin level this aggregator will be used for
-    intermediate_tables : a list. Names of tables that we don't want written to csv
-    calls : a pyspark dataframe. pyspcdr data
+    calls : a pyspark dataframe. cdr data
     cells : a pyspark dataframe. admin region to tower mapping
     spark : an initialised spark connection. spark connection this aggregator should use
     dates : a dictionary. dates the aggregator should run over
-    sql_code : a string. the flowminder sql code to be used
+    intermediate_tables : tables that we don't want written to csv
 
 
     Methods
@@ -38,17 +37,6 @@ class aggregator:
     save_and_report(table_name)
         Checks whether csv file exists before saving table_name to csv
 
-    run_and_save_sql(table_name)
-        - programmatically runs an sql query and produces a dataframe
-        - saves the result to a csv
-        - creates a view
-
-    run_and_save_all_sql(table_name)
-        runs run_and_save_sql on the list of all flowminder queries at once
-
-    run_save_and_rename_all_sql()
-        runs run_and_save_all_sql and then renames the csv files created and moves them to their parent folder
-
     rename_csv(table_name)
         - rename a specific csv
         - move a csv to parent folder, rename it, then delete its remaining folder
@@ -62,9 +50,6 @@ class aggregator:
     check_if_file_exists(table_name)
         checks whether a csv exists before we re-create
 
-    attempt_aggregation(indicators_to_produce = 'all', no_of_attempts = 4)
-        - attempts aggregation of all flowminder indicators
-        - tries mutiple times (this is relevant for databricks env, but should be dropped going forward and replaced by a more solid handling of databricks timeouts)
 
 
     """
@@ -126,15 +111,6 @@ class aggregator:
       self.create_view(df, table_name)
       return table_name
 
-    def run_and_save_all(self):
-      for table_name in self.table_names:
-          df = self.spark.sql(self.sql_code[table_name])
-          self.save_and_report(df, table_name)
-
-    def run_save_and_rename_all(self):
-      self.run_and_save_all()
-      self.rename_all_csvs()
-
     def rename_csv(self, table_name):
       # move one folder up and rename to human-legible .csv name
       if databricks:
@@ -147,8 +123,8 @@ class aggregator:
                             os.path.join(self.result_path, table_name + '.csv'))
           shutil.rmtree(os.path.join(self.result_path, table_name))
 
-    def save_and_rename_one(self, table_name):
-      self.rename_csv(self.save_and_report(table_name))
+    def save_and_rename_one(self, df, table_name):
+      self.rename_if_not_existing(self.save_and_report(df, table_name))
 
     def rename_all_csvs(self):
       for table_name in self.table_names:
@@ -200,26 +176,3 @@ class aggregator:
         else:
             return os.path.exists(self.result_path + '/' + table_name) | \
                    os.path.exists(self.result_path + '/' + table_name + '.csv')
-
-    def attempt_aggregation(self, indicators_to_produce = 'all', no_of_attempts = 4):
-        attempts = 0
-        while attempts < no_of_attempts:
-          try:
-              # all indicators
-              if indicators_to_produce == 'all':
-                self.run_save_and_rename_all()
-              # single indicator
-              else:
-                for table in indicators_to_produce.keys():
-                  table_name = indicators_to_produce[table]
-                  print('--> Producing: ' + table_name)
-                  self.run_save_and_rename(table_name + '_per_' + indicators_to_produce[table_name])
-              print('Indicators saved.')
-              break
-
-          except Exception as e:
-            attempts += 1
-            print(e)
-            print('Try number {} failed. Trying again.'.format(attempts))
-            if attempts == 4:
-              print('Tried creating and saving indicators 4 times, but failed.')

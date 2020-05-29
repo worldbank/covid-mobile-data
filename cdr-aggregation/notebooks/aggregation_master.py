@@ -27,32 +27,39 @@
 
 # # Import code
 
-# In[2]:
+# In[ ]:
+
+
+get_ipython().run_line_magic('load_ext', 'autoreload')
+get_ipython().run_line_magic('autoreload', '2')
+
+
+# In[ ]:
 
 
 from modules.DataSource import *
 
 
-# In[3]:
+# In[ ]:
 
 
 config_file = '../config_file.py'
 
 
-# In[4]:
+# In[ ]:
 
 
 exec(open(config_file).read())
 
 
-# In[10]:
+# In[ ]:
 
 
 ds = DataSource(datasource_configs)
 ds.show_config()
 
 
-# In[11]:
+# In[ ]:
 
 
 from modules.setup import *
@@ -82,30 +89,30 @@ from modules.setup import *
 # In[ ]:
 
 
-# Specify and load hive data
-ds.parquet_df = ds.spark.sql("""SELECT {} AS msisdn, 
-                                       {} AS call_datetime, 
-                                       {} AS location_id FROM {}""".format(ds.hive_vars['msisdn'],
-                                                                           ds.hive_vars['call_datetime'],
-                                                                           ds.hive_vars['location_id'],
-                                                                           ds.hive_vars['calls']))
+# # Specify and load hive data
+# ds.parquet_df = ds.spark.sql("""SELECT {} AS msisdn, 
+#                                        {} AS call_datetime, 
+#                                        {} AS location_id FROM {}""".format(ds.hive_vars['msisdn'],
+#                                                                            ds.hive_vars['call_datetime'],
+#                                                                            ds.hive_vars['location_id'],
+#                                                                            ds.hive_vars['calls']))
 
 
 # ### Or load a sample file
 
-# In[14]:
+# In[ ]:
 
 
 ## Use this in case you want to sample the data and run the code on the sample
 
 # #ds.sample_and_save(number_of_ids=1000)
-# ds.load_sample('sample_feb_mar2020')
-# ds.parquet_df = ds.sample_df
+ds.load_sample('sample_feb_mar2020')
+ds.parquet_df = ds.sample_df
 
 
 # ## Load geo data
 
-# In[13]:
+# In[ ]:
 
 
 ds.load_geo_csvs()
@@ -141,11 +148,11 @@ ds.load_geo_csvs()
 # In[ ]:
 
 
-agg_flowminder = aggregator(result_stub = '/admin2/flowminder',
+agg_flowminder_admin2 = flowminder_aggregator(result_stub = '/admin2/flowminder',
                             datasource = ds,
                             regions = 'admin2_tower_map')
 
-agg_flowminder.attempt_aggregation()
+agg_flowminder_admin2.attempt_aggregation()
 
 
 # ## Flowminder indicators for admin3
@@ -153,23 +160,23 @@ agg_flowminder.attempt_aggregation()
 # In[ ]:
 
 
-agg_flowminder = aggregator(result_stub = '/admin3/flowminder',
+agg_flowminder_admin3 = flowminder_aggregator(result_stub = '/admin3/flowminder',
                             datasource = ds,
                             regions = 'admin3_tower_map')
 
-agg_flowminder.attempt_aggregation()
+agg_flowminder_admin3.attempt_aggregation()
 
 
 # ## Priority indicators for admin2
 
-# In[15]:
+# In[ ]:
 
 
-agg_custom = custom_aggregator(result_stub = '/admin2/custom',
+agg_priority_admin2 = priority_aggregator(result_stub = '/admin2/priority',
                                datasource = ds,
                                regions = 'admin2_tower_map')
 
-agg_custom.attempt_aggregation()
+agg_priority_admin2.attempt_aggregation()
 
 
 # ## Priority indicators for admin3
@@ -177,11 +184,11 @@ agg_custom.attempt_aggregation()
 # In[ ]:
 
 
-agg_custom = custom_aggregator(result_stub = '/admin3/custom',
+agg_priority_admin3 = priority_aggregator(result_stub = '/admin3/priority',
                             datasource = ds,
                             regions = 'admin3_tower_map')
 
-agg_custom.attempt_aggregation()
+agg_priority_admin3.attempt_aggregation()
 
 
 # ## Scaled priority indicators for admin2
@@ -189,9 +196,43 @@ agg_custom.attempt_aggregation()
 # In[ ]:
 
 
-agg_custom = scaled_aggregator(result_stub = '/admin2/scaled',
+agg_scaled_admin2 = scaled_aggregator(result_stub = '/admin2/scaled',
                                datasource = ds,
                                regions = 'admin2_tower_map')
 
-agg_custom.attempt_aggregation()
+agg_scaled_admin2.attempt_aggregation()
+
+
+# ## Priority indicators for tower-cluster
+
+# In[ ]:
+
+
+agg_priority_tower = priority_aggregator(result_stub = '/voronoi/priority',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map')
+
+agg_priority_tower.attempt_aggregation(indicators_to_produce = {'unique_subscribers_per_hour' : ['unique_subscribers', 'hour'],
+                                                        'mean_distance_per_day' : ['mean_distance', 'day'],
+                                                        'mean_distance_per_week' : ['mean_distance', 'week']})
+
+
+# In[ ]:
+
+
+agg_priority_tower_harare = priority_aggregator(result_stub = '/voronoi/priority/harare',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map_harare')
+
+agg_priority_tower_harare.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
+
+
+# In[ ]:
+
+
+agg_priority_tower_bulawayo = priority_aggregator(result_stub = '/voronoi/priority/bulawayo',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map_bulawayo')
+
+agg_priority_tower_bulawayo.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
 

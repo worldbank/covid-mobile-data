@@ -65,7 +65,7 @@ Unless you run a databricks/datalake set-up, the by far easiest way to get start
 1. Set up the folder structure using [folder_setup.ipynb](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation\notebooks\folder_setup.ipynb) file in the `\cdr-aggregation\notebooks` folder
 1. Add your raw data to the `<base_path>/new/<country_code>/<telecom_alias>` folder created in last step
 1. Add shapefiles and tower locations, or alternatively add the tower-admin region mapping directly, to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these
-1. Open the `aggregation_offsite.ipynb` notebook to run aggregations. If all went well, you should find the indicators in the `<base_path>/results/<country_code>/<telecom_alias>`
+1. Open the [aggregation_master.ipynb](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_master.ipynb) notebook to run aggregations. If all went well, you should find the indicators in the `<base_path>/results/<country_code>/<telecom_alias>`
 
 ##### Databricks/datalake set-up
 This is a manual tasks where the following steps need to be completed:
@@ -73,7 +73,7 @@ This is a manual tasks where the following steps need to be completed:
   1. Set up the config file. Use the [config_file_template](https://github.com/worldbank/covid-mobile-data/blob/master/covid-mobile-data/cdr-aggregation/config_file_template.py) and after you have modified it, save it in the `cdr-aggregation` folder.
   1. Copy all the raw anonymized CDR data to the `<base_path>/new/<country_code>/<telecom_alias>` folder
   1. Add shapefiles and tower locations, or alternatively add the tower-admin region mapping directly, to `<base_path>/support-data/<country_code>/<telecom_alias>/geofiles`. Get in touch to get assistance in accessing or creating these.
-  1. Then you can run the [aggregation_notebook](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_notebook.py) in your spark cluster creating aggregates from your data.
+  1. Then you can run the [aggregation_master.py](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_master.py) notebook in your spark cluster creating aggregates from your data.
 
 ### Workflow description
 
