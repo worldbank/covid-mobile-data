@@ -101,7 +101,7 @@ class outlier_counter:
 
       # count how many we kept and dropped
       self.counts['filtered_transactions'] = self.filtered_transactions.count()
-      self.counts['dropped_calls'] =
+      self.counts['dropped_calls'] = \
         self.counts['all_records'] - self.counts['filtered_transactions']
       self.print_results()
 
