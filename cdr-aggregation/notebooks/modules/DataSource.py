@@ -83,7 +83,7 @@ class DataSource:
     #Config values : [<type>, <default value>]. If default value is None then value must be specified by user
     keys_types_defaults = {
       "base_path":[str,None],
-      "results_subfldr":[str,None],
+      "results_subfldr":[str,""],
       "spark_master":[str,"local[*]"],
       "hive_warehouse_location":[str,'path_to_hive_warehouse'],
       "hive_vars":[dict,{}],
