@@ -42,15 +42,23 @@
 
 # COMMAND ----------
 
-# MAGIC %run COVID19DataAnalysis/modules/flowminder_aggregations
+# MAGIC %run COVID19DataAnalysis/modules/aggregator
 
 # COMMAND ----------
 
-# MAGIC %run COVID19DataAnalysis/modules/custom_aggregations
+# MAGIC %run COVID19DataAnalysis/modules/priority_aggregator
 
 # COMMAND ----------
 
-# MAGIC %run COVID19DataAnalysis/modules/scaled_aggregations
+# MAGIC %run COVID19DataAnalysis/modules/flowminder_aggregator
+
+# COMMAND ----------
+
+# MAGIC %run COVID19DataAnalysis/modules/custom_aggregator
+
+# COMMAND ----------
+
+# MAGIC %run COVID19DataAnalysis/modules/scaled_aggregator
 
 # COMMAND ----------
 
@@ -218,47 +226,71 @@ ds.load_geo_csvs()
 # COMMAND ----------
 
 # DBTITLE 1,Aggregation of flowminder indicators at admin2 level
-agg_flowminder = aggregator(result_stub = '/admin2/flowminder',
+agg_flowminder_admin2 = flowminder_aggregator(result_stub = '/admin2/flowminder',
                             datasource = ds,
                             regions = 'admin2_tower_map')
 
-agg_flowminder.attempt_aggregation()
+agg_flowminder_admin2.attempt_aggregation()
 
 # COMMAND ----------
 
 # DBTITLE 1,Aggregation of flowminder indicators at admin3 level
-agg_flowminder = aggregator(result_stub = '/admin3/flowminder',
+agg_flowminder_admin3 = flowminder_aggregator(result_stub = '/admin3/flowminder',
                             datasource = ds,
                             regions = 'admin3_tower_map')
 
-agg_flowminder.attempt_aggregation()
+agg_flowminder_admin3.attempt_aggregation()
 
 # COMMAND ----------
 
-# DBTITLE 1,Aggregation of custom indicators at admin2 level
-agg_custom = custom_aggregator(result_stub = '/admin2/custom',
+# DBTITLE 1,Aggregation of priority indicators at admin2 level
+agg_priority_admin2 = priority_aggregator(result_stub = '/admin2/priority',
                                datasource = ds,
                                regions = 'admin2_tower_map')
 
-agg_custom.attempt_aggregation()
+agg_priority_admin2.attempt_aggregation()
 
 # COMMAND ----------
 
-# DBTITLE 1,Aggregation of custom indicators at admin3 level
-agg_custom = custom_aggregator(result_stub = '/admin3/custom',
+# DBTITLE 1,Aggregation of priority indicators at admin3 level
+agg_priority_admin3 = priority_aggregator(result_stub = '/admin3/priority',
                             datasource = ds,
                             regions = 'admin3_tower_map')
 
-agg_custom.attempt_aggregation()
+agg_priority_admin3.attempt_aggregation()
 
 # COMMAND ----------
 
 # DBTITLE 1,Aggregation of scaled indicators at admin2 level
-agg_custom = scaled_aggregator(result_stub = '/admin2/scaled',
+agg_scaled_admin2 = scaled_aggregator(result_stub = '/admin2/scaled',
                                datasource = ds,
                                regions = 'admin2_tower_map')
 
-agg_custom.attempt_aggregation()
+agg_scaled_admin2.attempt_aggregation()
 
 # COMMAND ----------
 
+# DBTITLE 1,Aggregation of priority indicators for tower-cluster
+agg_priority_tower = priority_aggregator(result_stub = '/voronoi/priority',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map')
+
+agg_priority_tower.attempt_aggregation(indicators_to_produce = {'unique_subscribers_per_hour' : ['unique_subscribers', 'hour'],
+                                                        'mean_distance_per_day' : ['mean_distance', 'day'],
+                                                        'mean_distance_per_week' : ['mean_distance', 'week']})
+
+# COMMAND ----------
+
+agg_priority_tower_harare = priority_aggregator(result_stub = '/voronoi/priority/harare',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map_harare')
+
+agg_priority_tower_harare.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
+
+# COMMAND ----------
+
+agg_priority_tower_bulawayo = priority_aggregator(result_stub = '/voronoi/priority/bulawayo',
+                               datasource = ds,
+                               regions = 'voronoi_tower_map_bulawayo')
+
+agg_priority_tower_bulawayo.attempt_aggregation(indicators_to_produce = {'origin_destination_connection_matrix_per_day' : ['origin_destination_connection_matrix', 'day']})
