@@ -155,7 +155,8 @@ class priority_aggregator(aggregator):
 
             self.df = save_and_load_parquet(self.df,
                 os.path.join(self.datasource.standardize_path,
-                    self.datasource.parquetfile_vars + self.level + '.parquet'))
+                    self.datasource.parquetfile_vars + self.level + '.parquet'),
+                    self.datasource)
 
         ## When we don't want to re-create the variables parquet, we just load it
         else:
@@ -278,7 +279,6 @@ class priority_aggregator(aggregator):
                             filter_var = self.period_filter
                           result = getattr(self,
                             table_name)(filter_var, frequency)
-
                         # save and rename
                         table_name = table_name  + '_per_' + frequency
                         table_name = self.save_and_rename_one(result, table_name)

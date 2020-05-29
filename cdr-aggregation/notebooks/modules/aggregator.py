@@ -123,8 +123,8 @@ class aggregator:
                             os.path.join(self.result_path, table_name + '.csv'))
           shutil.rmtree(os.path.join(self.result_path, table_name))
 
-    def save_and_rename_one(self, table_name):
-      self.rename_csv(self.save_and_report(table_name))
+    def save_and_rename_one(self, df, table_name):
+      self.rename_if_not_existing(self.save_and_report(df, table_name))
 
     def rename_all_csvs(self):
       for table_name in self.table_names:
