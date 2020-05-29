@@ -1,7 +1,7 @@
 # Module organization
 
 ## Aggregation
-The base class `aggregator` defined in [aggregator.py](https://github.com/worldbank/covid-mobile-data/tree/cdr-master/cdr-aggregation/notebooks/modules/aggregator.py) implements methods and attributes shared by all aggregator classes. At the next level, `flowminder_aggregator` and `priority_aggregator` implement sql queries from [GitHub account](https://github.com/Flowminder), and priority indicators written in pyspark, respectively. Beyond that, the classes `scaled_aggregator` and `custom_aggregator` implement priority indicators scaled by a resident count, and additional custom pyspark indicators, respectively. Both inherit from the `priority_aggregator` class.
+The base class `aggregator` defined in [aggregator.py](https://github.com/worldbank/covid-mobile-data/tree/cdr-master/cdr-aggregation/notebooks/modules/aggregator.py) implements methods and attributes shared by all aggregator classes. At the next level, `flowminder_aggregator` and `priority_aggregator` implement sql queries from [Flowminder](https://github.com/Flowminder), and priority indicators written in pyspark, respectively. Beyond that, the classes `scaled_aggregator` and `custom_aggregator` implement priority indicators scaled by a resident count, and additional custom pyspark indicators, respectively. Both inherit from the `priority_aggregator` class.
 
 ```
 |-- aggregator
