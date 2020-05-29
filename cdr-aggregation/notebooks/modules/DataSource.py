@@ -28,7 +28,7 @@ class DataSource:
     #Top folder path in datalake
     self.newdata_path     = self.base_path+"/new/"+self.ccc_path
     self.standardize_path = self.base_path+"/standardized/"+self.ccc_path
-    self.results_path     = self.base_path+"/results/"+self.ccc_path
+    self.results_path     = self.base_path+"/results/"+self.ccc_path + self.results_subfldr
     self.tempfldr_path    = self.base_path+"/tempfiles/"+self.ccc_path
 
     #Support data folder paths
@@ -83,6 +83,7 @@ class DataSource:
     #Config values : [<type>, <default value>]. If default value is None then value must be specified by user
     keys_types_defaults = {
       "base_path":[str,None],
+      "results_subfldr":[str,None],
       "spark_master":[str,"local[*]"],
       "hive_warehouse_location":[str,'path_to_hive_warehouse'],
       "hive_vars":[dict,{}],
