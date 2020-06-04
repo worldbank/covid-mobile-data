@@ -19,15 +19,13 @@ class priority_aggregator(aggregator):
         intermediary steps to save computation. Do this whenever you've changed
         code.
     level : a string. Level this aggregator is supposed to run on, to hande
-        level-specific queries such as incidence or weighting
+        level-specific queries such as weighting
     distances_df : a pyspark dataframe. Matrix of distances to be used for
         distance calculation
     table_names : a list. Keep a list of all tables we creat for re-naming
     period_filter : a pyspark filter. Time filter for hourly, daily and monthly
         indicators
     weeks_filter :  a pyspark filter. Time filter for weekly queries, includes
-        only full weeks
-    incidence : a pyspark dataframe. Incididence observed; for admin2 only
 
     Methods
     -------
@@ -103,14 +101,6 @@ class priority_aggregator(aggregator):
         self.privacy_filter = 15
         self.missing_value_code = 99999
         self.cutoff_days = 7
-
-        # for admin 2, we also have an incidence file
-        if self.level == 'admin2':
-            try:
-                self.incidence = getattr(datasource, 'admin2_incidence')
-            except Exception as e:
-                print('No incidence file added.')
-                pass
 
         # Check whether a parquet file with variable has already been created,
         # this differs from databricks to docker
