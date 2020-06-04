@@ -2,6 +2,9 @@
 # DATA CHECKS MASTER
 #-----------------------------------------------------------------#
 
+# This script sets file paths and (will) map all processes for checking
+# incoming data
+
 #-----------------------------------------------------------------#
 #### Settings
 

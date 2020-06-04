@@ -55,9 +55,6 @@ def clean(d, index_cols):
     d = drop_custna(d, index_cols)
     return(d)
 
-
-
-
 #-----------------------------------------------------------------#
 # Check overlap of data for a few key indicators
 
@@ -76,7 +73,6 @@ def process_pipeline(d,
                how = how,
                suffixes=('', '_ecnt'))
     return md
-
 
 # Indicator 1
 i1, i1i = loadfiles('transactions_per_hour.csv')
@@ -106,8 +102,6 @@ i3_md = process_pipeline(i3d, i3id, i3_index)
 # i3_index = ['day', 'region']
 
 # i3_m = process_pipeline(i3, i3i, i3_index)
-
-
 
 # Indicator 5
 i5, i5i = loadfiles('origin_destination_connection_matrix_per_day.csv')
@@ -153,6 +147,9 @@ i9['home_region'] = i9['home_region'].astype(int)
 i9i['home_region'] = i9i['home_region'].astype(int)
 
 i9_m = process_pipeline(i9, i9i, i9_index, do_clean = False)
+
+#-----------------------------------------------------------------#
+# Export intersection
 
 # Export 
 def export(data, 
@@ -240,8 +237,6 @@ if EXPORT:
     export(i3_cpanel, 'i3_admin3', path = OUT_hfcs + 'Sheet comp panel/')
     export(i3_cpaneld,'i3_admin2', path = OUT_hfcs + 'Sheet comp panel/')
     export(i5_cpanel, 'i5_admin3', path = OUT_hfcs + 'Sheet comp panel/')
-
-
 
 #-----------------------------------------------------------------#
 # DRAFT
