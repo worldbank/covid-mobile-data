@@ -282,8 +282,7 @@ class priority_aggregator(aggregator):
                           result = getattr(self,
                             table_name)(filter_var, frequency)
                         # save and rename
-                        table_name = table_name  + '_per_' + frequency
-                        table_name = self.save_and_rename_one(result, table_name)
+                        table_name = self.save_and_rename_one(result, table)
                 print('Priority indicators saved.')
                 break
             except Exception as e:
