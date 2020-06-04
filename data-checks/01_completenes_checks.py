@@ -2,6 +2,9 @@
 # DATA CHECKS - completeness checks
 #-----------------------------------------------------------------#
 
+
+EXPORT_FIGURES = False
+
 # This file checks all files to test if all0 dates and hours are 
 # present.
 
@@ -71,10 +74,6 @@ fi_cl['hour'] = fi_cl['hour'].astype('datetime64')
 
 # I5
 f5['date'] = pd.to_datetime(f5['connection_date']).dt.date
-
-
-
-
 
 
 #-----------------------------------------------------------------#
@@ -164,8 +163,20 @@ obs_per_day_plot = sns.lineplot(
     f1_agg_date.index,
     f1_agg_date['count'])
 # Export
-obs_per_day_plot.figure.savefig(OUT_hfcs + "i1_dates_n_obs.png")
+if EXPORT_FIGURES:
+    obs_per_day_plot.figure.savefig(OUT_hfcs + "i1_dates_n_obs.png")
 
+
+# Number of transactions scatter
+def scatter_plot(data, var = 'count'):
+    plot = sns.scatterplot(
+        data.index,
+        data[var])
+    plot.set_xlim([data.index.min() - dt.timedelta(days=1), 
+                  data.index.max() + dt.timedelta(days=1)])
+    return plot
+
+scatter_plot(f1_agg_date)
 
 #-----------------------------------------------------------------#
 # I1 - Hour Plots
@@ -183,7 +194,8 @@ hour_plot = sns.lineplot(
 # hour_plot.set_xticklabels(x_ticks)
 
 # Export
-hour_plot.figure.savefig(OUT_hfcs + "i1_hours_ward_count.png")
+if EXPORT_FIGURES:
+    hour_plot.figure.savefig(OUT_hfcs + "i1_hours_ward_count.png")
 
 #----------------------------
 # Total count of transactions
@@ -198,7 +210,8 @@ obs_per_hour_plot = sns.lineplot(
 # obs_per_hour_plot.set_xticklabels(x_ticks)
 
 # Export
-obs_per_hour_plot.figure.savefig(OUT_hfcs + "i1_hours_n_obs.png")
+if EXPORT_FIGURES:
+    obs_per_hour_plot.figure.savefig(OUT_hfcs + "i1_hours_n_obs.png")
 
 
 # Table with hours 
@@ -217,7 +230,8 @@ f5_plot = sns.lineplot(
     f5_agg_date['date'],
     f5_agg_date['total_count'])
 # Export
-f5_plot.figure.savefig(OUT_hfcs + "i5_dates_total_count.png")
+if EXPORT_FIGURES:
+    f5_plot.figure.savefig(OUT_hfcs + "i5_dates_total_count.png")
 
 
 #-----------------------------------------------------------------#
