@@ -168,15 +168,16 @@ if EXPORT_FIGURES:
 
 
 # Number of transactions scatter
-def scatter_plot(data, var = 'count'):
-    plot = sns.scatterplot(
-        data.index,
-        data[var])
-    plot.set_xlim([data.index.min() - dt.timedelta(days=1), 
-                  data.index.max() + dt.timedelta(days=1)])
-    return plot
+# def scatter_plot(data, var = 'count'):
+#     plot = sns.scatterplot(
+#         data.index,
+#         data[var])
+#     plot.set_xlim([data.index.min() - dt.timedelta(days=1), 
+#                   data.index.max() + dt.timedelta(days=1)])
+#     # plot.set(yscale="log")
+#     return plot
 
-scatter_plot(f1_agg_date)
+# scatter_plot(f1_agg_date)
 
 #-----------------------------------------------------------------#
 # I1 - Hour Plots
