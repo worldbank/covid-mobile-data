@@ -27,11 +27,20 @@ def drop_custna(data, columns):
 def loadfiles(file_name, 
               files_df = internal_indicators,
               admin = 3):
-    print(file_name, admin)
-    # Set intex
+     # Set intex
     idx = files_df[(files_df['file'] == file_name) & (files_df['level'] == admin)].index.values[0]    # Load internal
+    # Custom file names for i5 and i7
+    if file_name in ['mean_distance_per_day', 
+                     'origin_destination_connection_matrix_per_day']:
+        file_name_i = file_name + '_7day_limit.csv'
+    else:
+        file_name_i = file_name + '.csv'
+    # External names
+    file_name_e = file_name + '.csv'
+    print(file_name, admin)
+    # Load data
     d = None
-    d = pd.read_csv(files_df['path'][idx] + file_name)
+    d = pd.read_csv(files_df['path'][idx] + file_name_i)
     # Load external
     if files_df['indicator'][idx] == 'flow':
         ext_path = IFLOW_path
@@ -40,7 +49,7 @@ def loadfiles(file_name,
     # Load external file
     ext_folder = ext_path + 'admin' + str(files_df['level'][idx]) + '/' 
     de = None
-    de = pd.read_csv(ext_folder + file_name)
+    de = pd.read_csv(ext_folder + file_name_e)
     # Patch cleannig of headers in the middle of the data
     c1_name = d.columns[0]
     de = de[~de[c1_name].astype(str).str.contains(c1_name)]    
@@ -75,25 +84,25 @@ def process_pipeline(d,
     return md
 
 # Indicator 1
-i1, i1i = loadfiles('transactions_per_hour.csv')
+i1, i1i = loadfiles('transactions_per_hour')
 i1_index = ['hour', 'region']
 
 i1_m = process_pipeline(i1, i1i, i1_index)
 
 # Indicator 2
-i2, i2i = loadfiles('unique_subscribers_per_hour.csv')
+i2, i2i = loadfiles('unique_subscribers_per_hour')
 i2_index = ['hour', 'region']
 
 i2_m = process_pipeline(i2, i2i, i2_index)
 
 # Indicator 3
-i3, i3i = loadfiles('unique_subscribers_per_day.csv')
+i3, i3i = loadfiles('unique_subscribers_per_day')
 i3_index = ['day', 'region']
 
 i3_m = process_pipeline(i3, i3i, i3_index)
 
 # Indicator 3 district
-i3d, i3id = loadfiles('unique_subscribers_per_day.csv', admin = 2)
+i3d, i3id = loadfiles('unique_subscribers_per_day', admin = 2)
 
 i3_md = process_pipeline(i3d, i3id, i3_index)
 
@@ -104,7 +113,7 @@ i3_md = process_pipeline(i3d, i3id, i3_index)
 # i3_m = process_pipeline(i3, i3i, i3_index)
 
 # Indicator 5
-i5, i5i = loadfiles('origin_destination_connection_matrix_per_day.csv')
+i5, i5i = loadfiles('origin_destination_connection_matrix_per_day')
 i5_index = ['connection_date', 'region_from', 'region_to']
 
 i5_m = process_pipeline(i5, i5i, i5_index)
@@ -115,7 +124,7 @@ i5_m = process_pipeline(i5, i5i, i5_index)
 # i5_md = process_pipeline(i5d, i5id, i5_index)
 
 # Indicator 7 
-i7,i7i = loadfiles('mean_distance_per_day.csv')
+i7,i7i = loadfiles('mean_distance_per_day')
 i7_index = ['home_region', 'day']
 
 i7_m = process_pipeline(i7, i7i, i7_index)

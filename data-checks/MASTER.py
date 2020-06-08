@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 
 DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/"
 DATA_POC = DATA_path + "proof-of-concept/"
+DATA_GIS = DATA_POC + 'geo_files/'
 
 DATA_DB_raw_indicators = DATA_POC + "databricks-results/zw/"
 DATA_dashboad_clean = DATA_POC + "/files_for_dashboard/files_clean/"
@@ -117,6 +118,7 @@ ICUST_adm3_path = ICUST_path + "admin3/"
 #---------------#
 # Outputs
 OUT_path = DATA_POC + "outputs/"
+OUT_plots = OUT_path + "Figures/"
 OUT_hfcs = OUT_path + "data-checks/"
 # OUT_hfcs_sheets =  OUT_hfcs + "Sheet differences/"
 
