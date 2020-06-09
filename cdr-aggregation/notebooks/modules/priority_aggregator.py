@@ -337,9 +337,12 @@ class priority_aggregator(aggregator):
       result = result.join(prep, (prep.region == result.region_to)\
                            & (prep.region_lag == result.region_from)\
                            & (prep.day == result.connection_date), 'full')\
-        .withColumn('region_to', F.when(F.col('region_to').isNotNull(), F.col('region_to')).otherwise(F.col('region')))\
-        .withColumn('region_from', F.when(F.col('region_from').isNotNull(), F.col('region_from')).otherwise(F.col('region_lag')))\
-        .withColumn('connection_date', F.when(F.col('connection_date').isNotNull(), F.col('connection_date')).otherwise(F.col('day')))\
+        .withColumn('region_to', F.when(F.col('region_to').isNotNull(),
+            F.col('region_to')).otherwise(F.col('region')))\
+        .withColumn('region_from', F.when(F.col('region_from').isNotNull(),
+            F.col('region_from')).otherwise(F.col('region_lag')))\
+        .withColumn('connection_date', F.when(F.col('connection_date').isNotNull(),
+            F.col('connection_date')).otherwise(F.col('day')))\
         .na.fill({'od_count' : 0, 'subscriber_count' : 0})\
         .withColumn('total_count', F.col('subscriber_count') + F.col('od_count'))\
         .drop('region').drop('region_lag').drop('day')
@@ -407,15 +410,19 @@ class priority_aggregator(aggregator):
         .groupby('msisdn', 'home_region', frequency)\
         .agg(F.sum('distance').alias('distance'))\
         .groupby('home_region', frequency)\
-        .agg(F.mean('distance').alias('mean_distance'), F.stddev_pop('distance').alias('stdev_distance'))
+        .agg(F.mean('distance').alias('mean_distance'),
+             F.stddev_pop('distance').alias('stdev_distance'))
       return result
 
     ## Indicator 9
     def home_vs_day_location(self, time_filter, frequency, home_location_frequency = 'week', **kwargs):
       home_locations = self.assign_home_locations(time_filter, home_location_frequency)
       prep = self.df.where(time_filter)\
-        .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
-        .withColumn('duration', (F.col('call_datetime_lead').cast('long') - F.col('call_datetime').cast('long')))\
+        .withColumn('call_datetime_lead',
+            F.when(F.col('call_datetime_lead').isNull(),
+            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
+        .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
+            F.col('call_datetime').cast('long')))\
         .withColumn('duration', F.when(F.col('duration') <= \
             (self.cutoff_days * 24 * 60 * 60), F.col('duration')).otherwise(0))\
         .groupby('msisdn', 'region', frequency, home_location_frequency)\
@@ -425,10 +432,15 @@ class priority_aggregator(aggregator):
         .agg(F.last('region').alias('region'), F.last('total_duration').alias('duration'))\
         .withColumnRenamed('msisdn', 'msisdn2')\
         .withColumnRenamed(home_location_frequency, home_location_frequency + '2')
-      result = prep.join(home_locations, (prep.msisdn2 == home_locations.msisdn) & (prep[home_location_frequency + '2'] == home_locations[home_location_frequency]), 'left')\
+      result = prep.join(home_locations,
+            (prep.msisdn2 == home_locations.msisdn) & \
+            (prep[home_location_frequency + '2'] == \
+            home_locations[home_location_frequency]), 'left')\
         .na.fill({'home_region' : self.missing_value_code})\
         .groupby(frequency, 'region', 'home_region')\
-        .agg(F.mean('duration').alias('mean_duration'), F.stddev_pop('duration').alias('stdev_duration'), F.count('msisdn').alias('count'))\
+        .agg(F.mean('duration').alias('mean_duration'),
+            F.stddev_pop('duration').alias('stdev_duration'),
+            F.count('msisdn').alias('count'))\
         .where(F.col('count') > self.privacy_filter)
       return result
 
@@ -436,15 +448,25 @@ class priority_aggregator(aggregator):
     def origin_destination_matrix_time(self, time_filter, frequency):
       user_frequency_window = Window.partitionBy('msisdn').orderBy('call_datetime')
       result = self.df.where(time_filter)\
-        .where((F.col('region_lag') != F.col('region')) | (F.col('region_lead') != F.col('region')) | (F.col('call_datetime_lead').isNull()))\
-        .withColumn('call_datetime_lead', F.when(F.col('call_datetime_lead').isNull(), self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
-        .withColumn('duration', (F.col('call_datetime_lead').cast('long') - F.col('call_datetime').cast('long')))\
+        .where((F.col('region_lag') != F.col('region')) | \
+            (F.col('region_lead') != F.col('region')) | \
+            (F.col('call_datetime_lead').isNull()))\
+        .withColumn('call_datetime_lead',
+            F.when(F.col('call_datetime_lead').isNull(),
+            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
+        .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
+            F.col('call_datetime').cast('long')))\
         .withColumn('duration', F.when(F.col('duration') <= \
             (self.cutoff_days * 24 * 60 * 60), F.col('duration')).otherwise(0))\
         .withColumn('duration_next', F.lead('duration').over(user_frequency_window))\
-        .withColumn('duration_change_only', F.when(F.col('region') == F.col('region_lead'), F.col('duration_next') + F.col('duration')).otherwise(F.col('duration')))\
-        .withColumn('duration_change_only', F.when(F.col('duration_change_only') > (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
-        .withColumn('duration_change_only_lag', F.lag('duration_change_only').over(user_frequency_window))\
+        .withColumn('duration_change_only', F.when(F.col('region') == \
+            F.col('region_lead'), F.col('duration_next') + \
+            F.col('duration')).otherwise(F.col('duration')))\
+        .withColumn('duration_change_only',
+            F.when(F.col('duration_change_only') > \
+            (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
+        .withColumn('duration_change_only_lag',
+            F.lag('duration_change_only').over(user_frequency_window))\
         .where(F.col('region_lag') != F.col('region'))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.sum('duration_change_only').alias('total_duration_destination'),
