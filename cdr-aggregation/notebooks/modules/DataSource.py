@@ -61,13 +61,11 @@ class DataSource:
               .config("spark.driver.maxResultSize", "2g") \
               .config("spark.sql.shuffle.partitions", "16") \
               .config("spark.driver.memory", "8g") \
-              .config("spark.sql.session.timeZone", "UTC") \
               .config("spark.sql.execution.arrow.enabled", "true")\
               .getOrCreate()
 
       elif self.spark_mode == 'cluster':
           self.spark = SparkSession.builder.master(self.spark_master) \
-              .config("spark.sql.session.timeZone", "UTC") \
               .config("spark.sql.execution.arrow.enabled", "true")\
               .getOrCreate()
 
