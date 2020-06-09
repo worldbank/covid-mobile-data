@@ -10,6 +10,12 @@ else:
 class custom_aggregator(priority_aggregator):
     """This class inherits from the priority aggregator class.
     It is the main class to handle custom non-priority indicators.
+
+    Attributes
+    ----------
+    [check inherited attributes described in aggregator class]
+
+    incidence : a pyspark dataframe. Incididence observed; for admin2 only
     """
     def __init__(self,
                  result_stub,
@@ -19,6 +25,14 @@ class custom_aggregator(priority_aggregator):
 
         # initiate with parent init
         super().__init__(result_stub,datasource,regions)
+
+        # for admin 2, we also have an incidence file
+        if self.level == 'admin2':
+            try:
+                self.incidence = getattr(datasource, 'admin2_incidence')
+            except Exception as e:
+                print('No incidence file added.')
+                pass
 
 
 ##### Non-priority Indicators - not used at the moment, but kept just in case
