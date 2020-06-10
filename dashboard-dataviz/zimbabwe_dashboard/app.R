@@ -560,6 +560,26 @@ server = (function(input, output, session) {
           date_i <- "2020-02-01"
         }
         
+        if((timeunit_i %in% "Daily") & !(variable_i %in% "Density")){
+          
+          if(date_i > "2020-03-29"){
+            date_i <- "2020-03-29"
+          }
+          
+        }
+        
+        if((timeunit_i %in% "Weekly") & !(variable_i %in% "Density")){
+          
+          if(date_i %in% c("Mar 28 - Apr 03",
+                           "Apr 04 - Apr 10",
+                           "Apr 11 - Apr 17",
+                           "Apr 18 - Apr 24",
+                           "Apr 25 - May 01")){
+            date_i <- "Mar 21 - Mar 27"
+          }
+          
+        }
+        
         # ****** 4.2.2.2 Density -----------------------------------------------
         if(variable_i %in% c("Density")){
           
@@ -575,6 +595,8 @@ server = (function(input, output, session) {
                                                     timeunit_i, "_",
                                                     ward_i,".Rds")))
           
+
+
           
           if(metric_i %in% "Count"){
             
@@ -1177,18 +1199,38 @@ server = (function(input, output, session) {
         if (input$select_timeunit %in% "Weekly") {
           
           #### Main Line Graph Element
-          data_line <- data_line[!grepl("Mar 28", data_line$Date),]
+          #data_line <- data_line[!grepl("Mar 28", data_line$Date),]
+
+          
+          data_line$Date_short <- data_line$Date %>%
+            as.character() %>%
+            substring(1,6) %>%
+            factor(levels = c("Feb 01",
+                              "Feb 08",
+                              "Feb 15",
+                              "Feb 22",
+                              "Feb 29",
+                              "Mar 07",
+                              "Mar 14",
+                              "Mar 21",
+                              "Mar 28",
+                              "Apr 04",
+                              "Apr 11",
+                              "Apr 18"),
+                   ordered = T)
+          
+
           
           p <- ggplot(data_line,
                       aes(
-                        x = Date %>% substring(1,6),
+                        x = Date_short,
                         y = N,
                         group = 1
                       )) +
             geom_line(size = 1, color = "orange") +
             geom_point(size = 1, color = "orange") +
             geom_point(data=data_line[as.character(data_line$Date) %in% as.character(input$date_ward),],
-                       aes(x = Date %>% substring(1,6),
+                       aes(x = Date_short,
                            y = N),
                        size = 2.5, pch = 1, color = "forestgreen") +
             labs(
@@ -1273,6 +1315,26 @@ server = (function(input, output, session) {
             if(input$select_timeunit %in% "Daily"){
               df_out <- df_out %>%
                 filter(date <= input$date_ward)
+            } else{
+              df_out$Date_short <- df_out$date %>%
+                as.character() %>%
+                substring(1,6) %>%
+                factor(levels = c("Feb 01",
+                                  "Feb 08",
+                                  "Feb 15",
+                                  "Feb 22",
+                                  "Feb 29",
+                                  "Mar 07",
+                                  "Mar 14",
+                                  "Mar 21",
+                                  "Mar 28",
+                                  "Apr 04",
+                                  "Apr 11",
+                                  "Apr 18"),
+                       ordered = T)
+              
+              df_out <- df_out %>%
+                arrange(Date_short)
             }
             
             return(df_out)
@@ -1882,22 +1944,56 @@ server = (function(input, output, session) {
           
           # If a change since baseline metric (not count), then only see March
           if(!is.null(input$select_metric)){
+            
             if(input$select_metric %in% c("Count")){
-              out <- dateInput(
-                "date_ward",
-                NULL,
-                value = "2020-03-01",
-                min = "2020-02-01",
-                max = "2020-03-29"
-              )
+              
+              
+              
+              
+              if(input$select_variable %in% c("Density")){
+                out <- dateInput(
+                  "date_ward",
+                  NULL,
+                  value = "2020-03-01",
+                  min = "2020-02-01",
+                  max = "2020-04-30" # max = "2020-03-29"
+                )
+              } else{
+                out <- dateInput(
+                  "date_ward",
+                  NULL,
+                  value = "2020-03-01",
+                  min = "2020-02-01",
+                  max = "2020-03-29" # max = "2020-03-29"
+                )
+              }
+              
+ 
+              
+              
             } else{
-              out <- dateInput(
-                "date_ward",
-                NULL,
-                value = "2020-03-01",
-                min = "2020-03-01",
-                max = "2020-03-29"
-              )
+              
+              
+              if(input$select_variable %in% c("Density")){
+                out <- dateInput(
+                  "date_ward",
+                  NULL,
+                  value = "2020-03-01",
+                  min = "2020-03-01",
+                  max = "2020-04-30"
+                )
+              } else{
+                out <- dateInput(
+                  "date_ward",
+                  NULL,
+                  value = "2020-03-01",
+                  min = "2020-03-01",
+                  max = "2020-03-29"
+                )
+              }
+              
+              
+       
             }
           }
           
@@ -1907,29 +2003,84 @@ server = (function(input, output, session) {
           
           # If a change since baseline metric (not count), then only see March
           if(input$select_metric %in% c("Count")){
-            out <-   selectInput(
-              "date_ward",
-              label = NULL,
-              choices = c("Feb 01 - Feb 07",
-                          "Feb 08 - Feb 14",
-                          "Feb 15 - Feb 21",
-                          "Feb 22 - Feb 28",
-                          "Feb 29 - Mar 06",
-                          "Mar 07 - Mar 13",
-                          "Mar 14 - Mar 20",
-                          "Mar 21 - Mar 27"),
-              multiple = F
-            )
+            
+            if(input$select_variable %in% "Density"){
+              out <-   selectInput(
+                "date_ward",
+                label = NULL,
+                choices = c("Feb 01 - Feb 07",
+                            "Feb 08 - Feb 14",
+                            "Feb 15 - Feb 21",
+                            "Feb 22 - Feb 28",
+                            "Feb 29 - Mar 06",
+                            "Mar 07 - Mar 13",
+                            "Mar 14 - Mar 20",
+                            "Mar 21 - Mar 27",
+                            "Mar 28 - Apr 03",
+                            "Apr 04 - Apr 10",
+                            "Apr 11 - Apr 17",
+                            "Apr 18 - Apr 24"),
+                
+                multiple = F
+              )
+            } else{
+              out <-   selectInput(
+                "date_ward",
+                label = NULL,
+                choices = c("Feb 01 - Feb 07",
+                            "Feb 08 - Feb 14",
+                            "Feb 15 - Feb 21",
+                            "Feb 22 - Feb 28",
+                            "Feb 29 - Mar 06",
+                            "Mar 07 - Mar 13",
+                            "Mar 14 - Mar 20",
+                            "Mar 21 - Mar 27"),
+                
+                multiple = F
+              )
+            }
+            
+
+            
+            
+            
+            
+            
+            
           } else{
-            out <-   selectInput(
-              "date_ward",
-              label = NULL,
-              choices = c("Feb 29 - Mar 06",
-                          "Mar 07 - Mar 13",
-                          "Mar 14 - Mar 20",
-                          "Mar 21 - Mar 27"),
-              multiple = F
-            )
+            
+            
+            if(input$select_variable %in% "Density"){
+              out <-   selectInput(
+                "date_ward",
+                label = NULL,
+                choices = c("Feb 29 - Mar 06",
+                            "Mar 07 - Mar 13",
+                            "Mar 14 - Mar 20",
+                            "Mar 21 - Mar 27",
+                            "Mar 28 - Apr 03",
+                            "Apr 04 - Apr 10",
+                            "Apr 11 - Apr 17",
+                            "Apr 18 - Apr 24"),
+                multiple = F
+              )
+            } else{
+              out <-   selectInput(
+                "date_ward",
+                label = NULL,
+                choices = c("Feb 29 - Mar 06",
+                            "Mar 07 - Mar 13",
+                            "Mar 14 - Mar 20",
+                            "Mar 21 - Mar 27"),
+                multiple = F
+              )
+            }
+
+            
+            
+            
+            
+            
           }
           
           

@@ -80,10 +80,14 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       ### Load Data
       if(timeunit_short %in% "day"){
+        #df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
+        #                                paste0("count_unique_subscribers_per_region_per_",
+        #                                       timeunit_short,
+        #                                       "_scaled.Rds")))
         df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
                                         paste0("count_unique_subscribers_per_region_per_",
                                                timeunit_short,
-                                               "_scaled.Rds")))
+                                               ".Rds")))
       } else {
         df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
                                         paste0("count_unique_subscribers_per_region_per_",

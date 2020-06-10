@@ -57,8 +57,7 @@ for(unit in c("district", "ward")){
     towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
                                       "outputs", 
                                       "data-checks", 
-                                      "Archive",
-                                      "days_wards_with_low_hours_I1.csv"))
+                                      "days_wards_with_low_hours_I1_panel.csv"))
     
     towers_down <- towers_down %>%
       dplyr::select(region, date) %>%
@@ -85,7 +84,7 @@ for(unit in c("district", "ward")){
     tp_add_polygon_data(admin_sp) %>%
     
     # Interpolate/Clean Values
-    tp_interpolate_outliers(NAs_as_zero = T) %>%
+    tp_interpolate_outliers(NAs_as_zero = T, outlier_sd=3) %>%
     tp_replace_zeros(NAs_as_zero = T) %>%
     tp_less15_NA() %>%
     
