@@ -243,7 +243,11 @@ tp_clean_week <- function(data,
                     "11" = "Mar 07 - Mar 13",
                     "12" = "Mar 14 - Mar 20",
                     "13" = "Mar 21 - Mar 27",
-                    "14" = "Mar 28 - Apr 03")
+                    "14" = "Mar 28 - Apr 03",
+                    "15" = "Apr 04 - Apr 10",
+                    "16" = "Apr 11 - Apr 17",
+                    "17" = "Apr 18 - Apr 24",
+                    "18" = "Apr 25 - May 01")
     
   } else if (type == "date"){
     # TODO Not idea as assumes starts on Feb 1

@@ -6,7 +6,7 @@ i <- 1
 telecom_files <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, pattern = "*.Rds")
 
 # Select subset if only need to move some
-telecom_files <- telecom_files[grepl("Movement Out of|Movement Into", telecom_files)]
+telecom_files <- telecom_files[grepl("Density", telecom_files)]
 
 temp <- telecom_files %>%
   lapply(function(file_i){

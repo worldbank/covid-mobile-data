@@ -117,7 +117,7 @@ for(unit in c("ward", "district")){
                      value_var = "value_scale",
                      NAs_as_zero = T) %>%
     tp_less15_NA(value_var = "value_scale") %>%
-    
+
     # Create adjusted value to use for percent change and zscore
     #mutate(value_scale = value / percent_active) %>%
     
@@ -131,7 +131,7 @@ for(unit in c("ward", "district")){
     #              value_perchange = value_scale_perchange) %>%
     
     # Add labels
-    tp_add_label_level(timeunit = "day", OD = F) %>%
+    tp_add_label_level(value_var = "value_scale", timeunit = "day", OD = F) %>%
     tp_add_label_baseline(timeunit = "day", OD = F) %>%
     
     # Use scaled value for counts 
@@ -219,3 +219,8 @@ for(unit in c("ward", "district")){
 
 adm2_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm2/count_unique_subscribers_per_region_per_day_scaled.csv")
 adm3_df <- read.csv("C:/Users/wb521633/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/files_for_dashboard/files_clean/adm3/count_unique_subscribers_per_region_per_day_scaled.csv")
+
+aa <- adm3_df[adm3_df$date %in% "2020-03-01",]
+aa <- aa[aa$name %in% "Mbire 13",]
+
+

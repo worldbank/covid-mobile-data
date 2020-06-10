@@ -65,7 +65,7 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -144,9 +144,9 @@ ui = (htmlOutput("page"))
 
 # ** 3.2 Main UI - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -----
 ui_main <- fluidPage(
-
+  
   h4("WBG - COVID Mobility Analytics Task Force", align="center"),
-
+  
   navbarPage(
     theme = shinytheme("flatly"), # journal
     collapsible = TRUE,
@@ -217,10 +217,10 @@ ui_main <- fluidPage(
               class = "panel panel-default",
               top = 350,
               left = 40,
-              width = 200,
+              width = 220,
               fixed = TRUE,
-              draggable = TRUE,
-              height = 300,
+              draggable = F,
+              height = 400,
               align = "center",
               
               h5("Select Date"),
@@ -233,8 +233,15 @@ ui_main <- fluidPage(
                 label = h5(textOutput("select_province_title")),
                 choices = provinces,
                 multiple = F
+              ),
+              
+              column(12, align = "left",
+                     textOutput("legend_note_title")
               )
+              
             )
+            
+            
           ),
           column( 
             4,
@@ -244,7 +251,7 @@ ui_main <- fluidPage(
               h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
-
+              
               strong(htmlOutput("table_title"), align = "center"),
               
               div(style = 'height:425px; overflow-y: scroll',
@@ -265,7 +272,7 @@ ui_main <- fluidPage(
     # **** 3.2.2 Risk analysis -------------------------------------------------
     tabPanel(
       "Risk Analysis",
-
+      
       dashboardBody(
         fluidRow(
           
@@ -289,7 +296,7 @@ ui_main <- fluidPage(
                  
                  p(risk_analysis_text[1]),
                  p(risk_analysis_text[2])
-
+                 
                  
           ),
           
@@ -474,7 +481,7 @@ server = (function(input, output, session) {
         out
       })
       
-    
+      
       # **** 4.2.2 Telecom Data Filtering --------------------------------------
       ward_data_sp_filtered <- reactive({
         
@@ -869,7 +876,7 @@ server = (function(input, output, session) {
                                           "Movement Out of Wards",
                                           "Movement Into Districts",
                                           "Movement Out of Districts")){
-
+            
             od_index <- which(grepl("Origin|Destination", map_labels))
             
           }
@@ -877,26 +884,28 @@ server = (function(input, output, session) {
         
         #### Define observed value with value is 15 or less
         # When value is "masked" (typically 15 or less), decide whether the
-        # value should be 0 or NA when shown on map. In cases where the value can
-        # range from negative to positive, masked value should be NA. In cases where
-        # the value can only be positive, masked value should be 0.
+        # value should be 0 or NA when shown on map. 0 values are shown as
+        # purple and NA values are shown as gray. In cases where the value can 
+        # only be positive, masked value should be 0.
+        
+        ## If metric is % change or z-score, always make masked value NA
         if(!is.null(input$select_metric)){
           if(input$select_metric %in% c("% Change", "Z-Score")){
             
             map_values[grepl("information", map_labels)] <- NA
             
+            # If metric is count, only make   
           } else{
             
             if(!is.null(input$select_variable)){
               if(input$select_variable %in% c("Density")){
                 map_values[grepl("information", map_labels)] <- 0
-                
               }
               
               if(input$select_variable %in% c("Mean Distance Traveled",
                                               "Std Dev Distance Traveled")){
-                map_values[grepl("information", map_labels)] <- min(map_values, na.rm=T)
-                
+                map_values[grepl("information", map_labels)] <- NA
+                map_labels[grepl("information", map_labels)] <- "information not available"
               }
               
             }
@@ -905,7 +914,7 @@ server = (function(input, output, session) {
           }
         }
         
-
+        
         #### Log values with negatives
         # Define function to take the log of values that can deal with negative
         # values. Just takes the absoltue value, logs, then reapplies negative
@@ -927,9 +936,15 @@ server = (function(input, output, session) {
         
         #### Make outliers less extreme
         # Chop off at percentile
-        q_vals <- quantile(map_values, c(.025,.975), na.rm=T)
-        map_values[map_values < q_vals[1]] <- q_vals[1]
-        map_values[map_values > q_vals[2]] <- q_vals[2]
+        # TODO: Doesn't work with lots of zeros, so commenting out for now.
+        
+        N_non_zero <- sum(abs(map_values) > 0, na.rm=T)
+        if(N_non_zero > 400){
+          q_vals <- quantile(map_values, c(.025,.975), na.rm=T)
+          map_values[map_values < q_vals[1]] <- q_vals[1]
+          map_values[map_values > q_vals[2]] <- q_vals[2]
+        }
+        
         
         #### Log Values
         if(!is.null(input$select_metric)){
@@ -964,6 +979,20 @@ server = (function(input, output, session) {
           reverse = F
         )
         
+        # If all non-NA values are NA, make purple
+        if(sum(!is.na(map_values)) == sum(map_values %in% 0)){
+          
+          map_values <- rep(NA, length(map_values))
+          
+          # Define pallete
+          pal_ward <- colorNumeric(
+            palette = "viridis",
+            domain = c(0, 0, 0),
+            na.color = "#440154FF",
+            reverse = F
+          )
+        }
+        
         # Alpha value. Originally had if map is zoomed in (few units), we made 
         # more transparent. As of now not doing that, but including here in 
         # case want to change.
@@ -973,6 +1002,7 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
+
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
@@ -1047,7 +1077,7 @@ server = (function(input, output, session) {
             if(input$select_region_zoom %in% map_data$name){
               
               loc_i <- which(map_data$name %in% input$select_region_zoom)
-
+              
               map_data_zoom <- map_data[loc_i,] 
               
               map_data_zoom_extent <- map_data_zoom %>% extent()
@@ -1133,14 +1163,14 @@ server = (function(input, output, session) {
             data_dow_i <- data_line[data_line$dow %in% dow_i,] 
             
             data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 2,]
-
+            
             p <- p + 
               geom_point(data=data_dow_i, aes(x = Date,
                                               y = N), color="orange4") +
               geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
-
+            
           }
- 
+          
         }
         
         # Weekly - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1196,7 +1226,7 @@ server = (function(input, output, session) {
         ward_data_sp_react <- ward_data_sp_filtered()
         data <- ward_data_sp_react$table_data 
         data <- data[!is.na(data$value),]
-      
+        
         #### Define Parameters
         customGreen = "#71CA97"
         customGreen0 = "#DeF7E9"
@@ -1206,7 +1236,7 @@ server = (function(input, output, session) {
         customYellow = "goldenrod2"
         
         table_max <- 20
-
+        
         #### Restrict to Province
         if(!is.null(input$select_province)){
           if(!(input$select_province %in% "All")){
@@ -1506,7 +1536,7 @@ server = (function(input, output, session) {
         # legend parameters
         leg_labels = sort(unique(risk_map@data$risk_var)) %>% rev()
         lg_colors = pal(sort(unique(risk_map@data$risk_var))) %>% rev()
-
+        
         map_label <- risk_map@data$name
         
         leafletProxy("riskmap", data = risk_map) %>%
@@ -1593,7 +1623,7 @@ server = (function(input, output, session) {
                                                        byrow=TRUE, dimnames=list(c("red","green","blue"), NULL), nrow=3)))
           })}
         
-
+        
         f_list <- list(
           `name` = formatter("span", style = ~ style(color = "black")),
           `value` = color_tile2(c("#95C6D3", "#ECDC87", "#EA7E71"))
@@ -1625,12 +1655,14 @@ server = (function(input, output, session) {
         ward_data_sp_react <- ward_data_sp_filtered()
         title <- ward_data_sp_react$map_title
         
-        if(input$select_metric %in% "% Change"){
-          title <- paste0("% Change in ", title)
-        }
-        
-        if(input$select_metric %in% "Z-Score"){
-          title <- paste0("Z-Score in ", title)
+        if(!is.null(input$select_metric)){
+          if(input$select_metric %in% "% Change"){
+            title <- paste0("% Change in ", title)
+          }
+          
+          if(input$select_metric %in% "Z-Score"){
+            title <- paste0("Z-Score in ", title)
+          }
         }
         
         title
@@ -1642,12 +1674,14 @@ server = (function(input, output, session) {
         
         out <- ""
         
-        if(input$select_metric %in% "% Change"){
-          out <- "% Change calculated relevant to baseline values"
-        }
-        
-        if(input$select_metric %in% "Z-Score"){
-          out <- "Z-Score is the change in value relevant to average baseline values scaled by the typical deviation in baseline values."
+        if(!is.null(input$select_metric)){
+          if(input$select_metric %in% "% Change"){
+            out <- "% Change calculated relevant to baseline values"
+          }
+          
+          if(input$select_metric %in% "Z-Score"){
+            out <- "Z-Score is the change in value relevant to average baseline values scaled by the typical deviation in baseline values."
+          }
         }
         
         out
@@ -1668,7 +1702,7 @@ server = (function(input, output, session) {
             out <- ""
           }
         }
-
+        
         out
         
       })
@@ -1686,7 +1720,7 @@ server = (function(input, output, session) {
         ward_data_sp_react <- ward_data_sp_filtered()
         ward_data_sp_react$line_title
       })
-    
+      
       # **** 4.4.6 Map Instructions --------------------------------------------
       output$map_instructions <- renderText({
         
@@ -1742,6 +1776,28 @@ server = (function(input, output, session) {
         out
         
       })
+      
+      output$legend_note_title <- renderText({
+        
+        out <- "'High' and 'Low' colors are relative to the selected date chosen."
+        
+        if(!is.null(input$select_variable)){
+          if(input$select_variable %in% c("Movement Into Wards",
+                                          "Movement Out of Wards")){
+            out <- "'High' and 'Low' colors are relative to the selected date and ward chosen."
+          }
+          
+          if(input$select_variable %in% c("Movement Into District",
+                                          "Movement Out of District")){
+            out <- "'High' and 'Low' colors are relative to the selected date and district chosen."
+          }
+        }
+        
+        out
+        
+      })
+      
+      
       
       
       # ** 4.5 Controls - - - - - - - - - - - - - - - - - - - - - - - - - -----
@@ -1825,22 +1881,24 @@ server = (function(input, output, session) {
         if (input$select_timeunit %in% "Daily") {
           
           # If a change since baseline metric (not count), then only see March
-          if(input$select_metric %in% c("Count")){
-            out <- dateInput(
-              "date_ward",
-              NULL,
-              value = "2020-03-01",
-              min = "2020-02-01",
-              max = "2020-03-29"
-            )
-          } else{
-            out <- dateInput(
-              "date_ward",
-              NULL,
-              value = "2020-03-01",
-              min = "2020-03-01",
-              max = "2020-03-29"
-            )
+          if(!is.null(input$select_metric)){
+            if(input$select_metric %in% c("Count")){
+              out <- dateInput(
+                "date_ward",
+                NULL,
+                value = "2020-03-01",
+                min = "2020-02-01",
+                max = "2020-03-29"
+              )
+            } else{
+              out <- dateInput(
+                "date_ward",
+                NULL,
+                value = "2020-03-01",
+                min = "2020-03-01",
+                max = "2020-03-29"
+              )
+            }
           }
           
         }
