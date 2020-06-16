@@ -420,7 +420,7 @@ class priority_aggregator(aggregator):
       prep = self.df.where(time_filter)\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
-            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
+            self.dates['end_date'] + dt.timedelta(1)).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
             F.col('call_datetime').cast('long')))\
         .withColumn('duration', F.when(F.col('duration') <= \
