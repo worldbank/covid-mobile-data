@@ -257,7 +257,7 @@ if EXPORT:
 
 
 #-----------------------------------------------------------------#
-# Simple panel DRAFT
+# Simple panel
 
 # A panel with no intersection of internal and external 
 # indicators and a ad hoc appending date
@@ -285,11 +285,11 @@ def simp_panel(d,
     # Replace count values with internal until the 7th of march and 
     # external after
     for var in countvars:
-        md[var + '_p'] = np.where(pd.to_datetime(md[timevar]).dt.date <= append_date, 
+        md[var] = np.where(pd.to_datetime(md[timevar]).dt.date <= append_date, 
                    md[var], 
                    md[var + '_ecnt'])
     # Remove other columns
-    # md = md.filter(regex=r'^((?!_ecnt).)*$')
+    md = md.filter(regex=r'^((?!_ecnt).)*$')
     # Return
     return md.sort_values(index_cols).dropna(subset= index_cols)
 

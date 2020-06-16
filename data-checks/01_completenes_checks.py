@@ -3,7 +3,7 @@
 #-----------------------------------------------------------------#
 
 
-EXPORT_FIGURES = False
+EXPORT_FIGURES = True
 
 # This file checks all files to test if all0 dates and hours are 
 # present.
