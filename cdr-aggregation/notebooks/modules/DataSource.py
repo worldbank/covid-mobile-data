@@ -171,7 +171,7 @@ class DataSource:
       newfolder_data_paths.append(self.newdata_path+"/"+data_path)
 
     #Load csv file or files using load option and schema
-    raw_df = spark.read\
+    raw_df = self.spark.read\
       .option("seperator", self.load_seperator)\
       .option("header", self.load_header)\
       .option("mode", self.load_mode)\
