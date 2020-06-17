@@ -26,15 +26,17 @@ class priority_aggregator(aggregator):
     period_filter : a pyspark filter. Time filter for hourly, daily and monthly
         indicators
     weeks_filter :  a pyspark filter. Time filter for weekly queries, includes
+    privacy_filter : an integer. Minimum number of observations to keep statistic
+    missing_value_code : an integer. Code for missing regions
+    cutoff_days : an integer. Max number of days for leads and lags.
+    max_duration : an integer. Max number of days to consider for duration.
 
-    Methods
-    -------
+    Methods to manage aggregation:
+    -----------------------------
     [check inherited methods described in aggregator class]
 
     run_and_save_all(time_filter, frequency)
-        - as opposed to flowminder indicators, we don not produce all indicators
-            this aggregator has to offer
-        - we cherry pick only priority indicators in this method
+        - in this method we run all indicators defines as priority
         - for this we need to supply filter and frequency
 
     run_and_save_all_frequencies()
@@ -49,6 +51,36 @@ class priority_aggregator(aggregator):
         - handle errors and retries
         - we can drop this method when we find a better way of dealing with
             databrick time-out problems
+
+    Methods to produce priority indicators:
+    --------------------------------------
+
+    transactions(time_filter, frequency)
+        - indicator 1
+
+    unique_subscribers(time_filter, frequency)
+        - indicator 2
+
+    unique_subscribers_country(time_filter, frequency)
+        - indicator 3
+
+    percent_of_all_subscribers_active(time_filter, frequency)
+        - indicator 4
+
+    origin_destination_connection_matrix(time_filter, frequency)
+        - indicator 5
+
+    unique_subscriber_home_locations(time_filter, frequency)
+        - indicator 6 + 11
+
+    mean_distance(time_filter, frequency)
+        - indicators 7 + 8
+
+    home_vs_day_location(time_filter, frequency, home_location_frequency)
+        - indicator 9
+
+    origin_destination_matrix_time(time_filter, frequency)
+        - indicator 10
 
     """
 
@@ -65,7 +97,6 @@ class priority_aggregator(aggregator):
         regions : admin level this aggregator will be used for
         intermediate_tables : tables that we don't want written to csv
         re_create_vars : whether to re-create/create a parquet file with
-        intermediary steps to save computation
         """
 
         # initiate with parent init
@@ -308,7 +339,7 @@ class priority_aggregator(aggregator):
 
 
 
-    #### Indicator 2 + 3
+    #### Indicator 2
 
     # result:
     # - apply sample period filter
