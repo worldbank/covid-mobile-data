@@ -26,15 +26,17 @@ class priority_aggregator(aggregator):
     period_filter : a pyspark filter. Time filter for hourly, daily and monthly
         indicators
     weeks_filter :  a pyspark filter. Time filter for weekly queries, includes
+    privacy_filter : an integer. Minimum number of observations to keep statistic
+    missing_value_code : an integer. Code for missing regions
+    cutoff_days : an integer. Max number of days for leads and lags.
+    max_duration : an integer. Max number of days to consider for duration.
 
-    Methods
-    -------
+    Methods to manage aggregation:
+    -----------------------------
     [check inherited methods described in aggregator class]
 
     run_and_save_all(time_filter, frequency)
-        - as opposed to flowminder indicators, we don not produce all indicators
-            this aggregator has to offer
-        - we cherry pick only priority indicators in this method
+        - in this method we run all indicators defines as priority
         - for this we need to supply filter and frequency
 
     run_and_save_all_frequencies()
@@ -49,6 +51,36 @@ class priority_aggregator(aggregator):
         - handle errors and retries
         - we can drop this method when we find a better way of dealing with
             databrick time-out problems
+
+    Methods to produce priority indicators:
+    --------------------------------------
+
+    transactions(time_filter, frequency)
+        - indicator 1
+
+    unique_subscribers(time_filter, frequency)
+        - indicator 2
+
+    unique_subscribers_country(time_filter, frequency)
+        - indicator 3
+
+    percent_of_all_subscribers_active(time_filter, frequency)
+        - indicator 4
+
+    origin_destination_connection_matrix(time_filter, frequency)
+        - indicator 5
+
+    unique_subscriber_home_locations(time_filter, frequency)
+        - indicator 6 + 11
+
+    mean_distance(time_filter, frequency)
+        - indicators 7 + 8
+
+    home_vs_day_location(time_filter, frequency, home_location_frequency)
+        - indicator 9
+
+    origin_destination_matrix_time(time_filter, frequency)
+        - indicator 10
 
     """
 
@@ -65,7 +97,6 @@ class priority_aggregator(aggregator):
         regions : admin level this aggregator will be used for
         intermediate_tables : tables that we don't want written to csv
         re_create_vars : whether to re-create/create a parquet file with
-        intermediary steps to save computation
         """
 
         # initiate with parent init
@@ -101,6 +132,7 @@ class priority_aggregator(aggregator):
         self.privacy_filter = 15
         self.missing_value_code = 99999
         self.cutoff_days = 7
+        self.max_duration = 21
 
         # Check whether a parquet file with variable has already been created,
         # this differs from databricks to docker
@@ -307,7 +339,7 @@ class priority_aggregator(aggregator):
 
 
 
-    #### Indicator 2 + 3
+    #### Indicator 2
 
     # result:
     # - apply sample period filter
@@ -610,7 +642,7 @@ class priority_aggregator(aggregator):
             (F.col('call_datetime_lead').isNull()))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
-            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
+            self.dates['end_date'] + dt.timedelta(1)).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
             F.col('call_datetime').cast('long')))\
         .withColumn('duration', F.when(F.col('duration') <= \
@@ -621,7 +653,8 @@ class priority_aggregator(aggregator):
             F.col('duration')).otherwise(F.col('duration')))\
         .withColumn('duration_change_only',
             F.when(F.col('duration_change_only') > \
-            (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
+            (self.max_duration * 24 * 60 * 60),
+            (self.max_duration * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .withColumn('duration_change_only_lag',
             F.lag('duration_change_only').over(user_frequency_window))\
         .where(F.col('region_lag') != F.col('region'))\
