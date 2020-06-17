@@ -154,7 +154,7 @@ class custom_aggregator(priority_aggregator):
             self.dates['start']).otherwise(F.col('call_datetime_lag')))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
-            self.dates['end']).otherwise(F.col('call_datetime_lead')))\
+            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration',
             (F.col('call_datetime_lead').cast('long') - \
              F.col('call_datetime').cast('long')))\
@@ -196,7 +196,7 @@ class custom_aggregator(priority_aggregator):
       result = self.df.orderBy('call_datetime')\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
-            self.dates['end']).otherwise(F.col('call_datetime_lead')))\
+            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration',
             (F.col('call_datetime_lead').cast('long') - \
             F.col('call_datetime').cast('long')))\
@@ -312,3 +312,42 @@ class custom_aggregator(priority_aggregator):
           .withColumn('percent_active', F.col('count') / F.col('home_location_count'))\
           .drop('home_region2')
         return result
+
+def accumulated_cholera_incidence_imported_only(self, time_filter):
+  user_window = Window\
+    .partitionBy('msisdn').orderBy('call_datetime')
+  user_infection_pickup_window = Window\
+  .partitionBy('msisdn').orderBy('call_datetime')\
+    .rangeBetween((14 * 24 * 60 * 60), (3.5 * 24 * 60 * 60))
+
+  result = self.df.where(time_filter)\
+    .where((F.col('region_lag') != F.col('region')) | \
+        (F.col('region_lead') != F.col('region')) | \
+        (F.col('call_datetime_lead').isNull()))\
+    .withColumn('call_datetime_lead',
+        F.when(F.col('call_datetime_lead').isNull(),
+        self.dates['end_date'] + dt.timedelta(1)).otherwise(F.col('call_datetime_lead')))\
+    .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
+        F.col('call_datetime').cast('long')))\
+    .withColumn('duration', F.when(F.col('duration') <= \
+        (self.cutoff_days * 24 * 60 * 60), F.col('duration')).otherwise(0))\
+    .withColumn('duration_next', F.lead('duration').over(user_window))\
+    .withColumn('duration_change_only', F.when(F.col('region') == \
+        F.col('region_lead'), F.col('duration_next') + \
+        F.col('duration')).otherwise(F.col('duration')))\
+    .withColumn('duration_change_only',
+        F.when(F.col('duration_change_only') > \
+        (self.max_duration * 24 * 60 * 60),
+        (self.max_duration * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
+    .withColumn('duration_change_only_lag',
+        F.lag('duration_change_only').over(user_window))\
+    .where(F.col('region_lag') != F.col('region'))\
+    .join(self.incidence, 'region', 'left')\
+    .withColumn('weekly_incidence',
+        F.col('incidence') * F.col('duration') / (7 * 24 * 60 * 60))\
+    .withColumn('imported_incidence',
+        F.sum('weekly_incidence').over(user_infection_pickup_window))\
+    .groupby('day', 'region')\
+    .agg(F.sum('imported_incidence').alias('imported_incidence'))
+
+  return result
