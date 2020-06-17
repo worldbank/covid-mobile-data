@@ -101,6 +101,7 @@ class priority_aggregator(aggregator):
         self.privacy_filter = 15
         self.missing_value_code = 99999
         self.cutoff_days = 7
+        self.max_duration = 21
 
         # Check whether a parquet file with variable has already been created,
         # this differs from databricks to docker
@@ -453,7 +454,7 @@ class priority_aggregator(aggregator):
             (F.col('call_datetime_lead').isNull()))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
-            self.dates['end_date']).otherwise(F.col('call_datetime_lead')))\
+            self.dates['end_date'] + dt.timedelta(1)).otherwise(F.col('call_datetime_lead')))\
         .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
             F.col('call_datetime').cast('long')))\
         .withColumn('duration', F.when(F.col('duration') <= \
@@ -464,7 +465,8 @@ class priority_aggregator(aggregator):
             F.col('duration')).otherwise(F.col('duration')))\
         .withColumn('duration_change_only',
             F.when(F.col('duration_change_only') > \
-            (21 * 24 * 60 * 60), (21 * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
+            (self.max_duration * 24 * 60 * 60),
+            (self.max_duration * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .withColumn('duration_change_only_lag',
             F.lag('duration_change_only').over(user_frequency_window))\
         .where(F.col('region_lag') != F.col('region'))\
