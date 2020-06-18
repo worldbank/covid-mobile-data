@@ -68,25 +68,21 @@ class flowminder_aggregator(aggregator):
       self.run_and_save_all()
       self.rename_all_csvs()
 
-    def attempt_aggregation(self, indicators_to_produce = 'all', no_of_attempts = 4):
-        attempts = 0
-        while attempts < no_of_attempts:
-          try:
-              # all indicators
-              if indicators_to_produce == 'all':
-                self.run_save_and_rename_all()
-              # single indicator
-              else:
-                for table in indicators_to_produce.keys():
-                  table_name = indicators_to_produce[table]
-                  print('--> Producing: ' + table_name)
-                  self.run_save_and_rename(table_name + '_per_' + indicators_to_produce[table_name])
-              print('Indicators saved.')
-              break
 
-          except Exception as e:
-            attempts += 1
-            print(e)
-            print('Try number {} failed. Trying again.'.format(attempts))
-            if attempts == 4:
-              print('Tried creating and saving indicators 4 times, but failed.')
+    def attempt_aggregation(self, indicators_to_produce = 'all'):
+      try:
+          # all indicators
+          if indicators_to_produce == 'all':
+            self.run_save_and_rename_all()
+
+          # single indicator
+          else:
+            for table in indicators_to_produce.keys():
+              table_name = indicators_to_produce[table]
+              print('--> Producing: ' + table_name)
+              self.run_save_and_rename(table_name + '_per_' + indicators_to_produce[table_name])
+          print('Indicators saved.')
+          break
+
+      except Exception as e:
+        print(e)
