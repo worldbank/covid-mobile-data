@@ -9,13 +9,18 @@ else:
 
 class custom_aggregator(priority_aggregator):
     """This class inherits from the priority aggregator class.
-    It is the main class to handle custom non-priority indicators.
+    In this class we handle special aggregations not designed for wider use
 
     Attributes
     ----------
     [check inherited attributes described in aggregator class]
 
     incidence : a pyspark dataframe. Incididence observed; for admin2 only
+
+    Methods
+    -------
+    methods to implement special aggregations not designed for wider use
+
     """
     def __init__(self,
                  result_stub,
