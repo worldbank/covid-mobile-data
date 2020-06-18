@@ -35,7 +35,9 @@ class custom_aggregator(priority_aggregator):
                 pass
 
 
-##### Non-priority Indicators - not used at the moment, but kept just in case
+##### Non-priority Indicators - not used at the moment, but kept just in case.
+# Mostly for internal use by the WB Covid19 Task Force, hence documentation is
+# not yet very detailed.
 
     def origin_destination_matrix(self, time_filter, frequency):
       result = self.df.where(time_filter)\
