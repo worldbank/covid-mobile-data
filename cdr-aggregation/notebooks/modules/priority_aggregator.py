@@ -269,8 +269,8 @@ class priority_aggregator(aggregator):
 
     # run all priority indicators for all frequencies
     def run_and_save_all_frequencies(self):
-      self.run_and_save_all(self.period_filter, 'day')
       self.run_and_save_all(self.period_filter, 'hour')
+      self.run_and_save_all(self.period_filter, 'day')
       self.run_and_save_all(self.weeks_filter, 'week')
       self.run_and_save_all(self.weeks_filter, 'month')
 
@@ -308,7 +308,7 @@ class priority_aggregator(aggregator):
               self.run_save_and_rename_all()
 
             # if we want to produce a single or custom list of indicators
-            elif isinstance(indicators_to_produce, dictionary):
+            elif isinstance(indicators_to_produce, dict):
                 for table in indicators_to_produce.keys():
 
                     # get the name for the resulting csv file
@@ -369,8 +369,8 @@ class priority_aggregator(aggregator):
                  values.
                  """)
             print('Priority indicators saved.')
-            except Exception as e:
-                print(e)
+        except Exception as e:
+            print(e)
 
 
 
