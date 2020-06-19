@@ -82,7 +82,6 @@ class flowminder_aggregator(aggregator):
               print('--> Producing: ' + table_name)
               self.run_save_and_rename(table_name + '_per_' + indicators_to_produce[table_name])
           print('Indicators saved.')
-          break
 
       except Exception as e:
         print(e)
