@@ -46,11 +46,9 @@ class priority_aggregator(aggregator):
     run_save_and_rename_all()
         run all frequencies, then rename the resulting table
 
-    attempt_aggregation(indicators_to_produce = 'all', no_of_attempts = 4)
+    attempt_aggregation(indicators_to_produce = 'all')
         - run all priority indicators
-        - handle errors and retries
-        - we can drop this method when we find a better way of dealing with
-            databrick time-out problems
+        - or specify a dicionary of indicators to produce
 
     Methods to produce priority indicators:
     --------------------------------------
@@ -191,67 +189,88 @@ class priority_aggregator(aggregator):
     # Run and save all priority indicators (list keeps on changing so there's
     # some commented lines)
     def run_and_save_all(self, time_filter, frequency):
+
+      # hourly indicators
       if frequency == 'hour':
+
         # indicator 1
         self.table_names.append(self.save_and_report(
             self.transactions(time_filter, frequency),
             'transactions_per_' + frequency))
+
         # indicator 2
         self.table_names.append(self.save_and_report(
             self.unique_subscribers(time_filter, frequency),
             'unique_subscribers_per_' + frequency))
 
+      # daily indicators
       elif frequency == 'day':
+
         # indicator 3
         self.table_names.append(self.save_and_report(
             self.unique_subscribers(time_filter, frequency),
             'unique_subscribers_per_' + frequency))
+
         # indicator 4
         self.table_names.append(self.save_and_report(
             self.percent_of_all_subscribers_active(time_filter, frequency),
             'percent_of_all_subscribers_active_per_' + frequency))
+
         # indicator 5
         self.table_names.append(self.save_and_report(
             self.origin_destination_connection_matrix(time_filter, frequency),
             'origin_destination_connection_matrix_per_' + frequency))
+
         # indicator 7
         self.table_names.append(self.save_and_report(
             self.mean_distance(time_filter, frequency),
             'mean_distance_per_' + frequency))
+
         # indicator 9
         self.table_names.append(self.save_and_report(
             self.home_vs_day_location(time_filter, frequency,
             home_location_frequency = 'week'),
             'week_home_vs_day_location_per_' + frequency))
+
         self.table_names.append(self.save_and_report(
             self.home_vs_day_location(time_filter, frequency,
             home_location_frequency = 'month'),
             'month_home_vs_day_location_per_' + frequency))
+
         # indicator 10
         self.table_names.append(self.save_and_report(
             self.origin_destination_matrix_time(time_filter, frequency),
             'origin_destination_matrix_time_per_' + frequency))
+
+      # weekly indicators
       elif frequency == 'week':
+
         # indicator 6
         self.table_names.append(self.save_and_report(
             self.unique_subscriber_home_locations(time_filter, frequency),
             'unique_subscriber_home_locations_per_' + frequency))
+
         # indicator 8
         self.table_names.append(self.save_and_report(
             self.mean_distance(time_filter, frequency),
             'mean_distance_per_' + frequency))
+
+      # monthly indicators
       elif frequency == 'month':
+
         # indicator 11
         self.table_names.append(self.save_and_report(
             self.unique_subscriber_home_locations(time_filter, frequency),
             'unique_subscriber_home_locations_per_' + frequency))
+
+      # unkown frequency
       else:
-        print('What is the frequency')
+        print('What is the frequency?!')
 
     # run all priority indicators for all frequencies
     def run_and_save_all_frequencies(self):
-      self.run_and_save_all(self.period_filter, 'day')
       self.run_and_save_all(self.period_filter, 'hour')
+      self.run_and_save_all(self.period_filter, 'day')
       self.run_and_save_all(self.weeks_filter, 'week')
       self.run_and_save_all(self.weeks_filter, 'month')
 
@@ -260,59 +279,98 @@ class priority_aggregator(aggregator):
       self.run_and_save_all_frequencies()
       self.rename_all_csvs()
 
-    # Handle errors and retries. We can drop this method soon, as I don't think
-    # we have the time-out problems on Databricks anymore
     def attempt_aggregation(self,
-        indicators_to_produce = 'all',
-        no_of_attempts = 4):
-        attempts = 0
-        while attempts < no_of_attempts:
-            try:
-                # all indicators
-                if indicators_to_produce == 'all':
-                  self.run_save_and_rename_all()
+        indicators_to_produce = 'all'):
+        """This method handles multiple aggregations in a row.
+        It calls the indicator methods to produce indicators with frequencies
+        specified in Parameters to the method call.
 
-                # single indicator
-                else:
-                    for table in indicators_to_produce.keys():
-                        table_name = indicators_to_produce[table][0]
-                        frequency = indicators_to_produce[table][1]
+        Parameters
+        ----------
+        indicators_to_produce : a string or dictionary. Specify either the string
+        'all' or a dictionary in the format:
 
-                        # more than the standard arguments
-                        if isinstance(frequency, list):
-                          other_args = frequency[1]
-                          frequency = frequency[0]
-                          if frequency == 'week':
-                            filter_var = self.weeks_filter
-                          else:
-                            filter_var = self.period_filter
+        'table_name' : ['indicator_name', 'frequency']
 
-                          result = getattr(self, table_name)(filter_var,
-                            frequency, **other_args)
-                          try:
-                            table_name = other_args['home_location_frequency'] \
-                            + '_' + table_name
-                          except:
-                            pass
+         where
+            'table_name' is the file name for the resulting csv,
+            'indicator_name' is the name of the method for the indicator, and
+            'frequency' specifies the frequency at which you wish to compute
+         the indicator. Indicator 9 takes a list of lists in the format:
 
-                        # only the standard arguments
-                        else:
-                          if frequency == 'week':
-                            filter_var = self.weeks_filter
-                          else:
-                            filter_var = self.period_filter
-                          result = getattr(self,
-                            table_name)(filter_var, frequency)
-                        # save and rename
-                        table_name = self.save_and_rename_one(result, table)
-                print('Priority indicators saved.')
-                break
-            except Exception as e:
-                attempts += 1
-                print(e)
-                print('Try number {} failed. Trying again.'.format(attempts))
-                if attempts == 4:
-                    print('Tried creating and saving indicators 4 times, but failed.')
+         'table_name' : ['indicator_name',['frequency','home_location_frequency']]
+
+         as value.
+        """
+        try:
+            # if we want to produce all indicators
+            if indicators_to_produce == 'all':
+              self.run_save_and_rename_all()
+
+            # if we want to produce a single or custom list of indicators
+            elif isinstance(indicators_to_produce, dict):
+                for table in indicators_to_produce.keys():
+
+                    # get the name for the resulting csv file
+                    table_name = indicators_to_produce[table][0]
+
+                    # get the name of the indicator to produce
+                    frequency = indicators_to_produce[table][1]
+
+                    # if more than the standard arguments, we are producing
+                    # indicator 9 (currently the only indicator that requires
+                    # additional arguments, but we are keeping implementation
+                    # abstract here in case this changes) and need to prefix
+                    # the resulting csv filew ith the home location frequency.
+                    # We also need to use the week filter to avoid incomparability
+                    # across full and partial weeks.
+                    if isinstance(frequency, list):
+                      # get home_location_frequency
+                      other_args = frequency[1]
+                      # get frequency for indicator
+                      frequency = frequency[0]
+
+                      # set week filter if we want weekly frequency
+                      if frequency == 'week':
+                        filter_var = self.weeks_filter
+                      else:
+                        filter_var = self.period_filter
+
+                      # compute the indicator
+                      result = getattr(self, table_name)(filter_var,
+                        frequency, **other_args)
+                      # try to prefix the resulting table name
+                      try:
+                        table_name = other_args['home_location_frequency'] \
+                        + '_' + table_name
+                      except:
+                        pass
+
+                    # If we only have standard arguments, then we just check
+                    # whether we need a week filter, produce and save the indicator
+                    else:
+                      if frequency == 'week':
+                        filter_var = self.weeks_filter
+                      else:
+                        filter_var = self.period_filter
+                      result = getattr(self,
+                        table_name)(filter_var, frequency)
+                    # save and rename
+                    table_name = self.save_and_rename_one(result, table)
+            else:
+                print("""Wrong arguments for aggregation attempt. Specify either
+                 'all' or a dictionary in the format
+                 'table_name' : ['indicator_name', 'frequency']
+                 where 'table_name' is the file name for the resulting csv,
+                 'indicator_name' is the name of the method for the indicator, and
+                 'frequency' specifies the frequency at which you wish to compute
+                 the indicator. Indicator 9 takes a list of lists in the format
+                 ['indicator_name',['frequency', 'home_location_frequency']] as
+                 values.
+                 """)
+            print('Priority indicators saved.')
+        except Exception as e:
+            print(e)
 
 
 
