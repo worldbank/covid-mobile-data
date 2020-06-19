@@ -17,7 +17,6 @@ import datetime as dt
 import seaborn as sns; sns.set()
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
- 
 
 #-----------------------------------------------------------------#
 #### Set file paths
@@ -84,7 +83,6 @@ I8_Adm3_path = I5_path + "admin3/"
 I9_path = DATA_DB_raw_indicators + "indicator 9/"
 I9_Adm2_path = I9_path + "admin2/"
 I9_Adm3_path = I9_path + "admin3/"
-
 
 #Simple Origin Destination Matrix - trips 
 # between consecutive in time regions with time
