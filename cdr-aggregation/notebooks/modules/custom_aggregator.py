@@ -323,17 +323,36 @@ class custom_aggregator(priority_aggregator):
 
     # - filter for observations that imply a change in region either with the previous,
     # or the next observation. Also keep the last observation regardless.
-    # - replace missing lead timestamps with the lat day of the sample
+    # - replace missing lead timestamps with the last day of the sample
     # - calculate duration
-    # - replace duration with 7 days if it is longer than that
     # - get the lead duration
     # - when there is no change in region with the lead observation,
     # add the lead duration to the current duration
-    # - apply a max duration
     # - drop observations where the lag != current region
+    #
     # Now we have duration in each region
     # - Merge with incidence using region and incidence frequency
-    # - calculate imported
+    #
+    # Loop:
+    # - create 10 incidence sums: going back as far as 10 or as far as 1 day
+    # - collect regions and incidence over the windows
+    # - merge the arrays, then filter elements where the region == current region
+    # - sum imported incidence over infectious period
+    #
+    # If we want all incidence in one day:
+    # - multiply imported incidence by duration in region
+    # - group by day and region and sum
+    #
+    # If we want incidence spread out:
+    # - calculate the number of days a person stays in region / number of new rows needed
+    # - calculate the remainder time for the last day
+    # - make an array to fill the duration column
+    # - explode the array into number of rows needed
+    # - add a number of day to the date for each row that was exploded
+    # - for the last of the exloded rows per user, replace duration with remainder
+    # - calculate total incidence imported for the day by duration * incidence
+    # - for the above, use the variable depending on how far into our stay we are
+    # - group by day and region and sum
 
     def accumulated_cholera_incidence_imported_only(self,
                                                     time_filter,
@@ -346,9 +365,6 @@ class custom_aggregator(priority_aggregator):
 
       user_window = Window\
         .partitionBy('msisdn').orderBy('call_datetime')
-      user_infection_pickup_window = Window\
-        .partitionBy('msisdn').orderBy('call_datetime_long')\
-        .rangeBetween(start_infectious_window,end_infectious_window)
 
       prep = self.df.where(time_filter)\
         .withColumn('call_datetime_long', F.col('call_datetime').cast('long'))\
@@ -366,41 +382,48 @@ class custom_aggregator(priority_aggregator):
         .withColumn('duration_change_only', F.when(F.col('region') == \
             F.col('region_lead'), F.col('duration_next') + \
             F.col('duration')).otherwise(F.col('duration')))\
-        .withColumn('duration_change_only',
-            F.when(F.col('duration_change_only') > \
-            (self.max_duration * 24 * 60 * 60),
-            (self.max_duration * 24 * 60 * 60)).otherwise(F.col('duration_change_only')))\
         .where(F.col('region_lag') != F.col('region'))
 
       if incidence_frequency == 'total':
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_total')
         join_condition = (prep.region == self.incidence.ward)
-        divisor = (self.dates['end_date'] - self.dates['start_date']).days
       elif incidence_frequency == 'monthly':
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_monthly')
         join_condition = ((prep.region == self.incidence.ward) &\
                           (prep.month == self.incidence.case_month))
-        divisor = 30
       elif incidence_frequency == 'weekly':
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_weekly')
         join_condition = ((prep.region == self.incidence.ward) &\
                           (prep.week == self.incidence.case_week))
-        divisor = 7
+
 
       result = prep\
         .join(self.incidence, join_condition, 'left')\
         .na.fill({'incidence' : 0})\
-        .withColumn(incidence_frequency,
-            F.col('incidence') * F.col('duration_change_only') / (divisor * 24 * 60 * 60))\
-        .withColumn('imported_incidence',
-            F.sum(incidence_frequency).over(user_infection_pickup_window))\
-        .na.fill({'imported_incidence' : 0})
+        .withColumn('incidence_duration',
+            F.col('incidence') * F.col('duration_change_only'))\
+        .na.fill({'incidence_duration' : 0})
 
+      for days in range(10):
+
+          user_infection_pickup_window = Window\
+              .partitionBy('msisdn').orderBy('call_datetime_long')\
+              .rangeBetween(start_infectious_window + (days * 24 * 60 * 60),end_infectious_window)
+
+          result = result\
+            .withColumn('incidence_list',
+                F.collect_list('incidence_duration').over(user_infection_pickup_window))\
+            .withColumn('region_list',
+                F.collect_list('region').over(user_infection_pickup_window))\
+            .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_list')))\
+            .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
+            .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_list'))\
+            .withColumn('imported_incidence_' + str(days), F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
 
       if import_in_one_day:
         result = result\
           .withColumn('imported_incidence_time',
-               F.col('imported_incidence') * F.col('duration_change_only') / (divisor * 24 * 60 * 60))\
+               F.col('imported_incidence_0') * F.col('duration_change_only'))\
           .groupby('day', 'region')\
           .agg(F.sum('imported_incidence_time').alias('imported_incidence'))
 
@@ -414,17 +437,46 @@ class custom_aggregator(priority_aggregator):
               F.when(F.col('number_of_new_rows')>1,
               F.expr('array_repeat(24 * 60 * 60,number_of_new_rows)'))\
               .otherwise(F.array('duration_change_only')))\
-          .select('day', 'region', 'imported_incidence', 'remainder', 'msisdn','call_datetime',
-              F.posexplode('new_row_array').alias('pos', 'duration_change_only'),
-              F.expr('date_add(day, pos)').alias('day_filled'))\
+          .selectExpr('*',
+              "posexplode(new_row_array) as (pos, duration_exploded)",
+              "date_add(day, pos) as day_filled")\
           .withColumn('pos_lead', F.lead('pos').over(user_window))\
           .withColumn('duration_change_only_exact',
               F.when(F.col('pos') > F.col('pos_lead'), F.col('remainder'))\
-              .otherwise(F.col('duration_change_only')))\
+              .otherwise(F.col('duration_exploded')))\
           .withColumn('imported_incidence_time',
-               F.col('imported_incidence') * \
-               F.col('duration_change_only_exact') / (divisor * 24 * 60 * 60))\
+               F.when(F.col('pos') == 0,
+               F.col('imported_incidence_0') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 1,
+               F.col('imported_incidence_1') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 2,
+               F.col('imported_incidence_2') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 3,
+               F.col('imported_incidence_3') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 4,
+               F.col('imported_incidence_4') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 5,
+               F.col('imported_incidence_5') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 6,
+               F.col('imported_incidence_6') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 7,
+               F.col('imported_incidence_7') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 8,
+               F.col('imported_incidence_8') * \
+               F.col('duration_change_only_exact')).otherwise(
+               F.when(F.col('pos') == 9,
+               F.col('imported_incidence_9') * \
+               F.col('duration_change_only_exact')).otherwise(0)))))))))))\
           .groupby('day_filled', 'region')\
-          .agg(F.sum('imported_incidence_time').alias('imported_incidence'))
+          .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
+          .withColumnRenamed('day_filled', 'day')
 
       return result
