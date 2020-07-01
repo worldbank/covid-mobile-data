@@ -13,6 +13,7 @@ EXPORT <- T
 # days_wards_with_low_hours_I1.csv which indicates when a tower is likely town
 TOWER_DOWN_REPLACE_NA <- T
 
+unit <- "ward"
 for(unit in c("district", "ward")){
   
   # Set parameters -------------------------------------------------------------

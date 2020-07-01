@@ -708,6 +708,7 @@ tp_add_baseline_comp_stats <- function(data,
   data_sub <- data.frame(value = data[[value_var]],
                          region = data[[region_var]],
                          date = data[[date_var]])
+  data_sub$region <- data_sub$region %>% as.character()
   
   #### Add Month and Day of Week
   # TODO This process might not be most stable
@@ -777,7 +778,7 @@ tp_add_baseline_comp_stats <- function(data,
                                                value_dow_base_sd   = sd(value, na.rm=T)), 
                                            by = list(region, dow)]
   
-  data_sub_dt <- merge(data_sub_dt, data_sub_base_agg_dt, by=c("region", "dow"))
+  data_sub_dt <- merge(data_sub_dt, data_sub_base_agg_dt, by=c("region", "dow"), all.x=T) # !!! ERROR !!!
   
   data_sub <- as.data.frame(data_sub_dt)
   
