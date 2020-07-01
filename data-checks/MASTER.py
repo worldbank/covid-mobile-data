@@ -126,7 +126,7 @@ OUT_hfcs = OUT_path + "data-checks/"
 # Load list of internal indicators to make it
 # easier to bulk load files
 internal_indicators = pd\
-    .read_csv(DATA_POC + 'indicators_list.csv')
+    .read_csv(DATA_POC + 'documentation/indicators_list.csv')
 
 # Since sheet contains relative paths add path global
 # to have absolute paths    

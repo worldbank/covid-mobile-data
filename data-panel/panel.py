@@ -32,7 +32,7 @@ OUT_panel = DATA_POC + "panel_indicators/"
 
 # Load list of indicators to make it easier to bulk load files
 indicators_df = pd\
-    .read_csv(DATA_POC + 'indicators_list.csv')
+    .read_csv(DATA_POC + 'documentation/indicators_list.csv')
 
 # Since sheet contains relative paths add path global
 # to have absolute paths    
@@ -146,12 +146,23 @@ class i_indicator:
 # Count of observations - sum across all observations in the given hour and lowest admin 
 # area.
 i1 = i_indicator(num = 1,  index_cols = ['hour', 'region'])
-      
+
+# Indicator 3
+# Count of observations - sum across all observations in the given hour and lowest admin 
+# area.
+i3 = i_indicator(num = 3,  index_cols = ['day', 'region'])
+
+i3_2 = i_indicator(num = 3,  index_cols = ['day', 'region'], level = 2)
+
+
+
 # Indicator 5
 # Origin Destination Matrix - trips between two regions
 i5 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 3)
 
 i5_2 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 2)
+
+
 
 # Indicator 7
 # Mean and Standard Deviation of distance traveled (by home location)
@@ -173,6 +184,9 @@ i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level
 i1.create_panel(time_var = 'hour')
 i5.create_panel(time_var = 'connection_date')
 i5_2.create_panel(time_var = 'connection_date')
+
+i3_2.create_panel(time_var = 'day')
+
 i7.create_panel(time_var = 'day')
 i7_2.create_panel(time_var = 'day')
 i9.create_panel(time_var = 'day')
@@ -180,11 +194,13 @@ i9_2.create_panel(time_var = 'day')
 
 
 i5.panel.sort_values(i5.index_cols)
+i3_2.panel.sort_values(i3_2.index_cols)
 
 #-----------------------------------------------------------------#
 # Export
 if EXPORT:
     i1.panel.sort_values(i1.index_cols).to_csv(OUT_panel + 'i1_admin3.csv', index = False)
+    i3_2.panel.sort_values(i3.index_cols).to_csv(OUT_panel + 'i3_admin2.csv', index = False)
     i5.panel.sort_values(i5.index_cols).to_csv(OUT_panel + 'i5_admin3.csv', index = False)
     i5_2.panel.sort_values(i5.index_cols).to_csv(OUT_panel + 'i5_admin2.csv', index = False)
     i7.panel.sort_values(i7.index_cols).to_csv(OUT_panel + 'i7_admin3.csv', index = False)
