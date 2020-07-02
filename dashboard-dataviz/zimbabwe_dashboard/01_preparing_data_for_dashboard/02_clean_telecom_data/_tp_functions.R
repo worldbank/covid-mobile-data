@@ -259,8 +259,11 @@ tp_clean_week <- function(data,
     
     date_var_ORIG <- date_var %>% substring(1,10) %>% as.character()
     
+    # Convert to week
     date_var <- date_var_ORIG %>% week() + 1
     
+    # Convert to date
+    date_var <- lubridate::ymd( "2020-01-01" ) + lubridate::weeks( date_var - 2 )
     # date_var[date_var_ORIG >= "2020-02-01"] <- "Feb 01 - Feb 07"
     # date_var[date_var_ORIG >= "2020-02-08"] <- "Feb 08 - Feb 14"
     # date_var[date_var_ORIG >= "2020-02-15"] <- "Feb 15 - Feb 21"
