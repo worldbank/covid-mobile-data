@@ -231,38 +231,45 @@ tp_clean_week <- function(data,
   }
   
   #### Modify variable
-  # TODO Extend to full year
+  # Change to date that week starts
   if(type == "integer"){
     
-    date_var <- date_var %>%
-      dplyr::recode("6" = "Feb 01 - Feb 07",
-                    "7" = "Feb 08 - Feb 14",
-                    "8" = "Feb 15 - Feb 21",
-                    "9" = "Feb 22 - Feb 28",
-                    "10" = "Feb 29 - Mar 06",
-                    "11" = "Mar 07 - Mar 13",
-                    "12" = "Mar 14 - Mar 20",
-                    "13" = "Mar 21 - Mar 27",
-                    "14" = "Mar 28 - Apr 03",
-                    "15" = "Apr 04 - Apr 10",
-                    "16" = "Apr 11 - Apr 17",
-                    "17" = "Apr 18 - Apr 24",
-                    "18" = "Apr 25 - May 01")
+    # -1 because 2020-01-01 is week 1 and another -1 because python
+    # index starts at 0
+    date_var <- lubridate::ymd( "2020-01-01" ) + lubridate::weeks( date_var - 2 )
+    
+    # date_var <- date_var %>%
+    #   dplyr::recode("6" = "Feb 01 - Feb 07",
+    #                 "7" = "Feb 08 - Feb 14",
+    #                 "8" = "Feb 15 - Feb 21",
+    #                 "9" = "Feb 22 - Feb 28",
+    #                 "10" = "Feb 29 - Mar 06",
+    #                 "11" = "Mar 07 - Mar 13",
+    #                 "12" = "Mar 14 - Mar 20",
+    #                 "13" = "Mar 21 - Mar 27",
+    #                 "14" = "Mar 28 - Apr 03",
+    #                 "15" = "Apr 04 - Apr 10",
+    #                 "16" = "Apr 11 - Apr 17",
+    #                 "17" = "Apr 18 - Apr 24",
+    #                 "18" = "Apr 25 - May 01",
+    #                 "19" = "Apr 25 - May 02")
     
   } else if (type == "date"){
     # TODO Not idea as assumes starts on Feb 1
     
     date_var_ORIG <- date_var %>% substring(1,10) %>% as.character()
     
-    date_var[date_var_ORIG >= "2020-02-01"] <- "Feb 01 - Feb 07"
-    date_var[date_var_ORIG >= "2020-02-08"] <- "Feb 08 - Feb 14"
-    date_var[date_var_ORIG >= "2020-02-15"] <- "Feb 15 - Feb 21"
-    date_var[date_var_ORIG >= "2020-02-22"] <- "Feb 22 - Feb 28"
-    date_var[date_var_ORIG >= "2020-02-29"] <- "Feb 29 - Mar 06"
-    date_var[date_var_ORIG >= "2020-03-07"] <- "Mar 07 - Mar 13"
-    date_var[date_var_ORIG >= "2020-03-14"] <- "Mar 14 - Mar 20"
-    date_var[date_var_ORIG >= "2020-03-21"] <- "Mar 21 - Mar 27"
-    date_var[date_var_ORIG >= "2020-03-28"] <- "Mar 28 - Apr 03"
+    date_var <- date_var_ORIG %>% week() + 1
+    
+    # date_var[date_var_ORIG >= "2020-02-01"] <- "Feb 01 - Feb 07"
+    # date_var[date_var_ORIG >= "2020-02-08"] <- "Feb 08 - Feb 14"
+    # date_var[date_var_ORIG >= "2020-02-15"] <- "Feb 15 - Feb 21"
+    # date_var[date_var_ORIG >= "2020-02-22"] <- "Feb 22 - Feb 28"
+    # date_var[date_var_ORIG >= "2020-02-29"] <- "Feb 29 - Mar 06"
+    # date_var[date_var_ORIG >= "2020-03-07"] <- "Mar 07 - Mar 13"
+    # date_var[date_var_ORIG >= "2020-03-14"] <- "Mar 14 - Mar 20"
+    # date_var[date_var_ORIG >= "2020-03-21"] <- "Mar 21 - Mar 27"
+    # date_var[date_var_ORIG >= "2020-03-28"] <- "Mar 28 - Apr 03"
     
   }
   

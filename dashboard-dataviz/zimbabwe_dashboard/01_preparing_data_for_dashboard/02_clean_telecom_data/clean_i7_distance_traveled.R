@@ -1,7 +1,7 @@
 # Clean Subscribers Data
 
-EXPORT <- T
-
+unit = "district"
+metric = "mean_distance"
 for(unit in c("district", "ward")){
   for(metric in c("mean_distance", "stdev_distance")){
     
@@ -9,50 +9,59 @@ for(unit in c("district", "ward")){
     
     # Set parameters -------------------------------------------------------------
     if(unit %in% "district"){
-      RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "indicator 7", "admin2")
+      RAW_DATA_PATH <- file.path(PANELINDICATORS_PATH)
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
       admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
+      
+      #### Load Data
+      df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                   "i7_admin2.csv"), 
+                         stringsAsFactors=F) %>%
+        dplyr::rename(date = day) %>%
+        mutate(date = date %>% substring(1,10))
     }
     
     if(unit %in% "ward"){
-      RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "indicator 7", "admin3")
+      RAW_DATA_PATH <- file.path(PANELINDICATORS_PATH)
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
       admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
+      
+      #### Load Data
+      df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                   "i7_admin3.csv"), 
+                         stringsAsFactors=F) %>%
+        dplyr::rename(date = day) %>%
+        mutate(date = date %>% substring(1,10))
     }
     
-    # Daily ----------------------------------------------------------------------
-    print("day")
-    
-    df_day <- read.csv(file.path(RAW_DATA_PATH, 
-                                 "mean_distance_per_day.csv"), 
-                       stringsAsFactors=F)
-    
-    ## For wards, remove if tower is down
+  
+    # For wards, remove if tower is down ---------------------------------------
     if(unit %in% "ward"){
-      df_day$day <- df_day$day %>% substring(1,10) %>% as.Date()
       
       towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
                                         "outputs", 
                                         "data-checks", 
-                                        "days_wards_with_low_hours_I1.csv"))
+                                        "days_wards_with_low_hours_I1_panel.csv"))
       
       towers_down <- towers_down %>%
         dplyr::select(region, date) %>%
         mutate(tower_down = T) %>%
-        mutate(date = date %>% as.character %>% as.Date())
+        mutate(date = date %>% as.character)
       
       df_day <- df_day %>%
         left_join(towers_down, 
-                  by = c("day" = "date",
+                  by = c("date" = "date",
                          "home_region" = "region"))
       
       df_day[[metric]][df_day$tower_down %in% TRUE] <- NA
     }
     
+    # Daily ----------------------------------------------------------------------
+    print("day")
     
     df_day_clean <- df_day %>% 
       
-      tp_standardize_vars("day", "home_region", metric) %>%
+      tp_standardize_vars("date", "home_region", paste0(metric, "_p")) %>%
       
       # Clean datset
       tp_clean_date() %>%
@@ -73,13 +82,10 @@ for(unit in c("district", "ward")){
       tp_add_label_level(timeunit = "day", OD = F) %>%
       tp_add_label_baseline(timeunit = "day", OD = F)
     
-    if(EXPORT){
-      saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
-                                      paste0("indicator_7_day_",metric,".Rds")))
-      write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
-                                        paste0("indicator_7_day_",metric,".csv")), 
-                row.names=F)
-    }
+    ## Export
+    saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH, paste0("i7_daily_",metric,".Rds")))
+    write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, paste0("i7_daily_",metric,".csv")), row.names=F)
+    
     
     # Weekly ---------------------------------------------------------------------
     print("week")
@@ -110,13 +116,14 @@ for(unit in c("district", "ward")){
       tp_add_label_level(timeunit = "week", OD = F) %>%
       tp_add_label_baseline(timeunit = "week", OD = F) 
     
-    if(EXPORT){
-      saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,
-                                       paste0("indicator_7_week_",metric,".Rds")))
-      write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, 
-                                         paste0("indicator_7_week_",metric,".csv")), 
-                row.names=F)
-    }
+    
+    ## Export
+    saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,
+                                     paste0("i7_weekly_",metric,".Rds")))
+    write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, 
+                                       paste0("i7_weekly_",metric,".csv")), 
+              row.names=F)
+    
     
   }
 }

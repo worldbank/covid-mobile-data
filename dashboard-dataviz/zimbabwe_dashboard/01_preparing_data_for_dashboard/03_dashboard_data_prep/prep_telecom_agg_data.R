@@ -14,13 +14,13 @@ N_CORES <- 1
 
 #### Select which datasets to process
 # Non-OD
-PROCESS_DENSITY_DATA       <- T
-PROCESS_MOVEMENT_NET_DATA  <- F
-PROCESS_DISTANCE_MEAN_DATA <- F
-PROCESS_DISTANCE_STD_DATA  <- F
+PROCESS_DENSITY_DATA       <- F
+PROCESS_MOVEMENT_NET_DATA  <- T
+PROCESS_DISTANCE_MEAN_DATA <- T
+PROCESS_DISTANCE_STD_DATA  <- T
 
 # OD
-PROCESS_MOVEMENT_DATA      <- F
+PROCESS_MOVEMENT_DATA      <- T
 
 #### Delete previous files before running? Useful if change naming conventions
 # of files, so need to get rid of old files. Otherwise will just add or overwrite.
@@ -70,8 +70,8 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
     }
     
     # Short name for time unit, needed for file paths
-    if(timeunit %in% "Daily") timeunit_short <- "day"
-    if(timeunit %in% "Weekly") timeunit_short <- "week"
+    if(timeunit %in% "Daily") timeunit_short <- "daily"
+    if(timeunit %in% "Weekly") timeunit_short <- "weekly"
   
     ##### Process Non-OD Data ##### --------------------------------------------
     
@@ -85,12 +85,12 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
         #                                       timeunit_short,
         #                                       "_scaled.Rds")))
         df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("count_unique_subscribers_per_region_per_",
+                                        paste0("i3_",
                                                timeunit_short,
                                                ".Rds")))
       } else {
         df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("count_unique_subscribers_per_region_per_",
+                                        paste0("i3_",
                                                timeunit_short,
                                                ".Rds")))
       }
@@ -121,7 +121,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       ## Load data
       df_distance_mean <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                       paste0("indicator_7_",
+                                       paste0("i7_",
                                               timeunit_short,
                                               "_mean_distance",
                                               ".Rds")))
@@ -148,7 +148,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       ## Load data
       df_distance_stdev <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                            paste0("indicator_7_",
+                                            paste0("i7_",
                                                    timeunit_short,
                                                    "_stdev_distance",
                                                    ".Rds")))
@@ -175,7 +175,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       ## Load Data
       df_movement_net <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                           paste0("origin_destination_connection_matrix_net_per_",
+                                           paste0("i5_net_",
                                                   timeunit_short,
                                                   ".Rds")))
       
@@ -203,7 +203,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       #### Load OD Datasets to Process
       df_movement  <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("origin_destination_connection_matrix_per_",
+                                        paste0("i5_",
                                                timeunit_short,
                                                ".Rds")))
       

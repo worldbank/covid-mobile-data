@@ -2,12 +2,11 @@
 
 # Depends on: clean_movement_inout_data.R
 
-EXPORT <- T
 
 unit <- "ward"
-timeunit <- "day"
+timeunit <- "daily"
 for(unit in c("district", "ward")){
-  for(timeunit in c("day", "week")){
+  for(timeunit in c("daily", "weekly")){
     
     print(paste(unit, timeunit, "--------------------------------------------"))
     
@@ -24,7 +23,7 @@ for(unit in c("district", "ward")){
     
     # Clean ----------------------------------------------------------------------
     df <- readRDS(file.path(CLEAN_DATA_PATH,
-                            paste0("origin_destination_connection_matrix_per_",
+                            paste0("i5_",
                                    timeunit,
                                    ".Rds"))) %>%
       as.data.table()
@@ -67,18 +66,19 @@ for(unit in c("district", "ward")){
       tp_add_label_level(timeunit = timeunit, OD = F) %>%
       tp_add_label_baseline(timeunit = timeunit, OD = F) 
     
-    if(EXPORT){
-      saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
-                                      paste0("origin_destination_connection_matrix_net_per_",
+    
+    ## Export
+    saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
+                                    paste0("i5_net_",
+                                           timeunit,
+                                           ".Rds")))
+    
+    write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
+                                      paste0("i5_net_",
                                              timeunit,
-                                             ".Rds")))
-      
-      write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
-                                        paste0("origin_destination_connection_matrix_net_per_",
-                                               timeunit,
-                                               ".csv")), 
-                row.names=F)
-    }
+                                             ".csv")), 
+              row.names=F)
+    
     
     
   }

@@ -41,7 +41,7 @@ for(unit in c("ward", "district")){
     towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
                                       "outputs", 
                                       "data-checks", 
-                                      "days_wards_with_low_hours_I1.csv"))
+                                      "days_wards_with_low_hours_I1_panel.csv"))
     
     #### Towers Down
     # If tower seems down, make the value NA
@@ -70,7 +70,7 @@ for(unit in c("ward", "district")){
   # example, if a o-d pair has a value less than 15 for every time period, 
   # we don't considered here and helps improve code speed both here and in
   # the script to prepare data for dashboard.
-  df_day <- df_day[df_day$total_count > 15,]
+  df_day <- df_day[df_day$total_count_p > 15,]
   
   # Daily ----------------------------------------------------------------------
   #### Process data for dashboard
