@@ -185,6 +185,7 @@ i1.create_panel(time_var = 'hour')
 i5.create_panel(time_var = 'connection_date')
 i5_2.create_panel(time_var = 'connection_date')
 
+i3.create_panel(time_var = 'day')
 i3_2.create_panel(time_var = 'day')
 
 i7.create_panel(time_var = 'day')
@@ -194,12 +195,13 @@ i9_2.create_panel(time_var = 'day')
 
 
 i5.panel.sort_values(i5.index_cols)
-i3_2.panel.sort_values(i3_2.index_cols)
+i3.panel.sort_values(i3_2.index_cols)
 
 #-----------------------------------------------------------------#
 # Export
 if EXPORT:
     i1.panel.sort_values(i1.index_cols).to_csv(OUT_panel + 'i1_admin3.csv', index = False)
+    i3.panel.sort_values(i3.index_cols).to_csv(OUT_panel + 'i3_admin3.csv', index = False)
     i3_2.panel.sort_values(i3.index_cols).to_csv(OUT_panel + 'i3_admin2.csv', index = False)
     i5.panel.sort_values(i5.index_cols).to_csv(OUT_panel + 'i5_admin3.csv', index = False)
     i5_2.panel.sort_values(i5.index_cols).to_csv(OUT_panel + 'i5_admin2.csv', index = False)
