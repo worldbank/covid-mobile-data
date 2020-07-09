@@ -10,8 +10,7 @@ import numpy as np
 import datetime as dt
 
 
-
-EXPORT = False
+EXPORT = True
 
 # Number of hours below avg, used as a trashold to 
 # define a tower down
