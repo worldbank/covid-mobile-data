@@ -6,6 +6,7 @@
 
 EXPORT = False
 
+
 #-----------------------------------------------------------------#
 # F
 
@@ -27,11 +28,23 @@ def drop_custna(data, columns):
 def loadfiles(file_name, 
               files_df = internal_indicators,
               admin = 3):
-    print(file_name, admin)
-    # Set intex
+     # Set intex
     idx = files_df[(files_df['file'] == file_name) & (files_df['level'] == admin)].index.values[0]    # Load internal
+    # Custom file names for i5 and i7
+    if file_name in ['mean_distance_per_day', 
+                     'origin_destination_connection_matrix_per_day',
+                     'mean_distance_per_week',
+                     'month_home_vs_day_location_per_day',
+                     'week_home_vs_day_location_per_day']:
+        file_name_i = file_name + '_7day_limit.csv'
+    else:
+        file_name_i = file_name + '.csv'
+    # External names
+    file_name_e = file_name + '.csv'
+    print(file_name, admin)
+    # Load data
     d = None
-    d = pd.read_csv(files_df['path'][idx] + file_name)
+    d = pd.read_csv(files_df['path'][idx] + file_name_i)
     # Load external
     if files_df['indicator'][idx] == 'flow':
         ext_path = IFLOW_path
@@ -40,7 +53,7 @@ def loadfiles(file_name,
     # Load external file
     ext_folder = ext_path + 'admin' + str(files_df['level'][idx]) + '/' 
     de = None
-    de = pd.read_csv(ext_folder + file_name)
+    de = pd.read_csv(ext_folder + file_name_e)
     # Patch cleannig of headers in the middle of the data
     c1_name = d.columns[0]
     de = de[~de[c1_name].astype(str).str.contains(c1_name)]    
@@ -54,9 +67,6 @@ def clean(d, index_cols):
     #index_cols = list(d.columns[0:-1])
     d = drop_custna(d, index_cols)
     return(d)
-
-
-
 
 #-----------------------------------------------------------------#
 # Check overlap of data for a few key indicators
@@ -77,27 +87,26 @@ def process_pipeline(d,
                suffixes=('', '_ecnt'))
     return md
 
-
 # Indicator 1
-i1, i1i = loadfiles('transactions_per_hour.csv')
+i1, i1i = loadfiles('transactions_per_hour')
 i1_index = ['hour', 'region']
 
 i1_m = process_pipeline(i1, i1i, i1_index)
 
 # Indicator 2
-i2, i2i = loadfiles('unique_subscribers_per_hour.csv')
+i2, i2i = loadfiles('unique_subscribers_per_hour')
 i2_index = ['hour', 'region']
 
 i2_m = process_pipeline(i2, i2i, i2_index)
 
 # Indicator 3
-i3, i3i = loadfiles('unique_subscribers_per_day.csv')
+i3, i3i = loadfiles('unique_subscribers_per_day')
 i3_index = ['day', 'region']
 
 i3_m = process_pipeline(i3, i3i, i3_index)
 
 # Indicator 3 district
-i3d, i3id = loadfiles('unique_subscribers_per_day.csv', admin = 2)
+i3d, i3id = loadfiles('unique_subscribers_per_day', admin = 2)
 
 i3_md = process_pipeline(i3d, i3id, i3_index)
 
@@ -107,10 +116,8 @@ i3_md = process_pipeline(i3d, i3id, i3_index)
 
 # i3_m = process_pipeline(i3, i3i, i3_index)
 
-
-
 # Indicator 5
-i5, i5i = loadfiles('origin_destination_connection_matrix_per_day.csv')
+i5, i5i = loadfiles('origin_destination_connection_matrix_per_day')
 i5_index = ['connection_date', 'region_from', 'region_to']
 
 i5_m = process_pipeline(i5, i5i, i5_index)
@@ -121,29 +128,29 @@ i5_m = process_pipeline(i5, i5i, i5_index)
 # i5_md = process_pipeline(i5d, i5id, i5_index)
 
 # Indicator 7 
-i7,i7i = loadfiles('mean_distance_per_day.csv')
+i7,i7i = loadfiles('mean_distance_per_day')
 i7_index = ['home_region', 'day']
 
 i7_m = process_pipeline(i7, i7i, i7_index)
 
 # Indicator 7 district level
-i7d,i7id = loadfiles('mean_distance_per_day.csv', admin = 2)
+i7d,i7id = loadfiles('mean_distance_per_day', admin = 2)
 
 i7_md = process_pipeline(i7d, i7id, i7_index)
 
 # Indicator 8
-i8, i8i = loadfiles('mean_distance_per_week.csv') 
+i8, i8i = loadfiles('mean_distance_per_week') 
 i8_index = ['home_region', 'week']
 
 i8_m = process_pipeline(i8, i8i, i8_index)
 
 # Indicator 8 district
-i8d, i8id = loadfiles('mean_distance_per_week.csv', admin = 2) 
+i8d, i8id = loadfiles('mean_distance_per_week', admin = 2) 
 
 i8_md = process_pipeline(i8d, i8id, i8_index)
 
 # Indicator 9
-i9, i9i = loadfiles('week_home_vs_day_location_per_day.csv', admin = 2)
+i9, i9i = loadfiles('week_home_vs_day_location_per_day', admin = 2)
 i9_index = ['region', 'home_region', 'day']
 
 # Fix i9 district id
@@ -153,6 +160,9 @@ i9['home_region'] = i9['home_region'].astype(int)
 i9i['home_region'] = i9i['home_region'].astype(int)
 
 i9_m = process_pipeline(i9, i9i, i9_index, do_clean = False)
+
+#-----------------------------------------------------------------#
+# Export intersection
 
 # Export 
 def export(data, 
@@ -167,7 +177,7 @@ def export(data,
 if EXPORT:
     export(i1_m, 'i1_admin3', path = OUT_hfcs + 'Sheet intersections/')
     export(i2_m, 'i2_admin3', path = OUT_hfcs + 'Sheet intersections/')
-    export(i5_m, 'i5_admin3', path = OUT_hfcs + 'Sheet intersections/')
+    #export(i5_m, 'i5_admin3', path = OUT_hfcs + 'Sheet intersections/')
     export(i7_m, 'i7_admin3', path = OUT_hfcs + 'Sheet intersections/')
     export(i7_md, 'i7_admin2', path = OUT_hfcs + 'Sheet intersections/')
     export(i8_m, 'i8_admin3', path = OUT_hfcs + 'Sheet intersections/')
@@ -210,6 +220,10 @@ if EXPORT:
 
 #-----------------------------------------------------------------#
 # Comparisson panel 
+
+# This is a panel containig both data from internal and 
+# external indicators. 
+
 def comp_panel(d,
                de,
                index_cols,
@@ -239,193 +253,64 @@ if EXPORT:
     export(i2_cpanel, 'i2_admin3', path = OUT_hfcs + 'Sheet comp panel/')
     export(i3_cpanel, 'i3_admin3', path = OUT_hfcs + 'Sheet comp panel/')
     export(i3_cpaneld,'i3_admin2', path = OUT_hfcs + 'Sheet comp panel/')
-    export(i5_cpanel, 'i5_admin3', path = OUT_hfcs + 'Sheet comp panel/')
+    #export(i5_cpanel, 'i5_admin3', path = OUT_hfcs + 'Sheet comp panel/')
 
 
+#-----------------------------------------------------------------#
+# Simple panel
+
+# A panel with no intersection of internal and external 
+# indicators and a ad hoc appending date
+
+# Slice internal up to 15ht of april
+append_date =  dt.date(2020, 3, 7)
+
+def simp_panel(d,
+               de,
+               index_cols,
+               countvars,
+               append_date = append_date,
+               timevar = None,
+               how = 'outer'):
+    if timevar is None:
+        timevar = index_cols[0]
+    # Clean
+    d = clean(d, index_cols)
+    de = clean(de, index_cols)
+    # Join
+    md = d.merge(de,
+                 on = index_cols, 
+                 how = how,
+                 suffixes=('', '_ecnt'))
+    # Replace count values with internal until the 7th of march and 
+    # external after
+    for var in countvars:
+        md[var] = np.where(pd.to_datetime(md[timevar]).dt.date <= append_date, 
+                   md[var], 
+                   md[var + '_ecnt'])
+    # Remove other columns
+    md = md.filter(regex=r'^((?!_ecnt).)*$')
+    # Return
+    return md.sort_values(index_cols).dropna(subset= index_cols)
+
+
+i1_panel = simp_panel(i1, i1i, i1_index, countvars = ['count'])
+i2_panel = simp_panel(i2, i2i, i2_index, countvars = ['count'])
+i3_panel = simp_panel(i3, i3i, i3_index, countvars = ['count'])
+i5_panel = simp_panel(i5, i5i, i5_index, countvars = ['subscriber_count', 'od_count',  'od_count_seven',  'od_count_one', 'total_count'])
+i7_panel  = simp_panel(i7, i7i, i7_index, countvars = ['mean_distance', 'stdev_distance'], timevar='day')
+# i8_panel  = simp_panel(i8, i8i, i8_index, countvars = ['mean_distance', 'stdev_distance'], timevar='week')
+i9_panel  = simp_panel(i9, i9i, i9_index, countvars = ['stdev_duration', 'mean_duration', 'count'], timevar='day')
+
+
+
+if EXPORT:
+    export(i1_panel, 'i1_admin3', path = OUT_panel)
+    export(i2_panel, 'i2_admin3', path = OUT_panel)
+    export(i3_panel, 'i3_admin3', path = OUT_panel)
+    export(i5_panel, 'i5_admin3', path = OUT_panel)
+    export(i7_panel, 'i7_admin3', path = OUT_panel)
+    export(i9_panel, 'i9_admin2', path = OUT_panel)
 
 #-----------------------------------------------------------------#
 # DRAFT
-
-# (i7_m_diff['mean_distance'] - i7_m_diff['mean_distance_ecnt']).mean() 
-# i7_m_diff['mean_distance'].mean()
-
-# i5_m_diff['connection_date'].nunique()
-# set(i5_m_diff['connection_date'])    
-
-# i9_m_diff['week'].nunique()
-# set(i9_m_diff['week'])   
-
-
-#-----------------------------------------------------------------#
-# Loop through all the files
-
-# # Separate a few for manual merge
-# sep_list = ['percent_of_all_subscribers_active_per_day.csv', # Diff coliumn names
-#             'origin_destination_connection_matrix_per_day.csv',
-#             'mean_distance_per_day.csv',
-#             'mean_distance_per_week.csv',
-#             'origin_destination_matrix_time_per_day.csv',
-#             'count_unique_active_residents_per_region_per_day.csv',
-#             'count_unique_active_residents_per_region_per_week.csv',
-#             'count_unique_subscribers_per_region_per_day.csv',
-#             'count_unique_subscribers_per_region_per_week.csv',
-#             'count_unique_visitors_per_region_per_day.csv',
-#             'count_unique_visitors_per_region_per_week.csv'] 
-# loop_df = internal_indicators[~internal_indicators['file'].isin(sep_list)]
-
-# remaining = [25, 26, 27, 28,
-#             31, 32, 33, 34, 35, 36, 37, 38]
-
-
-
-
-# # Clean function
-# def clean(d):
-#     # Remove missins
-#     d = d.dropna()
-#     # All but the last column
-#     index_cols = list(d.columns[0:-1])
-#     d = drop_custna(d, index_cols)
-#     return(d)
-
-
-# # Comparisson outputs function
-# def compare_dfs(df1,df2, index_cols):
-#     cdf = df1.merge(df2, on = index_cols)
-#     #--------------------#
-#     # Calculate differeces
-#     # Make sure values are numeric
-#     cdf[cdf.columns[-1]] = cdf[cdf.columns[-1]].astype(int)
-#     cdf[cdf.columns[-2]] = cdf[cdf.columns[-2]].astype(int)
-#     # Create differences df
-#     diff_df = cdf[cdf[cdf.columns[-1]] != cdf[cdf.columns[-2]]]
-#     # Value difference
-#     # Proportion of mismatches
-#     p_rows_diff = sum(cdf[cdf.columns[-1]] != cdf[cdf.columns[-2]])/cdf.shape[0]
-#     p_rows_diff = str(round(p_rows_diff, 4)*100)
-#     # Return outputs
-#     return(diff_df)
-
-
-# # Complete pipeline function
-# def process_pipeline(file_name, 
-#                      index_cols,
-#                      files_df = internal_indicators):
-#     # Laod and clean data
-#     d,de =  loadfiles(file_name)
-#     d = clean(d)
-#     de = clean(de)
-#     # Merge
-#     cdf_diff = compare_dfs(i1,i1i, index_cols = index_cols )
-#     # output
-#     return(cdf)
-
-# # Export
-# def export(diff_data, files_df, idx):
-#     export_prefix = 'diff_' + 'admin' + str(files_df['level'][idx]) + '_'
-#     export_name = export_prefix + files_df['file'][idx]
-#     diff_data.to_csv(OUT_hfcs_sheets + export_name,
-#                     index = False)
-
-
-
-# process_pipeline
-
-# i1, i1i = loadfiles('transactions_per_hour.csv')
-# i1 = clean(i1)
-# i1i = clean(i1i)
-# i1_diff = compare_dfs(i1,i1i, index_cols =['region', 'hour'] )
-
-
-# #d, de = loadfiles('transactions_per_hour.csv')
-
-
-# process_pipeline('transactions_per_hour.csv',
-#                  index_cols =['region', 'hour'])
-
-
-# i2, i2i = loadfiles('unique_subscribers_per_day.csv')
-# i2 = clean(i1)
-# i2i = clean(i1i)
-
-
-# i1_diff = compare_dfs(i2,i2i, index_cols =['region', 'hour'] )
-
-# internal_indicators['file'][3]
-
-# # 
-# process_pipeline(1)
-# process_pipeline(2)
-# process_pipeline(3)
-# process_pipeline(4)
-# process_pipeline(5)
-# process_pipeline(6)
-# process_pipeline(7)
-# process_pipeline(8)
-# process_pipeline(9)
-# process_pipeline(10)
-# process_pipeline(11)
-# process_pipeline(12)
-# process_pipeline(13)
-# process_pipeline(14)
-# process_pipeline(15)
-# process_pipeline(16)
-# # process_pipeline(17)
-
-
-
-
-# i1,i1i =  loadfiles(1)
-
-# # Export
-# #export_name = 'diff_' + 'admin_' + str(files_df['level'][i]) + '_' +file_name
-
-
-
-
-# i1, i1i = loadfiles('transactions_per_hour.csv')
-
-# filename = 
-# files_df = internal_indicators
-
-
-# internal_indicators[internal_indicators.file == 'transactions_per_hour.csv'].index
-
-
-
-# # Comparisson outputs function
-# def compare_dfs(df1,df2, filename = None, outputdf = True):
-#     # Merge dfs
-#     index_cols = list(df1.columns[0:-1])
-#     # Make sure indexes are in the same format 
-#     df1[index_cols[1:][0]] = df1[ index_cols[1:][0]].astype(str).str.replace('.0', '', regex=True)
-#     df2[index_cols[1:][0]] = df2[ index_cols[1:][0]].astype(str).str.replace('.0', '', regex=True)
-#     # df1[index_cols[1:]] = df1[index_cols[1:]].astype(float).astype(int)
-#     # df2[index_cols[1:]] = df2[index_cols[1:]].astype(float).astype(int)
-#     #Make sure merging columns are str
-#     df1[index_cols] = df1[index_cols].astype(str)
-#     df2[index_cols] = df2[index_cols].astype(str)
-#     cdf = df1.merge(df2, left_on = index_cols, right_on = index_cols)
-#     #--------------------#
-#     # Calculate differeces
-#     # Make sure values are numeric
-#     cdf[cdf.columns[-1]] = cdf[cdf.columns[-1]].astype(int)
-#     cdf[cdf.columns[-2]] = cdf[cdf.columns[-2]].astype(int)
-#     # Create differences df
-#     diff_df = cdf[cdf[cdf.columns[-1]] != cdf[cdf.columns[-2]]]
-#     # Value difference
-#     # Proportion of mismatches
-#     p_rows_diff = sum(cdf[cdf.columns[-1]] != cdf[cdf.columns[-2]])/cdf.shape[0]
-#     p_rows_diff = str(round(p_rows_diff, 4)*100)
-#     # Return outputs
-#     if outputdf:
-#         return(diff_df)
-#     else:
-#         # Print report
-#         print(filename)
-#         # print('N rows ours: ' + str(df1.shape[0]) )
-#         # print("N rows Isaac's: " + str(df2.shape[0]))
-#         print('Of matching rows:')
-#         #print(' - Average difference of count column: ' + avg_diff + "%")
-#         print(' - Percentage rows that are different: ' + p_rows_diff + "%")
-#         print('\n')

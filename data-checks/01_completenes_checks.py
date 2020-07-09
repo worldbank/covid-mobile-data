@@ -3,14 +3,14 @@
 #-----------------------------------------------------------------#
 
 
-EXPORT_FIGURES = False
+EXPORT_FIGURES = True
 
 # This file checks all files to test if all0 dates and hours are 
 # present.
 
 
-flow_a2_file_list = os.listdir(IFLOWM_adm2_path)
-flow_a3_file_list = os.listdir(IFLOWM_adm3_path)
+# flow_a2_file_list = os.listdir(IFLOWM_adm2_path)
+# flow_a3_file_list = os.listdir(IFLOWM_adm3_path)
 cust_a2_file_list = os.listdir(ICUST_adm2_path)
 cust_a3_file_list = os.listdir(ICUST_adm3_path)
 
@@ -22,12 +22,14 @@ regvar = 'region'
 #-----------------------------------------------------------------#
 # Load data
 
+EXT_PATH = DATA_path + 'Zimbabwe/isaac-results/Archive/e-22_06_2020_coverage_23_04_to_31_05/'
+
 # Define loading functionp that depends on the existing folder 
 # structure but also remove headers in the middle of the data if
 # if there is any
 def loadfiles(file_name, 
               admin = 3,
-              ext_path = ICUST_path):
+              ext_path = EXT_PATH):
     print(file_name, admin)
     # Load external file
     ext_folder = ext_path + 'admin' + str(admin) + '/' 
@@ -168,15 +170,16 @@ if EXPORT_FIGURES:
 
 
 # Number of transactions scatter
-def scatter_plot(data, var = 'count'):
-    plot = sns.scatterplot(
-        data.index,
-        data[var])
-    plot.set_xlim([data.index.min() - dt.timedelta(days=1), 
-                  data.index.max() + dt.timedelta(days=1)])
-    return plot
+# def scatter_plot(data, var = 'count'):
+#     plot = sns.scatterplot(
+#         data.index,
+#         data[var])
+#     plot.set_xlim([data.index.min() - dt.timedelta(days=1), 
+#                   data.index.max() + dt.timedelta(days=1)])
+#     # plot.set(yscale="log")
+#     return plot
 
-scatter_plot(f1_agg_date)
+# scatter_plot(f1_agg_date)
 
 #-----------------------------------------------------------------#
 # I1 - Hour Plots
@@ -227,7 +230,7 @@ if EXPORT_FIGURES:
 
 # plot total count
 f5_plot = sns.lineplot(
-    f5_agg_date['date'],
+    f5_agg_date.index,
     f5_agg_date['total_count'])
 # Export
 if EXPORT_FIGURES:

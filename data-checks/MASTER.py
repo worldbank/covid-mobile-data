@@ -2,6 +2,9 @@
 # DATA CHECKS MASTER
 #-----------------------------------------------------------------#
 
+# This script sets file paths and (will) map all processes for checking
+# incoming data
+
 #-----------------------------------------------------------------#
 #### Settings
 
@@ -14,13 +17,13 @@ import datetime as dt
 import seaborn as sns; sns.set()
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
- 
 
 #-----------------------------------------------------------------#
 #### Set file paths
 
 DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/"
 DATA_POC = DATA_path + "proof-of-concept/"
+DATA_GIS = DATA_POC + 'geo_files/'
 
 DATA_DB_raw_indicators = DATA_POC + "databricks-results/zw/"
 DATA_dashboad_clean = DATA_POC + "/files_for_dashboard/files_clean/"
@@ -81,7 +84,6 @@ I9_path = DATA_DB_raw_indicators + "indicator 9/"
 I9_Adm2_path = I9_path + "admin2/"
 I9_Adm3_path = I9_path + "admin3/"
 
-
 #Simple Origin Destination Matrix - trips 
 # between consecutive in time regions with time
 I10_path = DATA_DB_raw_indicators + "indicator 10/"
@@ -114,6 +116,7 @@ ICUST_adm3_path = ICUST_path + "admin3/"
 #---------------#
 # Outputs
 OUT_path = DATA_POC + "outputs/"
+OUT_plots = OUT_path + "Figures/"
 OUT_hfcs = OUT_path + "data-checks/"
 # OUT_hfcs_sheets =  OUT_hfcs + "Sheet differences/"
 
@@ -123,7 +126,7 @@ OUT_hfcs = OUT_path + "data-checks/"
 # Load list of internal indicators to make it
 # easier to bulk load files
 internal_indicators = pd\
-    .read_csv(DATA_POC + 'indicators_list.csv')
+    .read_csv(DATA_POC + 'documentation/indicators_list.csv')
 
 # Since sheet contains relative paths add path global
 # to have absolute paths    
