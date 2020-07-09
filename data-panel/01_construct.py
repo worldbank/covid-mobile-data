@@ -60,7 +60,6 @@ def clean(data, index_cols):
 
 # clean(i5_2.data_e_04, i5_2.index_cols)['region_from'].unique()
 
-def out_merge)
 
 #-----------------------------------------------------------------#
 # Create indicator class
@@ -232,20 +231,65 @@ def clean_columns(indicator, timevar):
     new_df['date'] = pd.to_datetime(new_df[timevar]).dt.date
     return new_df
 
-foo = clean_columns(i7, timevar = 'day')
+def remove_towers_down(df, region_vars, outliers_df = i1_ag_df_tower_down):
+    # Process outliers file
+    outliers_df = copy.deepcopy(i1_ag_df_tower_down) # created in usage_outliers.py
+    outliers_df = outliers_df\
+        .drop(['hcount', 'avg_hours', 'h_diff'], axis = 1)\
+        .rename(columns = {'region':'region_right'})
+    outliers_df['flag'] = 1
+    # Merge outliers
+    if len(region_vars) == 1:
+        new_df = df\
+            .merge(outliers_df,
+                        left_on = ['date', region_vars[0]],
+                        right_on = ['date', 'region_right'],
+                        how = 'outer')\
+            .drop(['region_right'], axis = 1)
+    else:
+        new_df = df\
+            .merge(outliers_df,
+                        left_on = ['date', region_vars[0]],
+                        right_on = ['date', 'region_right'],
+                        how = 'outer')\
+            .drop(['region_right'], axis = 1)\
+            .merge(outliers_df,
+                        left_on = ['date', region_vars[1]],
+                        right_on = ['date', 'region_right'],
+                        how = 'outer')\
+            .drop(['region_right'], axis = 1)
+        # Flag if either is true
+        new_df['flag'] = ((new_df['flag_x'] == 1) | (new_df['flag_y'] == 1)).astype(int)
+        new_df = new_df.drop(['flag_x', 'flag_y'], axis =1)
+    # Drop outliers and processual columns
+    new_df = new_df[~(new_df['flag'] == 1)].drop(['flag'], axis = 1)
+    return new_df
 
-outliers_df = copy.deepcopy(i1_ag_df_tower_down) # created in usage_outliers.py
-outliers_df = outliers_df\
-    .drop(['hcount', 'avg_hours', 'h_diff'], axis = 1)\
-    .rename(columns = {'region':'region_right'})
-outliers_df['flag'] = 1
+def clean_pipeline(indicator, timevar, region_vars):
+    return remove_towers_down( 
+                       clean_columns(indicator, 
+                                     timevar = timevar), 
+                       region_vars = region_vars)
+    
 
-region_vars = 'home_region'
-bar = foo.merge(outliers_df,
-          left_on = ['date', region_vars],
-          right_on = ['date', 'region_right'],
-          how = 'outer')
-bar[~(bar['flag'] == 1)].drop(['region_right', 'flag'], axis = 1)
+i1_cl_panel = clean_pipeline(i1,timevar = 'hour', region_vars = ['region'])
+i3_cl_panel = clean_pipeline(i3, timevar = 'day', region_vars = ['region'])
+i3_2_cl_panel = clean_columns(i3, timevar = 'day')
+i5_cl_panel = clean_pipeline(i5,timevar = 'connection_date', region_vars = ['region_from', 'region_to'])
+i5_2_cl_panel = clean_columns(i5, timevar = 'connection_date')
+i7_cl_panel = clean_pipeline(i7,timevar = 'day', region_vars = ['home_region'])
+i7_2_cl_panel = clean_columns(i7, timevar = 'day')
+i9_cl_panel = clean_pipeline(i9,timevar = 'day', region_vars = ['region'])
+i9_2_cl_panel = clean_columns(i9, timevar = 'day')
 
-def remove_towers_down(df, outliers_df):
-    pass
+if EXPORT:
+    i1_cl_panel.to_csv(DATA_panel_clean + 'i1_admin3.csv', index = False)
+    i3_cl_panel.to_csv(DATA_panel_clean + 'i3_admin3.csv', index = False)
+    i3_2_cl_panel.to_csv(DATA_panel_clean + 'i3_admin2.csv', index = False)
+    i5_cl_panel.to_csv(DATA_panel_clean + 'i5_admin3.csv', index = False)
+    i5_2_cl_panel.to_csv(DATA_panel_clean + 'i5_admin2.csv', index = False)
+    i7_cl_panel.to_csv(DATA_panel_clean + 'i7_admin3.csv', index = False)
+    i7_2_cl_panel.to_csv(DATA_panel_clean + 'i7_admin2.csv', index = False)
+    i9_cl_panel.to_csv(DATA_panel_clean + 'i9_admin3.csv', index = False)
+    i9_2_cl_panel.to_csv(DATA_panel_clean + 'i9_admin2.csv', index = False)
+
