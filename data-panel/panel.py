@@ -2,6 +2,10 @@
 # CREATE PANEL
 #-----------------------------------------------------------------#
 
+# This code creates panel datasets combinig different versions of 
+# indicator files. 
+
+
 import os
 import re
 import pandas as pd
