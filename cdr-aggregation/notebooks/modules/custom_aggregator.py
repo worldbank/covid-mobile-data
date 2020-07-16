@@ -384,14 +384,13 @@ class custom_aggregator(priority_aggregator):
             F.col('duration')).otherwise(F.col('duration')))\
         .where(F.col('region_lag') != F.col('region'))
 
-      if incidence_frequency == 'total':
-        self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_total')
-        join_condition = (prep.region == self.incidence.ward)
-      elif incidence_frequency == 'monthly':
+      if incidence_frequency == 'monthly':
+        incidence_divisor = 30
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_monthly')
         join_condition = ((prep.region == self.incidence.ward) &\
                           (prep.month == self.incidence.case_month))
       elif incidence_frequency == 'weekly':
+        incidence_divisor = 7
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_weekly')
         join_condition = ((prep.region == self.incidence.ward) &\
                           (prep.week == self.incidence.case_week))
@@ -423,7 +422,7 @@ class custom_aggregator(priority_aggregator):
       if import_in_one_day:
         result = result\
           .withColumn('imported_incidence_time',
-               F.col('imported_incidence_0') * F.col('duration_change_only'))\
+               F.col('imported_incidence_0') / incidence_divisor)\
           .groupby('day', 'region')\
           .agg(F.sum('imported_incidence_time').alias('imported_incidence'))
 
@@ -446,35 +445,25 @@ class custom_aggregator(priority_aggregator):
               .otherwise(F.col('duration_exploded')))\
           .withColumn('imported_incidence_time',
                F.when(F.col('pos') == 0,
-               F.col('imported_incidence_0') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_0') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 1,
-               F.col('imported_incidence_1') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_1') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 2,
-               F.col('imported_incidence_2') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_2') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 3,
-               F.col('imported_incidence_3') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_3') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 4,
-               F.col('imported_incidence_4') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_4') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 5,
-               F.col('imported_incidence_5') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_5') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 6,
-               F.col('imported_incidence_6') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_6') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 7,
-               F.col('imported_incidence_7') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_7') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 8,
-               F.col('imported_incidence_8') * \
-               F.col('duration_change_only_exact')).otherwise(
+               F.col('imported_incidence_8') / incidence_divisor).otherwise(
                F.when(F.col('pos') == 9,
-               F.col('imported_incidence_9') * \
-               F.col('duration_change_only_exact')).otherwise(0)))))))))))\
+               F.col('imported_incidence_9') / incidence_divisor).otherwise(0)))))))))))\
           .groupby('day_filled', 'region')\
           .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
           .withColumnRenamed('day_filled', 'day')
