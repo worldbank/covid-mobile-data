@@ -418,7 +418,7 @@ class custom_aggregator(priority_aggregator):
       if import_in_one_day:
         result = result\
           .withColumn('imported_incidence_time',
-               F.col('imported_incidence_0') / incidence_divisor)\
+               F.col('imported_incidence_0'))\
           .groupby('day', 'region')\
           .agg(F.sum('imported_incidence_time').alias('imported_incidence'))
 
