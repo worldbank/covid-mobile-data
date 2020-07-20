@@ -439,7 +439,7 @@ class custom_aggregator(priority_aggregator):
           .withColumn('duration_change_only_exact',
               F.when(F.col('pos') > F.col('pos_lead'), F.col('remainder'))\
               .otherwise(F.col('duration_exploded')))\
-          .withColumn('duration_day_fraction', F.col('duration_change_only_exact') / (24 * 60 * 60))
+          .withColumn('duration_day_fraction', F.col('duration_change_only_exact') / (24 * 60 * 60))\
           .withColumn('imported_incidence_time',
                 F.when(F.col('pos') == 0,
                 F.col('imported_incidence_0') * \
