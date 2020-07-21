@@ -448,6 +448,9 @@ class custom_aggregator(priority_aggregator):
               F.ceil(F.col('duration') / (24 * 60 * 60)).astype('int'))\
           .withColumn('remainder',
               F.col('number_of_new_rows') * (24 * 60 * 60) - F.col('duration'))\
+          .withColumn('number_of_new_rows',
+              F.when(F.col('number_of_new_rows') > 10, 10)\
+              .otherwise(F.col('number_of_new_rows')))\
           .withColumn('new_row_array',
               F.when(F.col('number_of_new_rows')>1,
               F.expr('array_repeat(24 * 60 * 60,number_of_new_rows)'))\
