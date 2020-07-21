@@ -473,9 +473,9 @@ class custom_aggregator(priority_aggregator):
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 9,
                 F.col('imported_incidence_9') * \
-                F.col('duration_day_fraction')).otherwise(0)))))))))))
-          # .groupby('day_filled', 'region')\
-          # .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
-          # .withColumnRenamed('day_filled', 'day')
+                F.col('duration_day_fraction')).otherwise(0)))))))))))\
+          .groupby('day_filled', 'region')\
+          .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
+          .withColumnRenamed('day_filled', 'day')
 
       return result
