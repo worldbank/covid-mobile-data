@@ -321,22 +321,31 @@ class custom_aggregator(priority_aggregator):
         return result
 
 
-    # - filter for observations that imply a change in region either with the previous,
-    # or the next observation. Also keep the last observation regardless.
+    # - filter for observations that imply a change in region with the previous,
+    # observation. Also keep cases where the previous region is unknown, which
+    # can be the case for the beginning of the sample
     # - replace missing lead timestamps with the last day of the sample
-    # - calculate duration
     # - get the lead duration
-    # - when there is no change in region with the lead observation,
-    # add the lead duration to the current duration
-    # - drop observations where the lag != current region
+    # - create long versions of the timestamp and lead timestamp
+    # - calculate duration
     #
     # Now we have duration in each region
     # - Merge with incidence using region and incidence frequency
     #
     # Loop:
     # - create 10 incidence sums: going back as far as 10 or as far as 1 day
-    # - collect regions and incidence over the windows
-    # - merge the arrays, then filter elements where the region == current region
+    # - collect regions, incidence, durations and lead timestamps in arrays
+    # - calculate the beginning timestamps of the infection windows
+    # - calculate the size of the windows
+    # - repeat the beggining timestamp in an array the length of the window size
+    # - zip the beginning timestamps and the 'departure timestamps' arrays and
+    # calculate the time that the observation is apart from the beginning timestamps
+    # - when the duration from beginning to departure timestamps is smaller than the
+    # duration, replace the duration with this difference. This ensures we are not including
+    # durations that fall outside of the infectious window into our calculation
+    # - zip the incidence and duration arrays and multiply them to get an incidence_duration array
+    # - merge the incidence_duration array and the region array,
+    # then filter elements where the region == current region
     # - sum imported incidence over infectious period
     #
     # If we want all incidence in one day:
@@ -402,6 +411,8 @@ class custom_aggregator(priority_aggregator):
              F.collect_list('duration').over(user_infection_pickup_window))\
          .withColumn('departure_list',
              F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
+         .withColumn('region_list',
+             F.collect_list('region').over(user_infection_pickup_window))\
          .withColumn('window_start', F.col('call_datetime_lead_long') + start_infectious_window + (days * 24 * 60 * 60))\
          .withColumn('window_size', F.size('departure_list'))\
          .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
@@ -411,8 +422,6 @@ class custom_aggregator(priority_aggregator):
              F.expr("transform(arrays_zip(duration_list_from_window_start, duration_list), x -> case when x.duration_list_from_window_start > x.duration_list then x.duration_list else x.duration_list_from_window_start end)"))\
          .withColumn('incidence_duration_list',
              F.expr("transform(arrays_zip(duration_corrected_list, incidence_list), x -> x.duration_corrected_list * x.incidence_list)"))\
-         .withColumn('region_list',
-             F.collect_list('region').over(user_infection_pickup_window))\
          .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_duration_list')))\
          .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
          .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_duration_list'))\
