@@ -359,7 +359,7 @@ class custom_aggregator(priority_aggregator):
                                                     frequency,
                                                     incidence_frequency,
                                                     start_infectious_window = -(10 * 24 * 60 * 60),
-                                                    end_infectious_window = -(1),
+                                                    end_infectious_window = 0,
                                                     import_in_one_day = True,
                                                     **kwargs):
 
@@ -367,20 +367,15 @@ class custom_aggregator(priority_aggregator):
         .partitionBy('msisdn').orderBy('call_datetime')
 
       prep = self.df.where(time_filter)\
-        .withColumn('call_datetime_long', F.col('call_datetime').cast('long'))\
-        .where((F.col('region_lag') != F.col('region')) | \
-            (F.col('region_lead') != F.col('region')) | \
-            (F.col('call_datetime_lead').isNull()))\
+        .where((F.col('region_lag') != F.col('region')) |\
+            (F.col('region_lag') == self.missing_value_code))\
+        .withColumn('call_datetime_lead', F.lead('call_datetime').over(user_window))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
             self.dates['end_date'] + dt.timedelta(1)).otherwise(F.col('call_datetime_lead')))\
-        .withColumn('duration', (F.col('call_datetime_lead').cast('long') - \
-            F.col('call_datetime').cast('long')))\
-        .withColumn('duration_next', F.lead('duration').over(user_window))\
-        .withColumn('duration_change_only', F.when(F.col('region') == \
-            F.col('region_lead'), F.col('duration_next') + \
-            F.col('duration')).otherwise(F.col('duration')))\
-        .where(F.col('region_lag') != F.col('region'))
+        .withColumn('call_datetime_long', F.col('call_datetime').cast('long'))\
+        .withColumn('call_datetime_lead_long', F.col('call_datetime_lead').cast('long'))\
+        .withColumn('duration', F.col('call_datetime_lead_long') - F.col('call_datetime_long'))
 
       if incidence_frequency == 'monthly':
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_monthly')
@@ -391,29 +386,37 @@ class custom_aggregator(priority_aggregator):
         join_condition = ((prep.region == self.incidence.ward) &\
                           (prep.week == self.incidence.case_week))
 
-
       result = prep\
         .join(self.incidence, join_condition, 'left')\
         .na.fill({'incidence' : 0})\
-        .withColumn('incidence_duration',
-            F.col('incidence') * F.col('duration_change_only'))\
-        .na.fill({'incidence_duration' : 0})
 
       for days in range(10):
+        user_infection_pickup_window = Window\
+           .partitionBy('msisdn').orderBy('call_datetime_lead_long')\
+           .rangeBetween(start_infectious_window + (days * 24 * 60 * 60), end_infectious_window)
 
-          user_infection_pickup_window = Window\
-              .partitionBy('msisdn').orderBy('call_datetime_long')\
-              .rangeBetween(start_infectious_window + (days * 24 * 60 * 60),end_infectious_window)
-
-          result = result\
-            .withColumn('incidence_list',
-                F.collect_list('incidence_duration').over(user_infection_pickup_window))\
-            .withColumn('region_list',
-                F.collect_list('region').over(user_infection_pickup_window))\
-            .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_list')))\
-            .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
-            .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_list'))\
-            .withColumn('imported_incidence_' + str(days), F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
+        result = result\
+         .withColumn('incidence_list',
+             F.collect_list('incidence').over(user_infection_pickup_window))\
+         .withColumn('duration_list',
+             F.collect_list('duration').over(user_infection_pickup_window))\
+         .withColumn('departure_list',
+             F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
+         .withColumn('window_start', F.col('call_datetime_lead_long') + start_infectious_window + (days * 24 * 60 * 60))\
+         .withColumn('window_size', F.size('departure_list'))\
+         .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
+         .withColumn('duration_list_from_window_start',
+             F.expr("transform(arrays_zip(departure_list, window_start_list), x -> x.departure_list - x.window_start_list)"))\
+         .withColumn('duration_corrected_list',
+             F.expr("transform(arrays_zip(duration_list_from_window_start, duration_list), x -> case when x.duration_list_from_window_start > x.duration_list then x.duration_list else x.duration_list_from_window_start end)"))\
+         .withColumn('incidence_duration_list',
+             F.expr("transform(arrays_zip(duration_corrected_list, incidence_list), x -> x.duration_corrected_list * x.incidence_list)"))\
+         .withColumn('region_list',
+             F.collect_list('region').over(user_infection_pickup_window))\
+         .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_duration_list')))\
+         .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
+         .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_duration_list'))\
+         .withColumn('imported_incidence_' + str(days), F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
 
       if import_in_one_day:
         result = result\
@@ -425,21 +428,21 @@ class custom_aggregator(priority_aggregator):
       else:
         result = result\
           .withColumn('number_of_new_rows',
-              F.ceil(F.col('duration_change_only') / (24 * 60 * 60)).astype('int'))\
+              F.ceil(F.col('duration') / (24 * 60 * 60)).astype('int'))\
           .withColumn('remainder',
-              F.col('number_of_new_rows') * (24 * 60 * 60) - F.col('duration_change_only'))\
+              F.col('number_of_new_rows') * (24 * 60 * 60) - F.col('duration'))\
           .withColumn('new_row_array',
               F.when(F.col('number_of_new_rows')>1,
               F.expr('array_repeat(24 * 60 * 60,number_of_new_rows)'))\
-              .otherwise(F.array('duration_change_only')))\
+              .otherwise(F.array('duration')))\
           .selectExpr('*',
               "posexplode(new_row_array) as (pos, duration_exploded)",
               "date_add(day, pos) as day_filled")\
           .withColumn('pos_lead', F.lead('pos').over(user_window))\
-          .withColumn('duration_change_only_exact',
+          .withColumn('duration_exact',
               F.when(F.col('pos') > F.col('pos_lead'), F.col('remainder'))\
               .otherwise(F.col('duration_exploded')))\
-          .withColumn('duration_day_fraction', F.col('duration_change_only_exact') / (24 * 60 * 60))\
+          .withColumn('duration_day_fraction', F.col('duration_exact') / (24 * 60 * 60))\
           .withColumn('imported_incidence_time',
                 F.when(F.col('pos') == 0,
                 F.col('imported_incidence_0') * \
@@ -470,9 +473,9 @@ class custom_aggregator(priority_aggregator):
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 9,
                 F.col('imported_incidence_9') * \
-                F.col('duration_day_fraction')).otherwise(0)))))))))))\
-          .groupby('day_filled', 'region')\
-          .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
-          .withColumnRenamed('day_filled', 'day')
+                F.col('duration_day_fraction')).otherwise(0)))))))))))
+          # .groupby('day_filled', 'region')\
+          # .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
+          # .withColumnRenamed('day_filled', 'day')
 
       return result
