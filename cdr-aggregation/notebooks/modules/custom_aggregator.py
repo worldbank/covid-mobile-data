@@ -368,7 +368,6 @@ class custom_aggregator(priority_aggregator):
                                                     frequency,
                                                     incidence_frequency,
                                                     start_infectious_window = -(10 * 24 * 60 * 60),
-                                                    end_infectious_window = 0,
                                                     import_in_one_day = True,
                                                     **kwargs):
 
@@ -402,7 +401,7 @@ class custom_aggregator(priority_aggregator):
       for days in range(10):
         user_infection_pickup_window = Window\
            .partitionBy('msisdn').orderBy('call_datetime_lead_long')\
-           .rangeBetween(start_infectious_window + (days * 24 * 60 * 60), end_infectious_window)
+           .rangeBetween(Window.unboundedPreceding, 0)
 
         result = result\
          .withColumn('incidence_list',
@@ -413,9 +412,18 @@ class custom_aggregator(priority_aggregator):
              F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
          .withColumn('region_list',
              F.collect_list('region').over(user_infection_pickup_window))\
-         .withColumn('window_start', F.col('call_datetime_lead_long') + start_infectious_window + (days * 24 * 60 * 60))\
+         .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window + (days * 24 * 60 * 60))\
          .withColumn('window_size', F.size('departure_list'))\
          .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
+         .withColumn('full_zip', F.arrays_zip(F.col('incidence_list'),
+            F.col('duration_list'), F.col('departure_list'),
+            F.col('region_list'), F.col('window_start_list')))\
+         .withColumn('fitlered_full_zip', F.expr("filter(full_zip, x -> x['departure_list'] > window_start)"))\
+         .withColumn('incidence_list', F.col("fitlered_full_zip").getField('incidence_list'))\
+         .withColumn('duration_list', F.col("fitlered_full_zip").getField('duration_list'))\
+         .withColumn('departure_list', F.col("fitlered_full_zip").getField('departure_list'))\
+         .withColumn('region_list', F.col("fitlered_full_zip").getField('region_list'))\
+         .withColumn('window_start_list', F.col("fitlered_full_zip").getField('window_start_list'))\
          .withColumn('duration_list_from_window_start',
              F.expr("transform(arrays_zip(departure_list, window_start_list), x -> x.departure_list - x.window_start_list)"))\
          .withColumn('duration_corrected_list',
