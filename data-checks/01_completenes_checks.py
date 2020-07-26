@@ -22,7 +22,7 @@ regvar = 'region'
 #-----------------------------------------------------------------#
 # Load data
 
-EXT_PATH = DATA_path + 'Zimbabwe/isaac-results/Archive/e-22_06_2020_coverage_23_04_to_31_05/'
+EXT_PATH = DATA_path + 'Zimbabwe/isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
 
 # Define loading functionp that depends on the existing folder 
 # structure but also remove headers in the middle of the data if
