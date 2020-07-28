@@ -32,7 +32,7 @@ DATA_panel = DATA_POC + "panel_indicators/"
 DATA_panel_raw = DATA_panel + 'raw/'
 DATA_panel_clean = DATA_panel + 'clean/'
 
-OUT_hfcs = DATA_path + "data-checks/"
+OUT_hfcs = DATA_POC + "outputs/data-checks/"
 
 
 #-----------------------------------------------------------------#
@@ -104,13 +104,14 @@ class i_indicator:
             self.data_e_03 = pd.read_csv(folder + file_name_03)
             self.data_e_04 = pd.read_csv(folder + file_name_04)
             self.data_e_05 = pd.read_csv(folder + file_name_05)
-            # self.data_e_06 = pd.read_csv(folder + file_name_06)
+            self.data_e_06 = pd.read_csv(folder + file_name_06)
     # Clean indicators
     def clean(self):
         self.data = clean(self.data, self.index_cols)
         self.data_e_03 = clean(self.data_e_03, self.index_cols)
         self.data_e_04 = clean(self.data_e_04, self.index_cols)
         self.data_e_05 = clean(self.data_e_05, self.index_cols)
+        self.data_e_06 = clean(self.data_e_06, self.index_cols)
     # Internal merge function
     # def out_merge(self, d1, d2, suffix, on = self.index_cols):
     #     return d1.merge(d2, on = on, how = 'outer', suffixes=('', suffix))
@@ -120,7 +121,8 @@ class i_indicator:
                      time_var, 
                      c_date_1 = np.datetime64(dt.date(2020, 3, 15)),
                      c_date_2 = np.datetime64(dt.date(2020, 4, 1)),
-                     c_date_3 = np.datetime64(dt.date(2020, 5, 1)) ):
+                     c_date_3 = np.datetime64(dt.date(2020, 5, 1)),
+                     c_date_4 = np.datetime64(dt.date(2020, 6, 1)) ):
         # kwargs.setdefault('time_var', self.index_cols[0])
         self.panel = self.data\
             .merge(self.data_e_03,
@@ -134,11 +136,16 @@ class i_indicator:
             .merge(self.data_e_05,
                    on = self.index_cols,
                    how = 'outer',
-                   suffixes=('', '_05'))
+                   suffixes=('', '_05'))\
+            .merge(self.data_e_06,
+                   on = self.index_cols,
+                   how = 'outer',
+                   suffixes=('', '_06'))
         # Create panel column
         d1_bol = (self.panel[time_var].astype('datetime64')  >= c_date_1)
         d2_bol = (self.panel[time_var].astype('datetime64')  >= c_date_2)
         d3_bol = (self.panel[time_var].astype('datetime64')  >= c_date_3)
+        d4_bol = (self.panel[time_var].astype('datetime64')  >= c_date_4)
         countvars =  list(set(self.data.columns) - set(self.index_cols))
         for var in countvars:
             varname = var + '_p'
@@ -148,6 +155,7 @@ class i_indicator:
             self.panel.loc[d1_bol, varname] = self.panel.loc[d1_bol, var + '_03'] 
             self.panel.loc[d2_bol, varname] = self.panel.loc[d2_bol, var + '_04']
             self.panel.loc[d3_bol, varname] = self.panel.loc[d3_bol, var + '_05']
+            self.panel.loc[d4_bol, varname] = self.panel.loc[d3_bol, var + '_06']
         # Make sure order is fine
         # self.panel.sort_values(self.index_cols)          
 
@@ -212,13 +220,15 @@ if EXPORT:
     i9_2.panel.sort_values(i9.index_cols).to_csv(DATA_panel_raw + 'i9_admin2.csv', index = False)
     
 #-----------------------------------------------------------------#
-# Further cleaning
-
 # Create usage outliers files
+
 exec(open(CODE_path + 'usage_outliers.py').read())
 
 #-----------------------------------------------------------------#
 # Further cleaning
+
+# Remove low usage outliers assuming these are towers down and 
+# trims columns
 
 def clean_columns(indicator, timevar):
     # Remove comparison columns
@@ -274,22 +284,22 @@ def clean_pipeline(indicator, timevar, region_vars):
 
 i1_cl_panel = clean_pipeline(i1,timevar = 'hour', region_vars = ['region'])
 i3_cl_panel = clean_pipeline(i3, timevar = 'day', region_vars = ['region'])
-i3_2_cl_panel = clean_columns(i3, timevar = 'day')
+i3_2_cl_panel = clean_columns(i3_2, timevar = 'day')
 i5_cl_panel = clean_pipeline(i5,timevar = 'connection_date', region_vars = ['region_from', 'region_to'])
-i5_2_cl_panel = clean_columns(i5, timevar = 'connection_date')
+i5_2_cl_panel = clean_columns(i5_2, timevar = 'connection_date')
 i7_cl_panel = clean_pipeline(i7,timevar = 'day', region_vars = ['home_region'])
-i7_2_cl_panel = clean_columns(i7, timevar = 'day')
+i7_2_cl_panel = clean_columns(i7_2, timevar = 'day')
 i9_cl_panel = clean_pipeline(i9,timevar = 'day', region_vars = ['region'])
-i9_2_cl_panel = clean_columns(i9, timevar = 'day')
+i9_2_cl_panel = clean_columns(i9_2, timevar = 'day')
 
 if EXPORT:
-    i1_cl_panel.to_csv(DATA_panel_clean + 'i1_admin3.csv', index = False)
-    i3_cl_panel.to_csv(DATA_panel_clean + 'i3_admin3.csv', index = False)
-    i3_2_cl_panel.to_csv(DATA_panel_clean + 'i3_admin2.csv', index = False)
-    i5_cl_panel.to_csv(DATA_panel_clean + 'i5_admin3.csv', index = False)
-    i5_2_cl_panel.to_csv(DATA_panel_clean + 'i5_admin2.csv', index = False)
-    i7_cl_panel.to_csv(DATA_panel_clean + 'i7_admin3.csv', index = False)
-    i7_2_cl_panel.to_csv(DATA_panel_clean + 'i7_admin2.csv', index = False)
-    i9_cl_panel.to_csv(DATA_panel_clean + 'i9_admin3.csv', index = False)
-    i9_2_cl_panel.to_csv(DATA_panel_clean + 'i9_admin2.csv', index = False)
+    i1_cl_panel.sort_values(i1.index_cols).to_csv(DATA_panel_clean + 'i1_admin3.csv', index = False)
+    i3_cl_panel.sort_values(i3.index_cols).to_csv(DATA_panel_clean + 'i3_admin3.csv', index = False)
+    i3_2_cl_panel.sort_values(i3.index_cols).to_csv(DATA_panel_clean + 'i3_admin2.csv', index = False)
+    i5_cl_panel.sort_values(i5.index_cols).to_csv(DATA_panel_clean + 'i5_admin3.csv', index = False)
+    i5_2_cl_panel.sort_values(i5.index_cols).to_csv(DATA_panel_clean + 'i5_admin2.csv', index = False)
+    i7_cl_panel.sort_values(i7.index_cols).to_csv(DATA_panel_clean + 'i7_admin3.csv', index = False)
+    i7_2_cl_panel.sort_values(i7.index_cols).to_csv(DATA_panel_clean + 'i7_admin2.csv', index = False)
+    i9_cl_panel.sort_values(i9.index_cols).to_csv(DATA_panel_clean + 'i9_admin3.csv', index = False)
+    i9_2_cl_panel.sort_values(i9.index_cols).to_csv(DATA_panel_clean + 'i9_admin2.csv', index = False)
 
