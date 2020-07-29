@@ -10,17 +10,13 @@ else:
 class custom_aggregator(priority_aggregator):
     """This class inherits from the priority aggregator class.
     In this class we handle special aggregations not designed for wider use
-
     Attributes
     ----------
     [check inherited attributes described in aggregator class]
-
     incidence : a pyspark dataframe. Incididence observed; for admin2 only
-
     Methods
     -------
     methods to implement special aggregations not designed for wider use
-
     """
     def __init__(self,
                  result_stub,
@@ -322,44 +318,34 @@ class custom_aggregator(priority_aggregator):
 
 
     # - filter for observations that imply a change in region with the previous,
-    # observation. Also keep cases where the previous region is unknown, which
+    # observation. Also keep cases where the previous region is unknown, which
     # can be the case for the beginning of the sample
-    # - replace missing lead timestamps with the last day of the sample
-    # - get the lead duration
+    # - replace missing lead timestamps with the last day of the sample
+    # - get the lead duration
     # - create long versions of the timestamp and lead timestamp
-    # - calculate duration
+    # - calculate duration
     #
-    # Now we have duration in each region
-    # - Merge with incidence using region and incidence frequency
+    # Now we have duration in each region
+    # - Merge with incidence using region and incidence frequency
     #
-    # Loop:
+    # Loop:
     # - create 10 incidence sums: going back as far as 10 or as far as 1 day
-    # - collect regions, incidence, durations and lead timestamps in arrays
-    # - calculate the beginning timestamps of the infection windows
-    # - calculate the size of the windows
-    # - repeat the beggining timestamp in an array the length of the window size
-    # - zip the beginning timestamps and the 'departure timestamps' arrays and
-    # calculate the time that the observation is apart from the beginning timestamps
-    # - when the duration from beginning to departure timestamps is smaller than the
-    # duration, replace the duration with this difference. This ensures we are not including
-    # durations that fall outside of the infectious window into our calculation
-    # - zip the incidence and duration arrays and multiply them to get an incidence_duration array
-    # - merge the incidence_duration array and the region array,
-    # then filter elements where the region == current region
-    # - sum imported incidence over infectious period
+    # - collect regions and incidence over the windows
+    # - merge the arrays, then filter elements where the region == current region
+    # - sum imported incidence over infectious period
     #
-    # If we want all incidence in one day:
+    # If we want all incidence in one day:
     # - multiply imported incidence by duration in region
     # - group by day and region and sum
     #
     # If we want incidence spread out:
     # - calculate the number of days a person stays in region / number of new rows needed
-    # - calculate the remainder time for the last day
+    # - calculate the remainder time for the last day
     # - make an array to fill the duration column
-    # - explode the array into number of rows needed
+    # - explode the array into number of rows needed
     # - add a number of day to the date for each row that was exploded
-    # - for the last of the exloded rows per user, replace duration with remainder
-    # - calculate total incidence imported for the day by duration * incidence
+    # - for the last of the exloded rows per user, replace duration with remainder
+    # - calculate total incidence imported for the day by duration * incidence
     # - for the above, use the variable depending on how far into our stay we are
     # - group by day and region and sum
 
@@ -368,6 +354,7 @@ class custom_aggregator(priority_aggregator):
                                                     frequency,
                                                     incidence_frequency,
                                                     start_infectious_window = -(10 * 24 * 60 * 60),
+                                                    end_infectious_window = -(1),
                                                     import_in_one_day = True,
                                                     **kwargs):
 
@@ -400,40 +387,18 @@ class custom_aggregator(priority_aggregator):
 
       for days in range(10):
         user_infection_pickup_window = Window\
-           .partitionBy('msisdn').orderBy('call_datetime_lead_long')\
-           .rangeBetween(Window.unboundedPreceding, 0)
+           .partitionBy('msisdn').orderBy('call_datetime_long')\
+           .rangeBetween(start_infectious_window + (days * 24 * 60 * 60),end_infectious_window)
 
         result = result\
-         .withColumn('incidence_list',
-             F.collect_list('incidence').over(user_infection_pickup_window))\
-         .withColumn('duration_list',
-             F.collect_list('duration').over(user_infection_pickup_window))\
-         .withColumn('departure_list',
-             F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
-         .withColumn('region_list',
-             F.collect_list('region').over(user_infection_pickup_window))\
-         .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window + (days * 24 * 60 * 60))\
-         .withColumn('window_size', F.size('departure_list'))\
-         .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
-         .withColumn('full_zip', F.arrays_zip(F.col('incidence_list'),
-            F.col('duration_list'), F.col('departure_list'),
-            F.col('region_list'), F.col('window_start_list')))\
-         .withColumn('fitlered_full_zip', F.expr("filter(full_zip, x -> x['departure_list'] > window_start)"))\
-         .withColumn('incidence_list', F.col("fitlered_full_zip").getField('incidence_list'))\
-         .withColumn('duration_list', F.col("fitlered_full_zip").getField('duration_list'))\
-         .withColumn('departure_list', F.col("fitlered_full_zip").getField('departure_list'))\
-         .withColumn('region_list', F.col("fitlered_full_zip").getField('region_list'))\
-         .withColumn('window_start_list', F.col("fitlered_full_zip").getField('window_start_list'))\
-         .withColumn('duration_list_from_window_start',
-             F.expr("transform(arrays_zip(departure_list, window_start_list), x -> x.departure_list - x.window_start_list)"))\
-         .withColumn('duration_corrected_list',
-             F.expr("transform(arrays_zip(duration_list_from_window_start, duration_list), x -> case when x.duration_list_from_window_start > x.duration_list then x.duration_list else x.duration_list_from_window_start end)"))\
-         .withColumn('incidence_duration_list',
-             F.expr("transform(arrays_zip(duration_corrected_list, incidence_list), x -> x.duration_corrected_list * x.incidence_list)"))\
-         .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_duration_list')))\
-         .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
-         .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_duration_list'))\
-         .withColumn('imported_incidence_' + str(days), F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
+            .withColumn('incidence_list',
+                F.collect_list('incidence').over(user_infection_pickup_window))\
+            .withColumn('region_list',
+                F.collect_list('region').over(user_infection_pickup_window))\
+            .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_list')))\
+            .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
+            .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_list'))\
+            .withColumn('imported_incidence_' + str(days), F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
 
       if import_in_one_day:
         result = result\
