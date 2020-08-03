@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 #-----------------------------------------------------------------#
 # Settings 
 
-EXPORT = False
+EXPORT = True
 
 #-----------------------------------------------------------------#
 # Folder structure
@@ -186,6 +186,10 @@ i7_2 = i_indicator(num = 7,  index_cols =['day','home_region'], level = 2)
 i9 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 3)
 i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 2)
 
+# Indicator 10
+i10 = i_indicator(num = 10,  index_cols =['day', 'region', 'region_lag'], level = 3)
+i10_2 = i_indicator(num = 10,  index_cols =['day', 'region', 'region_lag'], level = 2)
+
 #-----------------------------------------------------------------#
 # Panel
 
@@ -203,8 +207,8 @@ i7_2.create_panel(time_var = 'day')
 i9.create_panel(time_var = 'day')
 i9_2.create_panel(time_var = 'day')
 
-i5.panel.sort_values(i5.index_cols)
-i3.panel.sort_values(i3_2.index_cols)
+i10.create_panel(time_var = 'day')
+i10_2.create_panel(time_var = 'day')
 
 #-----------------------------------------------------------------#
 # Export
@@ -218,7 +222,8 @@ if EXPORT:
     i7_2.panel.sort_values(i7.index_cols).to_csv(DATA_panel_raw + 'i7_admin2.csv', index = False)
     i9.panel.sort_values(i9.index_cols).to_csv(DATA_panel_raw + 'i9_admin3.csv', index = False)
     i9_2.panel.sort_values(i9.index_cols).to_csv(DATA_panel_raw + 'i9_admin2.csv', index = False)
-    
+    i10.panel.sort_values(i10.index_cols).to_csv(DATA_panel_raw + 'i10_admin3.csv', index = False)
+    i10_2.panel.sort_values(i10.index_cols).to_csv(DATA_panel_raw + 'i10_admin2.csv', index = False)
 #-----------------------------------------------------------------#
 # Create usage outliers files
 
@@ -292,6 +297,9 @@ i7_2_cl_panel = clean_columns(i7_2, timevar = 'day')
 i9_cl_panel = clean_pipeline(i9,timevar = 'day', region_vars = ['region'])
 i9_2_cl_panel = clean_columns(i9_2, timevar = 'day')
 
+i10_cl_panel = clean_columns(i10, timevar = 'day')
+i10_2_cl_panel = clean_columns(i10_2, timevar = 'day')
+
 if EXPORT:
     i1_cl_panel.sort_values(i1.index_cols).to_csv(DATA_panel_clean + 'i1_admin3.csv', index = False)
     i3_cl_panel.sort_values(i3.index_cols).to_csv(DATA_panel_clean + 'i3_admin3.csv', index = False)
@@ -302,4 +310,6 @@ if EXPORT:
     i7_2_cl_panel.sort_values(i7.index_cols).to_csv(DATA_panel_clean + 'i7_admin2.csv', index = False)
     i9_cl_panel.sort_values(i9.index_cols).to_csv(DATA_panel_clean + 'i9_admin3.csv', index = False)
     i9_2_cl_panel.sort_values(i9.index_cols).to_csv(DATA_panel_clean + 'i9_admin2.csv', index = False)
+    i10_cl_panel.sort_values(i10.index_cols).to_csv(DATA_panel_clean + 'i10_admin3.csv', index = False)
+    i10_2_cl_panel.sort_values(i10_2.index_cols).to_csv(DATA_panel_clean + 'i10_admin2.csv', index = False)
 
