@@ -59,7 +59,9 @@ for(unit in c("district", "ward")){
       tp_add_polygon_data(admin_sp) %>%
       
       # Percent change
-      tp_add_baseline_comp_stats() %>%
+      tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, 
+                                                       paste0("i5_net_",timeunit,"_base.csv")),
+                                 type = timeunit) %>%
       tp_add_percent_change() %>%
       
       # Add labels

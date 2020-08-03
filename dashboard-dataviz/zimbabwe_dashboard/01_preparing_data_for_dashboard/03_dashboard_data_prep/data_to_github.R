@@ -1,12 +1,25 @@
 # Transfer dashboard data from OneDrive to Github
 
+
+## Remove previous files in github
+REMOVE_PREVIOUS_FILES <- F
+if(REMOVE_PREVIOUS_FILES){
+  temp <- list.files(DASHBOARD_DATA_GITHUB_PATH, 
+                     full.names = T, 
+                     pattern = "*.Rds") %>%
+    lapply(file.remove)
+  
+
+}
+
+
 # Move telecom data to github folder -------------------------------------------
 i <- 1
 
 telecom_files <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, pattern = "*.Rds")
 
 # Select subset if only need to move some
-telecom_files <- telecom_files[grepl("Density", telecom_files)]
+#telecom_files <- telecom_files[grepl("Density", telecom_files)]
 
 temp <- telecom_files %>%
   lapply(function(file_i){

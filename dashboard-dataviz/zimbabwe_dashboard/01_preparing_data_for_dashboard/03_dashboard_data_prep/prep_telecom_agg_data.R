@@ -206,6 +206,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                                         paste0("i5_",
                                                timeunit_short,
                                                ".Rds")))
+      df_movement <- df_movement[!is.na(df_movement$date),]
       
       ### prep_movement_date_i
       temp <- lapply(unique(df_movement$date),  
@@ -215,7 +216,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      timeunit,
                      admin_sp)
       
-      if(F){
+
       ### prep_movement_adminname_i
       temp <- lapply(unique(unique(df_movement$name_dest),
                             unique(df_movement$name_origin)),  
@@ -223,11 +224,11 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      df_movement,  
                      unit,
                      timeunit)
-      }
+
       ### prep_movement_adminname_i_date_i
       # Loop through units and dates; apply function separately for moving in 
       # and out
-      if(F){
+
       i <- 1
       t <- Sys.time()
       for(name_i in unique(unique(df_movement$name_dest),
@@ -262,7 +263,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
         t <- Sys.time()
       }
       
-      }
+
     
     }
 

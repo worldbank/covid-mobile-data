@@ -705,7 +705,9 @@ tp_add_baseline_comp_stats <- function(data,
                                        value_var = "value",
                                        region_var = "region",
                                        date_var = "date",
-                                       baseline_months = 2){
+                                       baseline_date = "2020-03-15",
+                                       file_name = NULL,
+                                       type = "daily"){
   
   # DESCRIPTION
   # Adds baseline values
@@ -750,6 +752,10 @@ tp_add_baseline_comp_stats <- function(data,
     data_sub$month[grepl("^Dec", data_sub$date)] <- 12
   }
   
+  if(type %in% "weekly"){
+    data_sub$dow <- 1 # make dummy week variable
+  }
+  
   #### Create variables of baseline values
   # Use data.table method for below code
   #data_sub <- data_sub %>%
@@ -783,10 +789,14 @@ tp_add_baseline_comp_stats <- function(data,
   
   data_sub_dt <- as.data.table(data_sub)
   
-  data_sub_base_dt <- data_sub_dt[(data_sub_dt$month %in% baseline_months),]
+  data_sub_base_dt <- data_sub_dt[(data_sub_dt$date <= baseline_date),]
   data_sub_base_agg_dt <- data_sub_base_dt[, .(value_dow_base_mean = mean(value, na.rm=T),
                                                value_dow_base_sd   = sd(value, na.rm=T)), 
                                            by = list(region, dow)]
+  
+  if(!is.null(file_name)){
+    write.csv(data_sub_base_agg_dt %>% as.data.frame(), file.path(file_name), row.names = F)
+  }
   
   data_sub_dt <- merge(data_sub_dt, data_sub_base_agg_dt, by=c("region", "dow"), all.x=T) # !!! ERROR !!!
   

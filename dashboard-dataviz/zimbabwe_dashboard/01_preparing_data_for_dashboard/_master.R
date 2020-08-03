@@ -50,6 +50,8 @@ PROOF_CONCEPT_PATH   <- file.path(PROJECT_PATH, "proof-of-concept")
 CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm2")
 CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm3")
 
+BASELINE_FILE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "baseline")
+
 DASHBOARD_DATA_ONEDRIVE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_dashboard")
 
 DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard")
@@ -66,7 +68,7 @@ source(file.path(DASHBOARD_CLEAN_TELECOM_PATH,
 source(file.path(DASHBOARD_PREP_DASHBOARD_PATH,
                  "_prep_data_for_dash_functions.R"))
 
-#### Scripts #### ============================================================
+#### Scripts #### ==============================================================
 
 # 1. Prepare Spatial Data ------------------------------------------------------
 if(CLEAN_SPATIAL_DATA){

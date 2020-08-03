@@ -17,10 +17,9 @@ for(unit in c("ward", "district")){
     
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                 "clean",
                                  "i5_admin2.csv"), 
-                       stringsAsFactors=F) %>%
-      dplyr::rename(date = connection_date) %>%
-      mutate(date = date %>% substring(1,10))
+                       stringsAsFactors=F)
   }
   
   if(unit %in% "ward"){
@@ -30,10 +29,9 @@ for(unit in c("ward", "district")){
     
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                 "clean",
                                  "i5_admin3.csv"), 
-                       stringsAsFactors=F) %>%
-      dplyr::rename(date = connection_date) %>%
-      mutate(date = date %>% substring(1,10))
+                       stringsAsFactors=F) 
   }
   
   # Remove if Tower Down -------------------------------------------------------
@@ -70,13 +68,13 @@ for(unit in c("ward", "district")){
   # example, if a o-d pair has a value less than 15 for every time period, 
   # we don't considered here and helps improve code speed both here and in
   # the script to prepare data for dashboard.
-  df_day <- df_day[df_day$total_count_p > 15,]
+  df_day <- df_day[df_day$total_count > 15,]
   
   # Daily ----------------------------------------------------------------------
   #### Process data for dashboard
   df_day_clean <- df_day %>% 
     
-    tp_standardize_vars_od("date", "region_from", "region_to", "total_count_p") %>%
+    tp_standardize_vars_od("date", "region_from", "region_to", "total_count") %>%
     
     # Clean datset
     tp_clean_date() %>%
@@ -89,7 +87,7 @@ for(unit in c("ward", "district")){
     tp_less15_NA() %>%
     
     # Percent change
-    tp_add_baseline_comp_stats() %>%
+    tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, "i5_daily_base.csv")) %>%
     tp_add_percent_change() %>%
     
     # Add labels
@@ -97,6 +95,8 @@ for(unit in c("ward", "district")){
     tp_add_label_baseline(timeunit = "day", OD = T) 
   
   ## Export
+  df_day_clean <- df_day_clean[!is.na(df_day_clean$date),]
+  
   saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH, "i5_daily.Rds"))
   write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, "i5_daily.csv"), row.names=F)
   
@@ -121,7 +121,8 @@ for(unit in c("ward", "district")){
     tp_less15_NA() %>%
     
     # Percent change
-    tp_add_baseline_comp_stats() %>%
+    tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, "i5_weekly_base.csv"),
+                               type = "weekly") %>%
     tp_add_percent_change() %>%
     
     # Add labels

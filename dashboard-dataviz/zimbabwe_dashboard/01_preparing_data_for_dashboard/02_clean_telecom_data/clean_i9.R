@@ -3,7 +3,7 @@
 unit = "district"
 metric = "mean_distance"
 for(unit in c("district", "ward")){
-  for(metric in c("mean_distance", "stdev_distance")){
+  for(metric in c("count", "mean_duration", "stdev_duration")){
     
     print(paste(unit, metric,  "---------------------------------------------"))
     
@@ -16,7 +16,7 @@ for(unit in c("district", "ward")){
       #### Load Data
       df_day <- read.csv(file.path(RAW_DATA_PATH, 
                                    "clean",
-                                   "i7_admin2.csv"), 
+                                   "i9_admin2.csv"), 
                          stringsAsFactors=F) 
     }
     
@@ -28,11 +28,11 @@ for(unit in c("district", "ward")){
       #### Load Data
       df_day <- read.csv(file.path(RAW_DATA_PATH, 
                                    "clean",
-                                   "i7_admin3.csv"), 
+                                   "i9_admin3.csv"), 
                          stringsAsFactors=F) 
     }
     
-  
+    
     # For wards, remove if tower is down ---------------------------------------
     if(unit %in% "ward"){
       
@@ -73,7 +73,7 @@ for(unit in c("district", "ward")){
       tp_less15_NA(threshold = 0) %>%
       
       # Percent change
-      tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, paste0("i7_",metric,"_daily_base.csv"))) %>%
+      tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, paste0("i9_",metric,"_daily_base.csv"))) %>%
       tp_add_percent_change() %>%
       
       # Add labels
@@ -81,8 +81,8 @@ for(unit in c("district", "ward")){
       tp_add_label_baseline(timeunit = "day", OD = F)
     
     ## Export
-    saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH, paste0("i7_daily_",metric,".Rds")))
-    write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, paste0("i7_daily_",metric,".csv")), row.names=F)
+    saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH, paste0("i9_daily_",metric,".Rds")))
+    write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, paste0("i9_daily_",metric,".csv")), row.names=F)
     
     
     # Weekly ---------------------------------------------------------------------
@@ -107,7 +107,7 @@ for(unit in c("district", "ward")){
       #tp_less15_NA() %>%
       
       # Percent change
-      tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, paste0("i7_",metric,"_weekly_base.csv")),
+      tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, paste0("i9_",metric,"_weekly_base.csv")),
                                  type = "weekly") %>%
       tp_add_percent_change() %>%
       
@@ -118,9 +118,9 @@ for(unit in c("district", "ward")){
     
     ## Export
     saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,
-                                     paste0("i7_weekly_",metric,".Rds")))
+                                     paste0("i9_weekly_",metric,".Rds")))
     write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, 
-                                       paste0("i7_weekly_",metric,".csv")), 
+                                       paste0("i9_weekly_",metric,".csv")), 
               row.names=F)
     
     

@@ -306,15 +306,25 @@ ui_main <- fluidPage(
                           
                           selectInput(
                             "move_date_risk",
-                            label = h4("Movement Date"),
-                            choices = c("Feb 01 - Feb 07",
-                                        "Feb 08 - Feb 14",
-                                        "Feb 15 - Feb 21",
-                                        "Feb 22 - Feb 28",
-                                        "Feb 29 - Mar 06",
-                                        "Mar 07 - Mar 13",
-                                        "Mar 14 - Mar 20",
-                                        "Mar 21 - Mar 27"),
+                            label = h4("Movement Date - Week Of:"),
+                            choices = c("2020-01-29",
+                                        "2020-02-05",
+                                        "2020-02-12",
+                                        "2020-02-19",
+                                        "2020-02-26",
+                                        "2020-03-04",
+                                        "2020-03-11", 
+                                        "2020-03-18", 
+                                        "2020-03-25", 
+                                        "2020-04-01", 
+                                        "2020-04-08", 
+                                        "2020-04-15", 
+                                        "2020-04-22",
+                                        "2020-04-29", 
+                                        "2020-05-06", 
+                                        "2020-05-13", 
+                                        "2020-05-20", 
+                                        "2020-05-27"),
                             multiple = F)
                    ),
                    column(4, align="center",
@@ -552,11 +562,16 @@ server = (function(input, output, session) {
         # a week format.
         if( (timeunit_i %in% "Weekly") & 
             (substring(date_i,1,4) %in% "2020")){
-          date_i <- "Feb 01 - Feb 07"
+          date_i <- "2020-03-04"
         }
         
         if( (timeunit_i %in% "Daily") & 
             (!(substring(date_i,1,4) %in% "2020"))){
+          date_i <- "2020-02-01"
+        }
+        
+        if( (timeunit_i %in% "Daily") & 
+            ((substring(date_i,1,7) %in% "2020-01"))){
           date_i <- "2020-02-01"
         }
         
@@ -568,17 +583,17 @@ server = (function(input, output, session) {
           
         }
         
-        if((timeunit_i %in% "Weekly") & !(variable_i %in% "Density")){
-          
-          if(date_i %in% c("Mar 28 - Apr 03",
-                           "Apr 04 - Apr 10",
-                           "Apr 11 - Apr 17",
-                           "Apr 18 - Apr 24",
-                           "Apr 25 - May 01")){
-            date_i <- "Mar 21 - Mar 27"
-          }
-          
-        }
+        # if((timeunit_i %in% "Weekly") & !(variable_i %in% "Density")){
+        #   
+        #   if(date_i %in% c("Mar 28 - Apr 03",
+        #                    "Apr 04 - Apr 10",
+        #                    "Apr 11 - Apr 17",
+        #                    "Apr 18 - Apr 24",
+        #                    "Apr 25 - May 01")){
+        #     date_i <- "Mar 21 - Mar 27"
+        #   }
+        #   
+        # }
         
         # ****** 4.2.2.2 Density -----------------------------------------------
         if(variable_i %in% c("Density")){
@@ -594,8 +609,7 @@ server = (function(input, output, session) {
                                                     variable_i, "_",
                                                     timeunit_i, "_",
                                                     ward_i,".Rds")))
-          
-
+        
 
           
           if(metric_i %in% "Count"){
@@ -638,6 +652,12 @@ server = (function(input, output, session) {
             
           }
           
+          date_txt <- ""
+          if(timeunit_i %in% "Weekly"){
+            date_txt <- "Week of "
+          }
+          
+          
           out <- list(
             map_data = map_data,
             table_data = table_data,
@@ -649,6 +669,7 @@ server = (function(input, output, session) {
             table_title = paste0("Top ",
                                  unit_i,
                                  ": ", 
+                                 date_txt,
                                  date_i),
             table_subtitle = "",
             line_title = paste0("Trends in Subscribers in ", ward_i)
@@ -714,6 +735,11 @@ server = (function(input, output, session) {
             
           }
           
+          date_txt <- ""
+          if(timeunit_i %in% "Weekly"){
+            date_txt <- "Week of "
+          }
+          
           
           out <- list(
             map_data = map_data,
@@ -726,6 +752,7 @@ server = (function(input, output, session) {
             table_title = paste0("Top ",
                                  unit_i,
                                  ": ", 
+                                 date_txt,
                                  date_i),
             table_subtitle = "",
             line_title = paste0("Trends in ",variable_i," in ", ward_i)
@@ -796,6 +823,11 @@ server = (function(input, output, session) {
             
           }
           
+          date_txt <- ""
+          if(timeunit_i %in% "Weekly"){
+            date_txt <- "Week of "
+          }
+          
           out <- list(
             map_data = map_data,
             table_data = table_data,
@@ -814,12 +846,13 @@ server = (function(input, output, session) {
                                        " from other ",
                                        unit_i,
                                        ": ", 
+                                       date_txt,
                                        date_i)) ,
             
             table_title =  ifelse(input$select_variable %in% c("Movement Out of Wards",
                                                                "Movement Out of Districts"),
-                                  paste0(unit_i, " with Most Movement Out: ", date_i),
-                                  paste0(unit_i, " with Most Movement In: ", date_i)) ,
+                                  paste0(unit_i, " with Most Movement Out: ", date_txt, date_i),
+                                  paste0(unit_i, " with Most Movement In: ", date_txt, date_i)) ,
             
             table_subtitle = paste0("Total from all ", unit_i),
             
@@ -1148,10 +1181,12 @@ server = (function(input, output, session) {
           dplyr::rename(Date = date,
                         N = value)
         
+        data_line$Date <- data_line$Date %>% as.character() %>% as.Date()
+        
         # Line graph is made slightly differently depending on daily or weekly
         
         # Daily - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if (input$select_timeunit %in% "Daily") {
+        if (input$select_timeunit %in% c("Daily", "Weekly")) {
           
           #### Main Line Graph Element
           p <- ggplot(data_line,
@@ -1196,57 +1231,57 @@ server = (function(input, output, session) {
         }
         
         # Weekly - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if (input$select_timeunit %in% "Weekly") {
-          
-          #### Main Line Graph Element
-          #data_line <- data_line[!grepl("Mar 28", data_line$Date),]
-
-          
-          data_line$Date_short <- data_line$Date %>%
-            as.character() %>%
-            substring(1,6) %>%
-            factor(levels = c("Feb 01",
-                              "Feb 08",
-                              "Feb 15",
-                              "Feb 22",
-                              "Feb 29",
-                              "Mar 07",
-                              "Mar 14",
-                              "Mar 21",
-                              "Mar 28",
-                              "Apr 04",
-                              "Apr 11",
-                              "Apr 18"),
-                   ordered = T)
-          
-
-          
-          p <- ggplot(data_line,
-                      aes(
-                        x = Date_short,
-                        y = N,
-                        group = 1
-                      )) +
-            geom_line(size = 1, color = "orange") +
-            geom_point(size = 1, color = "orange") +
-            geom_point(data=data_line[as.character(data_line$Date) %in% as.character(input$date_ward),],
-                       aes(x = Date_short,
-                           y = N),
-                       size = 2.5, pch = 1, color = "forestgreen") +
-            labs(
-              x = "",
-              y = "",
-              title = "",
-              color = ""
-            ) +
-            scale_y_continuous(labels = scales::comma, 
-                               limits = c(min(data_line$N, na.rm=T), 
-                                          max(data_line$N, na.rm =
-                                                T))) +
-            theme_minimal() +
-            theme(plot.title = element_text(hjust = 0.5),
-                  axis.text.x = element_text(angle = 45))
-        }
+        # if (input$select_timeunit %in% "Weekly") {
+        #   
+        #   #### Main Line Graph Element
+        #   #data_line <- data_line[!grepl("Mar 28", data_line$Date),]
+        # 
+        #   
+        #   data_line$Date_short <- data_line$Date %>%
+        #     as.character() %>%
+        #     substring(1,6) %>%
+        #     factor(levels = c("Feb 01",
+        #                       "Feb 08",
+        #                       "Feb 15",
+        #                       "Feb 22",
+        #                       "Feb 29",
+        #                       "Mar 07",
+        #                       "Mar 14",
+        #                       "Mar 21",
+        #                       "Mar 28",
+        #                       "Apr 04",
+        #                       "Apr 11",
+        #                       "Apr 18"),
+        #            ordered = T)
+        #   
+        # 
+        #   
+        #   p <- ggplot(data_line,
+        #               aes(
+        #                 x = Date_short,
+        #                 y = N,
+        #                 group = 1
+        #               )) +
+        #     geom_line(size = 1, color = "orange") +
+        #     geom_point(size = 1, color = "orange") +
+        #     geom_point(data=data_line[as.character(data_line$Date) %in% as.character(input$date_ward),],
+        #                aes(x = Date_short,
+        #                    y = N),
+        #                size = 2.5, pch = 1, color = "forestgreen") +
+        #     labs(
+        #       x = "",
+        #       y = "",
+        #       title = "",
+        #       color = ""
+        #     ) +
+        #     scale_y_continuous(labels = scales::comma, 
+        #                        limits = c(min(data_line$N, na.rm=T), 
+        #                                   max(data_line$N, na.rm =
+        #                                         T))) +
+        #     theme_minimal() +
+        #     theme(plot.title = element_text(hjust = 0.5),
+        #           axis.text.x = element_text(angle = 45))
+        # }
         
         # Define Plotly - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         ggplotly(p, tooltip = c("Date", "N")) %>%
@@ -1319,18 +1354,24 @@ server = (function(input, output, session) {
               df_out$Date_short <- df_out$date %>%
                 as.character() %>%
                 substring(1,6) %>%
-                factor(levels = c("Feb 01",
-                                  "Feb 08",
-                                  "Feb 15",
-                                  "Feb 22",
-                                  "Feb 29",
-                                  "Mar 07",
-                                  "Mar 14",
-                                  "Mar 21",
-                                  "Mar 28",
-                                  "Apr 04",
-                                  "Apr 11",
-                                  "Apr 18"),
+                factor(levels = c("2020-01-29",
+                                  "2020-02-05",
+                                  "2020-02-12",
+                                  "2020-02-19",
+                                  "2020-02-26",
+                                  "2020-03-04",
+                                  "2020-03-11", 
+                                  "2020-03-18", 
+                                  "2020-03-25", 
+                                  "2020-04-01", 
+                                  "2020-04-08", 
+                                  "2020-04-15", 
+                                  "2020-04-22",
+                                  "2020-04-29", 
+                                  "2020-05-06", 
+                                  "2020-05-13", 
+                                  "2020-05-20", 
+                                  "2020-05-27"),
                        ordered = T)
               
               df_out <- df_out %>%
@@ -1495,7 +1536,7 @@ server = (function(input, output, session) {
           district_i <- input$riskmap_shape_click$id
         }
         
-        move_date_i <- "Feb 15 - Feb 21"
+        move_date_i <- "2020-03-04"
         if (!is.null(input$move_date_risk)){
           move_date_i <- input$move_date_risk
         }
@@ -1946,53 +1987,26 @@ server = (function(input, output, session) {
           if(!is.null(input$select_metric)){
             
             if(input$select_metric %in% c("Count")){
-              
-              
-              
-              
-              if(input$select_variable %in% c("Density")){
-                out <- dateInput(
-                  "date_ward",
-                  NULL,
-                  value = "2020-03-01",
-                  min = "2020-02-01",
-                  max = "2020-04-30" # max = "2020-03-29"
-                )
-              } else{
-                out <- dateInput(
-                  "date_ward",
-                  NULL,
-                  value = "2020-03-01",
-                  min = "2020-02-01",
-                  max = "2020-03-29" # max = "2020-03-29"
-                )
-              }
-              
- 
-              
-              
+
+              out <- dateInput(
+                "date_ward",
+                NULL,
+                value = "2020-03-01",
+                min = "2020-02-01",
+                max = "2020-05-31" # max = "2020-03-29"
+              )
+
             } else{
               
               
-              if(input$select_variable %in% c("Density")){
-                out <- dateInput(
-                  "date_ward",
-                  NULL,
-                  value = "2020-03-01",
-                  min = "2020-03-01",
-                  max = "2020-04-30"
-                )
-              } else{
-                out <- dateInput(
-                  "date_ward",
-                  NULL,
-                  value = "2020-03-01",
-                  min = "2020-03-01",
-                  max = "2020-03-29"
-                )
-              }
-              
-              
+              out <- dateInput(
+                "date_ward",
+                NULL,
+                value = "2020-03-01",
+                min = "2020-03-01",
+                max = "2020-05-31" # max = "2020-03-29"
+              )
+
        
             }
           }
@@ -2004,77 +2018,54 @@ server = (function(input, output, session) {
           # If a change since baseline metric (not count), then only see March
           if(input$select_metric %in% c("Count")){
             
-            if(input$select_variable %in% "Density"){
-              out <-   selectInput(
-                "date_ward",
-                label = NULL,
-                choices = c("Feb 01 - Feb 07",
-                            "Feb 08 - Feb 14",
-                            "Feb 15 - Feb 21",
-                            "Feb 22 - Feb 28",
-                            "Feb 29 - Mar 06",
-                            "Mar 07 - Mar 13",
-                            "Mar 14 - Mar 20",
-                            "Mar 21 - Mar 27",
-                            "Mar 28 - Apr 03",
-                            "Apr 04 - Apr 10",
-                            "Apr 11 - Apr 17",
-                            "Apr 18 - Apr 24"),
-                
-                multiple = F
-              )
-            } else{
-              out <-   selectInput(
-                "date_ward",
-                label = NULL,
-                choices = c("Feb 01 - Feb 07",
-                            "Feb 08 - Feb 14",
-                            "Feb 15 - Feb 21",
-                            "Feb 22 - Feb 28",
-                            "Feb 29 - Mar 06",
-                            "Mar 07 - Mar 13",
-                            "Mar 14 - Mar 20",
-                            "Mar 21 - Mar 27"),
-                
-                multiple = F
-              )
-            }
+            out <-   selectInput(
+              "date_ward",
+              label = NULL,
+              choices = c("2020-01-29",
+                          "2020-02-05",
+                          "2020-02-12",
+                          "2020-02-19",
+                          "2020-02-26",
+                          "2020-03-04",
+                          "2020-03-11", 
+                          "2020-03-18", 
+                          "2020-03-25", 
+                          "2020-04-01", 
+                          "2020-04-08", 
+                          "2020-04-15", 
+                          "2020-04-22",
+                          "2020-04-29", 
+                          "2020-05-06", 
+                          "2020-05-13", 
+                          "2020-05-20", 
+                          "2020-05-27"),
+              
+              multiple = F
+            )
             
 
-            
-            
-            
-            
-            
-            
           } else{
             
             
-            if(input$select_variable %in% "Density"){
-              out <-   selectInput(
-                "date_ward",
-                label = NULL,
-                choices = c("Feb 29 - Mar 06",
-                            "Mar 07 - Mar 13",
-                            "Mar 14 - Mar 20",
-                            "Mar 21 - Mar 27",
-                            "Mar 28 - Apr 03",
-                            "Apr 04 - Apr 10",
-                            "Apr 11 - Apr 17",
-                            "Apr 18 - Apr 24"),
-                multiple = F
-              )
-            } else{
-              out <-   selectInput(
-                "date_ward",
-                label = NULL,
-                choices = c("Feb 29 - Mar 06",
-                            "Mar 07 - Mar 13",
-                            "Mar 14 - Mar 20",
-                            "Mar 21 - Mar 27"),
-                multiple = F
-              )
-            }
+            out <-   selectInput(
+              "date_ward",
+              label = NULL,
+              choices = c("2020-03-04",
+                          "2020-03-11", 
+                          "2020-03-18", 
+                          "2020-03-25", 
+                          "2020-04-01", 
+                          "2020-04-08", 
+                          "2020-04-15", 
+                          "2020-04-22",
+                          "2020-04-29", 
+                          "2020-05-06", 
+                          "2020-05-13", 
+                          "2020-05-20", 
+                          "2020-05-27"),
+              
+              multiple = F
+            )
 
             
             

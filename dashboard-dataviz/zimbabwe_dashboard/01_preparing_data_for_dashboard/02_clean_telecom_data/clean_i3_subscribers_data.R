@@ -10,6 +10,7 @@
 # days_wards_with_low_hours_I1.csv which indicates when a tower is likely town
 TOWER_DOWN_REPLACE_NA <- T
 
+
 unit <- "ward"
 for(unit in c("district", "ward")){
   
@@ -21,10 +22,9 @@ for(unit in c("district", "ward")){
     
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                 "clean",
                                  "i3_admin2.csv"), 
-                       stringsAsFactors=F) %>%
-      dplyr::rename(date = day) %>%
-      mutate(date = date %>% substring(1,10))
+                       stringsAsFactors=F) 
   }
   
   if(unit %in% "ward"){
@@ -34,10 +34,9 @@ for(unit in c("district", "ward")){
     
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                 "clean",
                                  "i3_admin3.csv"), 
-                       stringsAsFactors=F) %>%
-      dplyr::rename(date = day) %>%
-      mutate(date = date %>% substring(1,10))
+                       stringsAsFactors=F) 
   }
   
   # Daily ----------------------------------------------------------------------
@@ -66,7 +65,7 @@ for(unit in c("district", "ward")){
   #### 3. Clean data
   df_day_clean <- df_day %>% 
     
-    tp_standardize_vars("date", "region", "count_p") %>%
+    tp_standardize_vars("date", "region", "count") %>%
     
     # Clean datset
     tp_clean_date() %>%
@@ -80,7 +79,7 @@ for(unit in c("district", "ward")){
     tp_less15_NA() %>%
     
     # Percent change
-    tp_add_baseline_comp_stats() %>%
+    tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, "i3_daily_base.csv")) %>%
     tp_add_percent_change() %>%
     
     # Add labels
@@ -114,7 +113,8 @@ for(unit in c("district", "ward")){
     tp_less15_NA() %>%
     
     # Percent change
-    tp_add_baseline_comp_stats() %>%
+    tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, "i3_weekly_base.csv"),
+                               type = "weekly") %>%
     tp_add_percent_change() %>%
     
     # Add labels
