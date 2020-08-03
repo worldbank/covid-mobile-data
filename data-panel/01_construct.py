@@ -16,10 +16,15 @@ import seaborn as sns; sns.set()
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 
+
+# Import functions.
+# This assumes the script is running from the folder where both files are 
+from utils import *
+
 #-----------------------------------------------------------------#
 # Settings 
 
-EXPORT = True
+EXPORT = False
 
 #-----------------------------------------------------------------#
 # Folder structure
@@ -49,17 +54,6 @@ indicators_df = pd\
 # to have absolute paths    
 indicators_df['path'] = DATA_path + indicators_df['path']   
 indicators_df['path_ecnt'] = DATA_path + indicators_df['path_ecnt']   
-
-#-----------------------------------------------------------------#
-# General functions
-
-def clean(data, index_cols):
-    na_list = [np.nan, '', '99999', 99999, float("inf")]
-    data = data[~data[index_cols].isin(na_list).any(axis ='columns')]
-    return(data)
-
-# clean(i5_2.data_e_04, i5_2.index_cols)['region_from'].unique()
-
 
 #-----------------------------------------------------------------#
 # Create indicator class
@@ -157,7 +151,13 @@ class i_indicator:
             self.panel.loc[d3_bol, varname] = self.panel.loc[d3_bol, var + '_05']
             self.panel.loc[d4_bol, varname] = self.panel.loc[d3_bol, var + '_06']
         # Make sure order is fine
-        # self.panel.sort_values(self.index_cols)          
+        # self.panel.sort_values(self.index_cols)
+    def create_clean_panel(self, time_var, region_vars, outliers_df):
+        if self.level == 3:
+            self.clean_panel = clean_pipeline(self, time_var, region_vars, outliers_df)
+        else:
+            self.clean_panel = clean_columns(self, time_var)
+
 
 
 # Indicator 1
@@ -232,70 +232,16 @@ exec(open(CODE_path + 'usage_outliers.py').read())
 #-----------------------------------------------------------------#
 # Further cleaning
 
-# Remove low usage outliers assuming these are towers down and 
-# trims columns
 
-def clean_columns(indicator, timevar):
-    # Remove comparison columns
-    keepcols = copy.deepcopy(indicator.index_cols)
-    keepcols.extend(indicator.panel.filter(like='_p', axis=1).columns.to_list())
-    new_df = indicator.panel[keepcols]
-    # Rename columns
-    new_df.columns = new_df.columns.str.strip('_p')
-    # Create time variables
-    new_df['date'] = pd.to_datetime(new_df[timevar]).dt.date
-    return new_df
-
-def remove_towers_down(df, region_vars, outliers_df = i1_ag_df_tower_down):
-    # Process outliers file
-    outliers_df = copy.deepcopy(i1_ag_df_tower_down) # created in usage_outliers.py
-    outliers_df = outliers_df\
-        .drop(['hcount', 'avg_hours', 'h_diff'], axis = 1)\
-        .rename(columns = {'region':'region_right'})
-    outliers_df['flag'] = 1
-    # Merge outliers
-    if len(region_vars) == 1:
-        new_df = df\
-            .merge(outliers_df,
-                        left_on = ['date', region_vars[0]],
-                        right_on = ['date', 'region_right'],
-                        how = 'outer')\
-            .drop(['region_right'], axis = 1)
-    else:
-        new_df = df\
-            .merge(outliers_df,
-                        left_on = ['date', region_vars[0]],
-                        right_on = ['date', 'region_right'],
-                        how = 'outer')\
-            .drop(['region_right'], axis = 1)\
-            .merge(outliers_df,
-                        left_on = ['date', region_vars[1]],
-                        right_on = ['date', 'region_right'],
-                        how = 'outer')\
-            .drop(['region_right'], axis = 1)
-        # Flag if either is true
-        new_df['flag'] = ((new_df['flag_x'] == 1) | (new_df['flag_y'] == 1)).astype(int)
-        new_df = new_df.drop(['flag_x', 'flag_y'], axis =1)
-    # Drop outliers and processual columns
-    new_df = new_df[~(new_df['flag'] == 1)].drop(['flag'], axis = 1)
-    return new_df
-
-def clean_pipeline(indicator, timevar, region_vars):
-    return remove_towers_down( 
-                       clean_columns(indicator, 
-                                     timevar = timevar), 
-                       region_vars = region_vars)
-    
-
-i1_cl_panel = clean_pipeline(i1,timevar = 'hour', region_vars = ['region'])
-i3_cl_panel = clean_pipeline(i3, timevar = 'day', region_vars = ['region'])
-i3_2_cl_panel = clean_columns(i3_2, timevar = 'day')
-i5_cl_panel = clean_pipeline(i5,timevar = 'connection_date', region_vars = ['region_from', 'region_to'])
-i5_2_cl_panel = clean_columns(i5_2, timevar = 'connection_date')
-i7_cl_panel = clean_pipeline(i7,timevar = 'day', region_vars = ['home_region'])
-i7_2_cl_panel = clean_columns(i7_2, timevar = 'day')
-i9_cl_panel = clean_pipeline(i9,timevar = 'day', region_vars = ['region'])
-i9_2_cl_panel = clean_columns(i9_2, timevar = 'day')
+i1.create_clean_panel(time_var = 'hour', region_vars = ['region'], outliers_df = i1_low_total_hours)
+# i3_cl_panel = clean_pipeline(i3, timevar = 'day', region_vars = ['region'])
+# i3_2_cl_panel = clean_columns(i3_2, timevar = 'day')
+# i5_cl_panel = clean_pipeline(i5,timevar = 'connection_date', region_vars = ['region_from', 'region_to'])
+# i5_2_cl_panel = clean_columns(i5_2, timevar = 'connection_date')
+# i7_cl_panel = clean_pipeline(i7,timevar = 'day', region_vars = ['home_region'])
+# i7_2_cl_panel = clean_columns(i7_2, timevar = 'day')
+# i9_cl_panel = clean_pipeline(i9,timevar = 'day', region_vars = ['region'])
+# i9_2_cl_panel = clean_columns(i9_2, timevar = 'day')
 
 i10_cl_panel = clean_columns(i10, timevar = 'day')
 i10_2_cl_panel = clean_columns(i10_2, timevar = 'day')
