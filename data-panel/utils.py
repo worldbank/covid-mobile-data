@@ -2,6 +2,13 @@
 # Panel utils
 #-----------------------------------------------------------------#
 
+import os
+import re
+import copy
+import pandas as pd
+import numpy as np
+import datetime as dt
+
 #-----------------------------------------------------------------#
 # General functions
 
@@ -27,9 +34,9 @@ def clean_columns(indicator, timevar):
     new_df['date'] = pd.to_datetime(new_df[timevar]).dt.date
     return new_df
 
-def remove_towers_down(df, region_vars, outliers_df = i1_ag_df_tower_down):
+def remove_towers_down(df, region_vars, outliers_df):
     # Process outliers file
-    outliers_df = copy.deepcopy(i1_ag_df_tower_down) # created in usage_outliers.py
+    # outliers_df = copy.deepcopy(i1_ag_df_tower_down) # created in usage_outliers.py
     outliers_df = outliers_df\
         .drop(['hcount', 'avg_hours', 'h_diff'], axis = 1)\
         .rename(columns = {'region':'region_right'})
@@ -61,8 +68,9 @@ def remove_towers_down(df, region_vars, outliers_df = i1_ag_df_tower_down):
     new_df = new_df[~(new_df['flag'] == 1)].drop(['flag'], axis = 1)
     return new_df
 
-def clean_pipeline(indicator, timevar, region_vars):
+def clean_pipeline(indicator, timevar, region_vars, outliers_df):
     return remove_towers_down( 
                        clean_columns(indicator, 
                                      timevar = timevar), 
-                       region_vars = region_vars)
+                       region_vars = region_vars,
+                       outliers_df = outliers_df)
