@@ -96,8 +96,12 @@ class i_indicator:
         # Set defaults for time and regions
         if time_var is None:
             self.time_var = self.index_cols[0]
+        else:
+            self.time_var = time_var
         if (region_vars is None) & (len(self.index_cols) > 1):
             self.region_vars = self.index_cols[1:]
+        else:
+            self.region_vars = region_vars
         # # Call methods when intializing
         self.load()
         self.clean()
@@ -297,23 +301,25 @@ class panel_constructor:
 #-----------------------------------------------------------------#
 # Load indicators and create comparisson "dirty" panel
 
-indicators = panel_constructor(ilevels_dict = {
-    1: [3], 
-    2: [3],
-    3: [2,3],
-    4: ['country'],
-    5: [2,3,'tc_harare', 'tc_bulawayo'],
-    6: [3],
-    7: [2,3],
-    8: [2,3],
-    9: [2,3],
-    #    9: [2,3,'tower-cluster-harare', 'tower-cluster-bulawayo'],
-    10: [2],
-    11: [2,3]} )
+# indicators = panel_constructor(ilevels_dict = {
+#     1: [3], 
+#     2: [3],
+#     3: [2,3],
+#     4: ['country'],
+#     5: [2,3,'tc_harare', 'tc_bulawayo'],
+#     6: [3],
+#     7: [2,3],
+#     8: [2,3],
+#     9: [2,3],
+#     #    9: [2,3,'tower-cluster-harare', 'tower-cluster-bulawayo'],
+#     10: [2],
+#     11: [2,3]} )
 
+# Create class instance
 # If no levels dictionary is provided, it will use the default, which is all of them!
-# indicators = panel_constructor()
+indicators = panel_constructor()
 
+# Run panel creation
 indicators.dirty_panel()
 
 #-----------------------------------------------------------------#
