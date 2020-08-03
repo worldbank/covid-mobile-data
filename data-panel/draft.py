@@ -25,7 +25,7 @@ from utils import *
 #-----------------------------------------------------------------#
 # Settings 
 
-EXPORT = False
+EXPORT = True
 
 #-----------------------------------------------------------------#
 # Folder structure
@@ -35,7 +35,8 @@ CODE_path = "C:/Users/wb519128/GitHub/covid-mobile-data/data-panel/"
 
 DATA_POC = DATA_path + "proof-of-concept/"
 DATA_panel = DATA_POC + "panel_indicators/"
-DATA_panel_raw = DATA_panel + 'raw/'
+# DATA_panel_raw = DATA_panel + 'raw/'
+DATA_panel_comp = DATA_panel + 'comparisson/'
 DATA_panel_clean = DATA_panel + 'clean/'
 
 OUT_hfcs = DATA_POC + "outputs/data-checks/"
@@ -173,16 +174,19 @@ class i_indicator:
             self.panel.loc[d2_bol, varname] = self.panel.loc[d2_bol, var + '_04']
             self.panel.loc[d3_bol, varname] = self.panel.loc[d3_bol, var + '_05']
             self.panel.loc[d4_bol, varname] = self.panel.loc[d3_bol, var + '_06']
-        # Make sure order is fine
-        # self.panel.sort_values(self.index_cols)
+    # Replace panel attribute with clean panel
     def create_clean_panel(self, 
                         #    time_var, 
                         #    region_vars, 
                            outliers_df):
         if self.level == 3:
-            self.clean_panel = clean_pipeline(self, self.time_var, self.region_vars, outliers_df)
+            self.panel = clean_pipeline(self, self.time_var, self.region_vars, outliers_df)
         else:
-            self.clean_panel = clean_columns(self, self.time_var)
+            self._panel = clean_columns(self, self.time_var)
+    
+    # Set a saving method
+    def save(self, path):
+        self.panel.sort_values(self.index_cols).to_csv(path, index = False)
 
 #-----------------------------------------------------------------#
 # Constructor class
@@ -271,68 +275,70 @@ class panel_constructor:
                 self.i11_3 = i_indicator(num = 11,  index_cols =['month', 'home_region'], level = 3)
             if 2 in self.ilevels_dict[11]:
                 self.i11_2 = i_indicator(num = 11,  index_cols =['month', 'home_region'], level = 2)
-    # Create panel methods
+    # Create comparisson panel for all loaded indicators
     def dirty_panel(self):
-        self.i1_3.create_panel()
+        for i in self.i_list:
+            getattr(self, i).create_panel()
+            print('Created comp. panel ' + i)
+        # self.i1_3.create_panel()
+    # Create clean panel for all loaded indicators
     def clean_panel(self, outliers_df):
-        i1.create_clean_panel(outliers_df = outliers_df)
+        for i in self.i_list:
+            getattr(self, i).create_clean_panel(outliers_df = outliers_df)
+            print('Created clean panel ' + i)
+        # i1.create_clean_panel(outliers_df = outliers_df)
+    # Export panel datasets for all loaded indicators
+    def export(self, path):
+        for i in self.i_list:
+            exp_path = path + i + '.csv'
+            getattr(self, i).save(path = exp_path)
+            print('Saved ' + exp_path )
+
 
 #-----------------------------------------------------------------#
-# Create dirty panel
+# Load indicators and create comparisson "dirty" panel
 
-panels = panel_constructor(ilevels_dict = {1: [3], 
-                                           2: [3]})
+indicators = panel_constructor(ilevels_dict = {1: [3],
+                                               5: [2,3,'tc_harare', 'tc_bulawayo']})
 
+indicators.dirty_panel()
 
-for i in panels.i_list:
-    getattr(panels, i).data
-
-# panels.i1_3.index_cols
-# panels.i1_3.time_var
-# panels.i1_3.region_vars
-
-getattr(panels, 'i1_3').data
-
-panels.dirty_panel()
-
-
+# indicators.i1_3.panel
 
 #-----------------------------------------------------------------#
 # Create usage outliers files
 
-i1 = panels.i1_3
+i1 = indicators.i1_3
 exec(open(CODE_path + 'usage_outliers.py').read())
 
 
 #-----------------------------------------------------------------#
+# Export comparisson panel
+
+if EXPORT:
+    indicators.export(DATA_panel_comp)
+    # indicators.i1_3.save(DATA_panel_comp + 'i1_admin3.csv')
+    # indicators.i2_3.save(DATA_panel_comp + 'i2_admin3.csv')
+    # indicators.i3_2.save(DATA_panel_comp + 'i3_admin2.csv')
+    # indicators.i3_3.save(DATA_panel_comp + 'i3_admin3.csv')
+    # #indicators.i4_country.save(DATA_panel_comp + 'i4_country.csv')
+    # indicators.i5_2.save(DATA_panel_comp + 'i5_admin2.csv')
+    # indicators.i5_.save(DATA_panel_comp + 'i5_admin3.csv')
+    # indicators.i5_2.save(DATA_panel_comp + 'i5_admin2.csv')
+    # indicators.i5_3.save(DATA_panel_comp + 'i5_admin3.csv')
+
+#-----------------------------------------------------------------#
 # Create clean panel
 
-panels.clean_panel(i1_ag_df_tower_down)
+# This replaces the old panel attribute with the clean version, with
+# standardized column names
 
-# try:
-#     hasattr(i1_ag_df_tower_down)
-# except NameError:
-#     print("Error! No towers down data set. Run usage outliers script")
-# else:
-#     print("bar")
+indicators.clean_panel(i1_ag_df_tower_down)
 
-    
-# bar = panel_constructor([1])
-# bar.create_panel()
+# panels.i1_3.clean_panel
 
-# for i in default_levels_dict.keys():
-#     print('i' + str(i) + '_' + str(default_levels_dict[i][0]))
-
-
-# 'i' + default_levels_dict[5]
-
-
-# i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 'tc_bulawayo')
-
-# dic1 = {'Name': 'John', 'Time': 'morning'}
-# 'i'.join(map('_'.join, dic1.items()))
-
-# a = {1: [3], '2': [2,3],'4': ['country'], 5: [2,3,'harare-tc']}
-
-# a[5]
+#-----------------------------------------------------------------#
+# Export
+if EXPORT:
+    indicators.export(DATA_panel_clean + 'test/')
 
