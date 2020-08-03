@@ -498,7 +498,7 @@ class priority_aggregator(aggregator):
         .where((F.col('region_lag') != F.col('region')) & ((F.col('day') > F.col('day_lag'))))\
         .groupby(frequency, 'region', 'region_lag')\
         .agg(F.count(F.col('msisdn')).alias('od_count'))\
-        .where(F.col('od_count') > 15)
+        .where(F.col('od_count') > self.privacy_filter)
 
       result = result.join(prep, (prep.region == result.region_to)\
                            & (prep.region_lag == result.region_from)\
