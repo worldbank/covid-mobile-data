@@ -13,9 +13,6 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-import seaborn as sns; sns.set()
-from matplotlib import rcParams
-import matplotlib.pyplot as plt
 from itertools import chain
 
 # Import functions.
@@ -62,7 +59,7 @@ indicators_df['path_ecnt'] = DATA_path + indicators_df['path_ecnt']
 default_levels_dict = {1: [3], 
                        2: [3],
                        3: [2,3],
-                    #    4: ['country'],
+                       4: ['country'],
                        5: [2,3,'tc_harare', 'tc_bulawayo'],
                        6: [3],
                        7: [2,3],
@@ -99,14 +96,14 @@ class i_indicator:
         # Set defaults for time and regions
         if time_var is None:
             self.time_var = self.index_cols[0]
-        if region_vars is None:
+        if (region_vars is None) & (len(self.index_cols) > 1):
             self.region_vars = self.index_cols[1:]
-        # Call methods when intializing
+        # # Call methods when intializing
         self.load()
         self.clean()
     # Load files
     def load(self, full = True):
-        idx = (self.files_df['indicator'] == str(self.num)) & (self.files_df['level'] == str(self.level))
+        idx = (self.files_df['indicator'] == self.num) & (self.files_df['level'] == str(self.level))
         # Internal indicator
         folder = self.files_df['path'][idx].iat[0]
         file_name = self.files_df['file'][idx].iat[0] + '.csv'
@@ -182,11 +179,12 @@ class i_indicator:
         if self.level == 3:
             self.panel = clean_pipeline(self, self.time_var, self.region_vars, outliers_df)
         else:
-            self._panel = clean_columns(self, self.time_var)
+            self.panel = clean_columns(self, self.time_var)
     
     # Set a saving method
     def save(self, path):
         self.panel.sort_values(self.index_cols).to_csv(path, index = False)
+
 
 #-----------------------------------------------------------------#
 # Constructor class
@@ -223,9 +221,9 @@ class panel_constructor:
                 self.i3_2 = i_indicator(num = 3,  index_cols = ['day', 'region'], level = 2)
         
         # 4. Proportion of active subscribers
-        # if 4 in self.ilevels_dict.keys():
-        #     self.i4
-        
+        if 4 in self.ilevels_dict.keys():
+            self.i4_country = i_indicator(num = 4,  index_cols = ['day'], level = 'country')
+            
         # 5 - Connection Matrix
         if 5 in self.ilevels_dict.keys():
             if 3 in self.ilevels_dict[5]:
@@ -244,16 +242,16 @@ class panel_constructor:
         # 7. Mean and Standard Deviation of distance traveled per day (by home location)
         if 7 in self.ilevels_dict.keys():
             if 3 in self.ilevels_dict[7]:
-                self.i7_3 = i_indicator(num = 7,  index_cols =['day','home_region'], level = 3)
+                self.i7_3 = i_indicator(num = 7,  index_cols =['day','home_region'], time_var = 'day', region_vars = ['home_region'], level = 3)
             if 2 in self.ilevels_dict[7]:
-                self.i7_2 = i_indicator(num = 7,  index_cols =['day','home_region'], level = 2)
+                self.i7_2 = i_indicator(num = 7,  index_cols =['day','home_region'], time_var = 'day', region_vars = ['home_region'], level = 2)
         
         # 8. Mean and Standard Deviation of distance traveled per week (by home location)
         if 8 in self.ilevels_dict.keys():
             if 3 in self.ilevels_dict[8]:
-                self.i8_3 = i_indicator(num = 8,  index_cols =['week','home_region'], level = 3)
+                self.i8_3 = i_indicator(num = 8,  index_cols =['week','home_region'], time_var = 'week', region_vars = ['home_region'], level = 3)
             if 2 in self.ilevels_dict[8]:
-                self.i8_2 = i_indicator(num = 8,  index_cols =['week','home_region'], level = 2)
+                self.i8_2 = i_indicator(num = 8,  index_cols =['week','home_region'], time_var = 'week', region_vars = ['home_region'], level = 2)
        
         # 9. Daily locations based on Home Region with average stay time and SD of stay time
         if 9 in self.ilevels_dict.keys(): 
@@ -289,20 +287,32 @@ class panel_constructor:
         # i1.create_clean_panel(outliers_df = outliers_df)
     # Export panel datasets for all loaded indicators
     def export(self, path):
+        print("Saving in " + path)
         for i in self.i_list:
             exp_path = path + i + '.csv'
             getattr(self, i).save(path = exp_path)
-            print('Saved ' + exp_path )
+            print('Saved ' + i + '.csv' )
 
 
 #-----------------------------------------------------------------#
 # Load indicators and create comparisson "dirty" panel
 
-# indicators = panel_constructor(ilevels_dict = {1: [3],
-#                                                5: [2,3,'tc_harare', 'tc_bulawayo']})
+indicators = panel_constructor(ilevels_dict = {
+    1: [3], 
+    2: [3],
+    3: [2,3],
+    4: ['country'],
+    5: [2,3,'tc_harare', 'tc_bulawayo'],
+    6: [3],
+    7: [2,3],
+    8: [2,3],
+    9: [2,3],
+    #    9: [2,3,'tower-cluster-harare', 'tower-cluster-bulawayo'],
+    10: [2],
+    11: [2,3]} )
 
 # If no levels dictionary is provided, it will use the default, which is all of them!
-indicators = panel_constructor()
+# indicators = panel_constructor()
 
 indicators.dirty_panel()
 
