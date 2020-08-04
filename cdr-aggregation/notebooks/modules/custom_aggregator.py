@@ -415,7 +415,7 @@ class custom_aggregator(priority_aggregator):
              F.collect_list('new_call_datetime_lead_long').over(user_infection_pickup_window))\
          .withColumn('region_list',
              F.collect_list('region').over(user_infection_pickup_window))\
-         .withColumn('window_start', F.col('new_call_datetime_lead_long') + start_infectious_window + (days * 24 * 60 * 60))\
+         .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window + (days * 24 * 60 * 60))\
          .withColumn('window_size', F.size('departure_list'))\
          .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
          .withColumn('duration_list_from_window_start',
