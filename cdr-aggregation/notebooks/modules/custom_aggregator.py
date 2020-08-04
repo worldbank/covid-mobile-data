@@ -324,6 +324,8 @@ class custom_aggregator(priority_aggregator):
     # - get the lead duration
     # - create long versions of the timestamp and lead timestamp
     # - calculate duration
+    # - create a new lead timestamp variable that reduces durations greater to 10 days to just 10 days 
+    # - create new duration variable based on new lead timestamp
     #
     # Now we have duration in each region
     # - Merge with incidence using region and incidence frequency
