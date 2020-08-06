@@ -324,8 +324,6 @@ class custom_aggregator(priority_aggregator):
     # - get the lead duration
     # - create long versions of the timestamp and lead timestamp
     # - calculate duration
-    # - create a new lead timestamp variable that reduces durations greater to 10 days to just 10 days 
-    # - create new duration variable based on new lead timestamp
     #
     # Now we have duration in each region
     # - Merge with incidence using region and incidence frequency
@@ -366,7 +364,6 @@ class custom_aggregator(priority_aggregator):
                                                     frequency,
                                                     incidence_frequency,
                                                     start_infectious_window = -(10 * 24 * 60 * 60),
-                                                    end_infectious_window = 0,
                                                     import_in_one_day = True,
                                                     **kwargs):
 
@@ -376,17 +373,14 @@ class custom_aggregator(priority_aggregator):
       prep = self.df.where(time_filter)\
         .where((F.col('region_lag') != F.col('region')) |\
             (F.col('region_lag') == self.missing_value_code))\
+        .where(F.col('msisdn') == 129049848)\
         .withColumn('call_datetime_lead', F.lead('call_datetime').over(user_window))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
             self.dates['end_date'] + dt.timedelta(1)).otherwise(F.col('call_datetime_lead')))\
         .withColumn('call_datetime_long', F.col('call_datetime').cast('long'))\
         .withColumn('call_datetime_lead_long', F.col('call_datetime_lead').cast('long'))\
-        .withColumn('duration', F.col('call_datetime_lead_long') - F.col('call_datetime_long'))\
-        .withColumn('new_call_datetime_lead_long',
-                    F.when(F.col('duration')>(10* 24 * 60 * 60), F.col('call_datetime_long')+ (10* 24 * 60 * 60))\
-                    .otherwise(F.col('call_datetime_lead_long')))\
-        .withColumn('duration_new',F.col('new_call_datetime_lead_long')- F.col('call_datetime_long'))
+        .withColumn('duration', F.col('call_datetime_lead_long') - F.col('call_datetime_long'))
 
       if incidence_frequency == 'monthly':
         self.incidence = getattr(self.datasource, 'admin3_cholera_incidence_monthly')
@@ -400,26 +394,32 @@ class custom_aggregator(priority_aggregator):
       result = prep\
         .join(self.incidence, join_condition, 'left')\
         .na.fill({'incidence' : 0})\
+    
+      user_infection_pickup_window = Window\
+           .partitionBy('msisdn').orderBy('call_datetime_lead_long')\
+           .rangeBetween(Window.unboundedPreceding, 0)
 
-
-
-      for days in range(10):
-        user_infection_pickup_window = Window\
-           .partitionBy('msisdn').orderBy('new_call_datetime_lead_long')\
-           .rangeBetween(start_infectious_window + (days * 24 * 60 * 60), end_infectious_window)
-
-        result = result\
+      result = result\
          .withColumn('incidence_list',
              F.collect_list('incidence').over(user_infection_pickup_window))\
          .withColumn('duration_list',
-             F.collect_list('duration_new').over(user_infection_pickup_window))\
+             F.collect_list('duration').over(user_infection_pickup_window))\
          .withColumn('departure_list',
-             F.collect_list('new_call_datetime_lead_long').over(user_infection_pickup_window))\
+             F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
          .withColumn('region_list',
              F.collect_list('region').over(user_infection_pickup_window))\
-         .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window + (days * 24 * 60 * 60))\
+         .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window)\
          .withColumn('window_size', F.size('departure_list'))\
          .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
+         .withColumn('full_zip', F.arrays_zip(F.col('incidence_list'),
+            F.col('duration_list'), F.col('departure_list'),
+            F.col('region_list'), F.col('window_start_list')))\
+         .withColumn('fitlered_full_zip', F.expr("filter(full_zip, x -> x['departure_list'] > window_start)"))\
+         .withColumn('incidence_list', F.col("fitlered_full_zip").getField('incidence_list'))\
+         .withColumn('duration_list', F.col("fitlered_full_zip").getField('duration_list'))\
+         .withColumn('departure_list', F.col("fitlered_full_zip").getField('departure_list'))\
+         .withColumn('region_list', F.col("fitlered_full_zip").getField('region_list'))\
+         .withColumn('window_start_list', F.col("fitlered_full_zip").getField('window_start_list'))\
          .withColumn('duration_list_from_window_start',
              F.expr("transform(arrays_zip(departure_list, window_start_list), x -> x.departure_list - x.window_start_list)"))\
          .withColumn('duration_corrected_list',
@@ -429,7 +429,7 @@ class custom_aggregator(priority_aggregator):
          .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_duration_list')))\
          .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
          .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_duration_list'))\
-         .withColumn('imported_incidence_' + str(days), F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
+         .withColumn('imported_incidence_0', F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
 
       if import_in_one_day:
         result = result\
@@ -441,13 +441,16 @@ class custom_aggregator(priority_aggregator):
       else:
         result = result\
           .withColumn('number_of_new_rows',
-              F.ceil(F.col('duration_new') / (24 * 60 * 60)).astype('int'))\
+              F.ceil(F.col('duration') / (24 * 60 * 60)).astype('int'))\
           .withColumn('remainder',
-              F.col('number_of_new_rows') * (24 * 60 * 60) - F.col('duration_new'))\
+              F.col('number_of_new_rows') * (24 * 60 * 60) - F.col('duration'))\
+          .withColumn('number_of_new_rows',
+              F.when(F.col('number_of_new_rows') > 10, 10)\
+              .otherwise(F.col('number_of_new_rows')))\
           .withColumn('new_row_array',
               F.when(F.col('number_of_new_rows')>1,
               F.expr('array_repeat(24 * 60 * 60,number_of_new_rows)'))\
-              .otherwise(F.array('duration_new')))\
+              .otherwise(F.array('duration')))\
           .selectExpr('*',
               "posexplode(new_row_array) as (pos, duration_exploded)",
               "date_add(day, pos) as day_filled")\
@@ -461,34 +464,34 @@ class custom_aggregator(priority_aggregator):
                 F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 1,
-                F.col('imported_incidence_1') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 2,
-                F.col('imported_incidence_2') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 3,
-                F.col('imported_incidence_3') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 4,
-                F.col('imported_incidence_4') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 5,
-                F.col('imported_incidence_5') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 6,
-                F.col('imported_incidence_6') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 7,
-                F.col('imported_incidence_7') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 8,
-                F.col('imported_incidence_8') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(
                 F.when(F.col('pos') == 9,
-                F.col('imported_incidence_9') * \
+                F.col('imported_incidence_0') * \
                 F.col('duration_day_fraction')).otherwise(0)))))))))))\
-          .groupby('day_filled', 'region')\
-          .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
-          .withColumnRenamed('day_filled', 'day')
+           .groupby('day_filled', 'region')\
+           .agg(F.sum('imported_incidence_time').alias('imported_incidence'))\
+           .withColumnRenamed('day_filled', 'day')
 
       return result
