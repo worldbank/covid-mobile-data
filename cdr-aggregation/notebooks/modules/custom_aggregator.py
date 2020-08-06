@@ -328,8 +328,8 @@ class custom_aggregator(priority_aggregator):
     # Now we have duration in each region
     # - Merge with incidence using region and incidence frequency
     #
-    # Loop:
-    # - create 10 incidence sums: going back as far as 10 or as far as 1 day
+  
+    # - create an incidence sum going back 10 days
     # - collect regions, incidence, durations and lead timestamps in arrays
     # - calculate the beginning timestamps of the infection windows
     # - calculate the size of the windows
@@ -355,7 +355,8 @@ class custom_aggregator(priority_aggregator):
     # - explode the array into number of rows needed
     # - add a number of day to the date for each row that was exploded
     # - for the last of the exloded rows per user, replace duration with remainder
-    # - calculate total incidence imported for the day by duration * incidence
+    # - calculate total incidence imported for the day by duration * incidence (implorted_incidence_0 
+    #   is applied to each of the 10 days)
     # - for the above, use the variable depending on how far into our stay we are
     # - group by day and region and sum
 
