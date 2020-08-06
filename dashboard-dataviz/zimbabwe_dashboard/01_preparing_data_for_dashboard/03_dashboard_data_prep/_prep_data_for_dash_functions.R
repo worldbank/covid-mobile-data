@@ -2,8 +2,8 @@
 
 #### Helper Functions ##### ----------------------------------------------------
 check_inputs <- function(unit, timeunit){
-  try(if(!(unit %in% c("Districts", "Wards"))) stop("unit must be Districts or Wards"))
-  try(if(!(timeunit %in% c("Daily", "Weekly"))) stop("unit must be Daily or Weekly"))
+  #try(if(!(unit %in% c("Districts", "Wards"))) stop("unit must be Districts or Wards"))
+  #try(if(!(timeunit %in% c("Daily", "Weekly"))) stop("unit must be Daily or Weekly"))
 }
 
 ##### Density ##### ------------------------------------------------------------
@@ -126,7 +126,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
     arrange(desc(value)) %>%
     dplyr::select(name, value, value_zscore_base, value_perchange_base, province)
   
-  saveRDS(df_out_of, file.path(DASHBOARD_DATA_GITHUB_PATH,
+  saveRDS(df_out_of, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                                paste0(unit, "_Movement Out of_",timeunit,"_", date_i, ".Rds")))
   
   #### Into Admin Unit
@@ -185,7 +185,7 @@ prep_od_adminname_i <- function(name_i, df, unit, timeunit){
   
   df_origin <- df_origin %>% as.data.frame()
   
-  saveRDS(df_origin, file.path(DASHBOARD_DATA_GITHUB_PATH,
+  saveRDS(df_origin, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                               paste0(unit, "_Movement Out of_",timeunit,"_", name_i, ".Rds")))
   
   #### Into Ward

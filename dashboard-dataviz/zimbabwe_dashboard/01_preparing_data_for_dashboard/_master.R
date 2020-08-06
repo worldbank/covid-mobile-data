@@ -1,6 +1,7 @@
 # Master R Script for Prepping Data for Dashboard
 
 #### Settings #### =============================================================
+options(rsconnect.max.bundle.files = 400000)
 
 CLEAN_SPATIAL_DATA <- F
 CLEAN_TELECOM_DATA <- F
