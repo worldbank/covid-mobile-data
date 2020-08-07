@@ -64,8 +64,8 @@ default_levels_dict = {1: [3],
                        6: [3],
                        7: [2,3],
                        8: [2,3],
-                       9: [2,3],
-                    #    9: [2,3,'tower-cluster-harare', 'tower-cluster-bulawayo'],
+                    #    9: [2,3],
+                       9: [2,3,'tc_harare', 'tc_bulawayo'],
                        10: [2,3],
                        11: [2,3]}
 
@@ -231,9 +231,9 @@ class panel_constructor:
         # 5 - Connection Matrix
         if 5 in self.ilevels_dict.keys():
             if 3 in self.ilevels_dict[5]:
-                self.i5_3 = i_indicator(num = 3,  index_cols = ['day', 'region'])
+                self.i5_3 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'])
             if 2 in self.ilevels_dict[5]:
-                self.i5_2 = i_indicator(num = 3,  index_cols = ['day', 'region'], level = 2)
+                self.i5_2 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 2)
             if 'tc_harare' in self.ilevels_dict[5]:
                 self.i5_tc_harare = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 'tc_harare')
             if 'tc_bulawayo' in self.ilevels_dict[5]:  
@@ -263,6 +263,10 @@ class panel_constructor:
                 self.i9_3 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 3)
             if 2 in self.ilevels_dict[9]:
                 self.i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 2)
+            if 'tc_bulawayo' in self.ilevels_dict[9]:
+                self.i9_3 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 'tc_bulawayo')
+            if 'tc_harare' in self.ilevels_dict[9]:
+                self.i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 'tc_harare')
         
         # 10. Simple OD matrix with duration of stay
         if 10 in self.ilevels_dict.keys():
@@ -301,23 +305,13 @@ class panel_constructor:
 #-----------------------------------------------------------------#
 # Load indicators and create comparisson "dirty" panel
 
-# indicators = panel_constructor(ilevels_dict = {
-#     1: [3], 
-#     2: [3],
-#     3: [2,3],
-#     4: ['country'],
-#     5: [2,3,'tc_harare', 'tc_bulawayo'],
-#     6: [3],
-#     7: [2,3],
-#     8: [2,3],
-#     9: [2,3],
-#     #    9: [2,3,'tower-cluster-harare', 'tower-cluster-bulawayo'],
-#     10: [2],
-#     11: [2,3]} )
+indicators = panel_constructor(ilevels_dict = {
+    1: [3],
+    5: [2,3]})
 
 # Create class instance
 # If no levels dictionary is provided, it will use the default, which is all of them!
-indicators = panel_constructor()
+# indicators = panel_constructor()
 
 # Run panel creation
 indicators.dirty_panel()
