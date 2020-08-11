@@ -4,38 +4,42 @@
 EXPORT <- T
 
 # Ward Level ===================================================================
-
+unit = "district"
 for(unit in c("ward", "district")){
   
   print(paste(unit, "--------------------------------------------------------"))
   
   # Set parameters -------------------------------------------------------------
   if(unit %in% "district"){
-    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "indicator 5", "admin2")
+    RAW_DATA_PATH <- file.path(PANELINDICATORS_PATH)
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
+    
+    #### Load Data
+    df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                 "clean",
+                                 "i5_admin2.csv"), 
+                       stringsAsFactors=F)
   }
   
   if(unit %in% "ward"){
-    RAW_DATA_PATH <- file.path(DATABRICKS_PATH, "indicator 5", "admin3")
+    RAW_DATA_PATH <- file.path(PANELINDICATORS_PATH)
     CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
     admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
+    
+    #### Load Data
+    df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                 "clean",
+                                 "i5_admin3.csv"), 
+                       stringsAsFactors=F) 
   }
   
-  #### Load Data
-  df_day <- read.csv(file.path(RAW_DATA_PATH, 
-                               "origin_destination_connection_matrix_per_day.csv"), 
-                     stringsAsFactors=F)
-  
-  df_day <- df_day %>%
-    dplyr::rename(date = connection_date) %>%
-    mutate(date = date %>% substring(1,10))
-  
+  # Remove if Tower Down -------------------------------------------------------
   if(unit %in% "ward"){
     towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
                                       "outputs", 
                                       "data-checks", 
-                                      "days_wards_with_low_hours_I1.csv"))
+                                      "days_wards_with_low_hours_I1_panel.csv"))
     
     #### Towers Down
     # If tower seems down, make the value NA
@@ -66,6 +70,7 @@ for(unit in c("ward", "district")){
   # the script to prepare data for dashboard.
   df_day <- df_day[df_day$total_count > 15,]
   
+  # Daily ----------------------------------------------------------------------
   #### Process data for dashboard
   df_day_clean <- df_day %>% 
     
@@ -82,20 +87,18 @@ for(unit in c("ward", "district")){
     tp_less15_NA() %>%
     
     # Percent change
-    tp_add_baseline_comp_stats() %>%
+    tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, "i5_daily_base.csv")) %>%
     tp_add_percent_change() %>%
     
     # Add labels
     tp_add_label_level(timeunit = "day", OD = T) %>%
     tp_add_label_baseline(timeunit = "day", OD = T) 
   
-  if(EXPORT){
-    saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
-                                    "origin_destination_connection_matrix_per_day.Rds"))
-    # write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
-    #                                    "origin_destination_connection_matrix_per_day.csv"), 
-    #           row.names=F)
-  }
+  ## Export
+  df_day_clean <- df_day_clean[!is.na(df_day_clean$date),]
+  
+  saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH, "i5_daily.Rds"))
+  write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, "i5_daily.csv"), row.names=F)
   
   # Weekly ---------------------------------------------------------------------
   print("week")
@@ -118,20 +121,17 @@ for(unit in c("ward", "district")){
     tp_less15_NA() %>%
     
     # Percent change
-    tp_add_baseline_comp_stats() %>%
+    tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, "i5_weekly_base.csv"),
+                               type = "weekly") %>%
     tp_add_percent_change() %>%
     
     # Add labels
     tp_add_label_level(timeunit = "week", OD = T) %>%
     tp_add_label_baseline(timeunit = "week", OD = T) 
   
-  if(EXPORT){
-    saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH,
-                                     "origin_destination_connection_matrix_per_week.Rds"))
-    #write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, 
-    #                                   "origin_destination_connection_matrix_per_week.csv"), 
-    #          row.names=F)
-  }
+  ## Export
+  saveRDS(df_week_clean, file.path(CLEAN_DATA_PATH, "i5_weekly.Rds"))
+  write.csv(df_week_clean, file.path(CLEAN_DATA_PATH, "i5_weekly.csv"), row.names=F)
   
 }
 

@@ -1,4 +1,7 @@
+# Master R Script for Prepping Data for Dashboard
+
 #### Settings #### =============================================================
+options(rsconnect.max.bundle.files = 400000)
 
 CLEAN_SPATIAL_DATA <- F
 CLEAN_TELECOM_DATA <- F
@@ -42,10 +45,13 @@ if(Sys.info()[["user"]] == "WB521633") GITHUB_PATH <- "C:/Users/wb521633/Documen
 GEO_PATH        <- file.path(PROJECT_PATH, "proof-of-concept", "geo_files")
 RISK_ANALYSIS_PATH   <- file.path(PROJECT_PATH, "proof-of-concept", "risk-analysis")
 DATABRICKS_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "databricks-results", "zw")
+PANELINDICATORS_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "panel_indicators")
 PROOF_CONCEPT_PATH   <- file.path(PROJECT_PATH, "proof-of-concept")
 
 CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm2")
 CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "adm3")
+
+BASELINE_FILE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_clean", "baseline")
 
 DASHBOARD_DATA_ONEDRIVE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_dashboard")
 
@@ -63,7 +69,7 @@ source(file.path(DASHBOARD_CLEAN_TELECOM_PATH,
 source(file.path(DASHBOARD_PREP_DASHBOARD_PATH,
                  "_prep_data_for_dash_functions.R"))
 
-#### Scripts #### ============================================================
+#### Scripts #### ==============================================================
 
 # 1. Prepare Spatial Data ------------------------------------------------------
 if(CLEAN_SPATIAL_DATA){

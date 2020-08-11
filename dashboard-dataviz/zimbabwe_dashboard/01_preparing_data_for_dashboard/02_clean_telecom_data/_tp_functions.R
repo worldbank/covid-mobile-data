@@ -231,34 +231,48 @@ tp_clean_week <- function(data,
   }
   
   #### Modify variable
-  # TODO Extend to full year
+  # Change to date that week starts
   if(type == "integer"){
     
-    date_var <- date_var %>%
-      dplyr::recode("6" = "Feb 01 - Feb 07",
-                    "7" = "Feb 08 - Feb 14",
-                    "8" = "Feb 15 - Feb 21",
-                    "9" = "Feb 22 - Feb 28",
-                    "10" = "Feb 29 - Mar 06",
-                    "11" = "Mar 07 - Mar 13",
-                    "12" = "Mar 14 - Mar 20",
-                    "13" = "Mar 21 - Mar 27",
-                    "14" = "Mar 28 - Apr 03")
+    # -1 because 2020-01-01 is week 1 and another -1 because python
+    # index starts at 0
+    date_var <- lubridate::ymd( "2020-01-01" ) + lubridate::weeks( date_var - 2 )
+    
+    # date_var <- date_var %>%
+    #   dplyr::recode("6" = "Feb 01 - Feb 07",
+    #                 "7" = "Feb 08 - Feb 14",
+    #                 "8" = "Feb 15 - Feb 21",
+    #                 "9" = "Feb 22 - Feb 28",
+    #                 "10" = "Feb 29 - Mar 06",
+    #                 "11" = "Mar 07 - Mar 13",
+    #                 "12" = "Mar 14 - Mar 20",
+    #                 "13" = "Mar 21 - Mar 27",
+    #                 "14" = "Mar 28 - Apr 03",
+    #                 "15" = "Apr 04 - Apr 10",
+    #                 "16" = "Apr 11 - Apr 17",
+    #                 "17" = "Apr 18 - Apr 24",
+    #                 "18" = "Apr 25 - May 01",
+    #                 "19" = "Apr 25 - May 02")
     
   } else if (type == "date"){
     # TODO Not idea as assumes starts on Feb 1
     
     date_var_ORIG <- date_var %>% substring(1,10) %>% as.character()
     
-    date_var[date_var_ORIG >= "2020-02-01"] <- "Feb 01 - Feb 07"
-    date_var[date_var_ORIG >= "2020-02-08"] <- "Feb 08 - Feb 14"
-    date_var[date_var_ORIG >= "2020-02-15"] <- "Feb 15 - Feb 21"
-    date_var[date_var_ORIG >= "2020-02-22"] <- "Feb 22 - Feb 28"
-    date_var[date_var_ORIG >= "2020-02-29"] <- "Feb 29 - Mar 06"
-    date_var[date_var_ORIG >= "2020-03-07"] <- "Mar 07 - Mar 13"
-    date_var[date_var_ORIG >= "2020-03-14"] <- "Mar 14 - Mar 20"
-    date_var[date_var_ORIG >= "2020-03-21"] <- "Mar 21 - Mar 27"
-    date_var[date_var_ORIG >= "2020-03-28"] <- "Mar 28 - Apr 03"
+    # Convert to week
+    date_var <- date_var_ORIG %>% week() + 1
+    
+    # Convert to date
+    date_var <- lubridate::ymd( "2020-01-01" ) + lubridate::weeks( date_var - 2 )
+    # date_var[date_var_ORIG >= "2020-02-01"] <- "Feb 01 - Feb 07"
+    # date_var[date_var_ORIG >= "2020-02-08"] <- "Feb 08 - Feb 14"
+    # date_var[date_var_ORIG >= "2020-02-15"] <- "Feb 15 - Feb 21"
+    # date_var[date_var_ORIG >= "2020-02-22"] <- "Feb 22 - Feb 28"
+    # date_var[date_var_ORIG >= "2020-02-29"] <- "Feb 29 - Mar 06"
+    # date_var[date_var_ORIG >= "2020-03-07"] <- "Mar 07 - Mar 13"
+    # date_var[date_var_ORIG >= "2020-03-14"] <- "Mar 14 - Mar 20"
+    # date_var[date_var_ORIG >= "2020-03-21"] <- "Mar 21 - Mar 27"
+    # date_var[date_var_ORIG >= "2020-03-28"] <- "Mar 28 - Apr 03"
     
   }
   
@@ -396,8 +410,8 @@ tp_add_label_baseline <- function(data,
                     "increase",
                     "decrease")
   
-  label_base <- paste0("The baseline February value was: ",
-                       data[[value_base_var]] %>% round(2), ".<br>",
+  label_base <- paste0(#"The baseline February value was: ",
+                       #data[[value_base_var]] %>% round(2), ".<br>",
                        "Compared to baseline, this ", timeunit, "<br>",
                        "had a ", 
                        data[[perchange_base_var]] %>% abs() %>% round(2),
@@ -481,9 +495,9 @@ tp_add_label_level <- function(data,
                     "increase",
                     "decrease") 
   
-  label_change <- paste0("Last ", timeunit, "'s value: ", 
-                         data$value_lag %>% round(2), ".", 
-                         "<br>", 
+  label_change <- paste0(#"Last ", timeunit, "'s value: ", 
+                         #data$value_lag %>% round(2), ".", 
+                         #"<br>", 
                          "This ", timeunit, " had a ",
                          abs(data$value - data$value_lag) %>% round(2), 
                          " ",
@@ -691,7 +705,9 @@ tp_add_baseline_comp_stats <- function(data,
                                        value_var = "value",
                                        region_var = "region",
                                        date_var = "date",
-                                       baseline_months = 2){
+                                       baseline_date = "2020-03-15",
+                                       file_name = NULL,
+                                       type = "daily"){
   
   # DESCRIPTION
   # Adds baseline values
@@ -704,6 +720,7 @@ tp_add_baseline_comp_stats <- function(data,
   data_sub <- data.frame(value = data[[value_var]],
                          region = data[[region_var]],
                          date = data[[date_var]])
+  data_sub$region <- data_sub$region %>% as.character()
   
   #### Add Month and Day of Week
   # TODO This process might not be most stable
@@ -733,6 +750,10 @@ tp_add_baseline_comp_stats <- function(data,
     data_sub$month[grepl("^Oct", data_sub$date)] <- 10
     data_sub$month[grepl("^Nov", data_sub$date)] <- 11
     data_sub$month[grepl("^Dec", data_sub$date)] <- 12
+  }
+  
+  if(type %in% "weekly"){
+    data_sub$dow <- 1 # make dummy week variable
   }
   
   #### Create variables of baseline values
@@ -768,12 +789,16 @@ tp_add_baseline_comp_stats <- function(data,
   
   data_sub_dt <- as.data.table(data_sub)
   
-  data_sub_base_dt <- data_sub_dt[(data_sub_dt$month %in% baseline_months),]
+  data_sub_base_dt <- data_sub_dt[(data_sub_dt$date <= baseline_date),]
   data_sub_base_agg_dt <- data_sub_base_dt[, .(value_dow_base_mean = mean(value, na.rm=T),
                                                value_dow_base_sd   = sd(value, na.rm=T)), 
                                            by = list(region, dow)]
   
-  data_sub_dt <- merge(data_sub_dt, data_sub_base_agg_dt, by=c("region", "dow"))
+  if(!is.null(file_name)){
+    write.csv(data_sub_base_agg_dt %>% as.data.frame(), file.path(file_name), row.names = F)
+  }
+  
+  data_sub_dt <- merge(data_sub_dt, data_sub_base_agg_dt, by=c("region", "dow"), all.x=T) # !!! ERROR !!!
   
   data_sub <- as.data.frame(data_sub_dt)
   

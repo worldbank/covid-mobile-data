@@ -2,29 +2,27 @@
 
 # Depends on: clean_movement_inout_data.R
 
-EXPORT <- T
-
-unit <- "ward"
-timeunit <- "day"
-for(unit in c("district", "ward")){
-  for(timeunit in c("day", "week")){
+unit <- "adm2"
+timeunit <- "daily"
+for(unit in c("adm2", "adm3")){
+  for(timeunit in c("daily", "weekly")){
     
     print(paste(unit, timeunit, "--------------------------------------------"))
     
     # Set parameters -------------------------------------------------------------
-    if(unit %in% "district"){
+    admin_sp <- readRDS(file.path(GEO_PATH, paste0(unit, ".Rds")))
+    
+    if(unit %in% "adm2"){
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
-      admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
     }
     
-    if(unit %in% "ward"){
+    if(unit %in% "adm3"){
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
-      admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
     }
     
     # Clean ----------------------------------------------------------------------
     df <- readRDS(file.path(CLEAN_DATA_PATH,
-                            paste0("origin_destination_connection_matrix_per_",
+                            paste0("i5_",
                                    timeunit,
                                    ".Rds"))) %>%
       as.data.table()
@@ -60,25 +58,28 @@ for(unit in c("district", "ward")){
       tp_add_polygon_data(admin_sp) %>%
       
       # Percent change
-      tp_add_baseline_comp_stats() %>%
+      tp_add_baseline_comp_stats(file_name = file.path(CLEAN_DATA_PATH, 
+                                                       paste0("i5_net_",timeunit,"_base.csv")),
+                                 type = timeunit) %>%
       tp_add_percent_change() %>%
       
       # Add labels
       tp_add_label_level(timeunit = timeunit, OD = F) %>%
       tp_add_label_baseline(timeunit = timeunit, OD = F) 
     
-    if(EXPORT){
-      saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
-                                      paste0("origin_destination_connection_matrix_net_per_",
+    
+    ## Export
+    saveRDS(df_day_clean, file.path(CLEAN_DATA_PATH,
+                                    paste0("i5_net_",
+                                           timeunit,
+                                           ".Rds")))
+    
+    write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
+                                      paste0("i5_net_",
                                              timeunit,
-                                             ".Rds")))
-      
-      write.csv(df_day_clean, file.path(CLEAN_DATA_PATH, 
-                                        paste0("origin_destination_connection_matrix_net_per_",
-                                               timeunit,
-                                               ".csv")), 
-                row.names=F)
-    }
+                                             ".csv")), 
+              row.names=F)
+    
     
     
   }
