@@ -88,6 +88,7 @@ variable_i <- "Density"
 timeunit_i <- "Daily" 
 date_i <- "2020-03-04"
 previous_zoom_selection <- ""
+last_selected_adm <- ""
 metric_i <- "Count"
 
 WEEKLY_VALUES <- c("2020-03-04",
@@ -388,7 +389,20 @@ server = (function(input, output, session) {
       
       
       # **** 4.2.2 Telecom Data Filtering --------------------------------------
+      
       ward_data_sp_filtered <- reactive({
+        
+        # Update region based on clicking
+        if(!is.null(input$mapward_shape_click$id)){
+          if(last_selected_adm != input$mapward_shape_click$id){
+            
+            updateSelectInput(session, "select_region_zoom",
+                              selected = input$mapward_shape_click$id
+            )
+            last_selected_adm <<- input$mapward_shape_click$id
+            
+          }
+        }
         
         # ****** 4.2.2.1 Grab inputs and define defaults -----------------------
         
@@ -411,10 +425,23 @@ server = (function(input, output, session) {
         
         ## Only update ward_i if user has clicked; otherwise, use default
         ward_i <- "Cidade De Matola"
-        
-        if (!is.null(input$mapward_shape_click$id)){
-          ward_i <- input$mapward_shape_click$id
+
+        if(!is.null(input$select_region_zoom)){
+          ward_i <- input$select_region_zoom
         }
+
+        #if (!is.null(input$mapward_shape_click$id)){
+        #  ward_i <- input$mapward_shape_click$id
+        #}
+        
+        
+        # observeEvent(input$select_region_zoom,{
+        #   if(!is.null(input$select_region_zoom)){
+        #     ward_i <- input$select_region_zoom
+        #   }
+        # })
+        
+        
         
         #### Clean Inputs
         # Some variables have names that include the unit (eg, Movement Into
@@ -475,8 +502,8 @@ server = (function(input, output, session) {
                                                     variable_i, "_",
                                                     timeunit_i, "_",
                                                     ward_i,".Rds")))
-        
-
+          
+          
           
           if(metric_i %in% "Count"){
             
@@ -738,6 +765,9 @@ server = (function(input, output, session) {
         
       })
       
+      
+      
+      
       # ** 4.3 Figures - - - - - - - - - - - - - - - - - - - - - - - - - - -----
       
       # **** 4.3.1 Indicator Map -----------------------------------------------
@@ -873,7 +903,7 @@ server = (function(input, output, session) {
             
             if(!is.null(input$select_variable)){
               #if(!(input$select_variable %in% "Net Movement")){
-                map_values <- log_neg(map_values)
+              map_values <- log_neg(map_values)
               #} 
             }
             
@@ -900,6 +930,30 @@ server = (function(input, output, session) {
           reverse = F
         )
         
+        if(!is.null(input$select_metric)){
+          if(!(input$select_metric %in% "Count")){
+            
+            wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
+              as.vector()
+            
+            
+            legend_colors <- brewer.pal(4, "RdBu") %>% rev()
+            legend_labels <- c("Positive", "", "", "Negative")
+            
+            # Define pallete
+            max_value <- map_values[!is.na(map_values)] %>% abs() %>% max()
+            
+            pal_ward <- colorNumeric(
+              palette = "RdBu", # "PuOr",
+              domain = c(-max_value, max_value), # c(0, map_values)
+              na.color = "gray",
+              reverse = F
+            )
+            
+          }
+        }
+        
+        
         # If all non-NA values are NA, make purple
         if(sum(!is.na(map_values)) == sum(map_values %in% 0)){
           
@@ -923,7 +977,7 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
-
+        
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
@@ -993,43 +1047,43 @@ server = (function(input, output, session) {
         #### Further Zoom to Region
         # Only change if choose something different than what is previously
         # selected.
-        if(!is.null(input$select_region_zoom)){
-          if(previous_zoom_selection != input$select_region_zoom){
-            if(input$select_region_zoom %in% map_data$name){
-              
-              loc_i <- which(map_data$name %in% input$select_region_zoom)
-              
-              map_data_zoom <- map_data[loc_i,] 
-              
-              map_data_zoom_extent <- map_data_zoom %>% extent()
-              
-              l <- l %>%
-                fitBounds(
-                  lng1 = map_data_zoom_extent@xmin,
-                  lat1 = map_data_zoom_extent@ymin,
-                  lng2 = map_data_zoom_extent@xmax,
-                  lat2 = map_data_zoom_extent@ymax
-                ) 
-              
-              # Tried to highlight the zoomed region, but encountered issues
-              # Keeping here in case useful when fixing.
-              #%>%
-              #addPolygons(data=map_data_zoom,
-              #            #label = ~ lapply(map_labels, htmltools::HTML),
-              #            #layerId = ~ name_id,
-              #            color="yellow",
-              #            opacity = 1.0, fillOpacity = 0)
-              
-              # Create a global of the previous zoom selected. Without this,
-              # the map would always zoom to the region if the user changes
-              # any other input - which is annoying. By grabing the selected
-              # region and only zooming when this value changes, we avoid
-              # that annoying, unwanted zooming.
-              previous_zoom_selection <<- input$select_region_zoom
-              
-            }
-          }
-        }
+        # if(!is.null(input$select_region_zoom)){
+        #   if(previous_zoom_selection != input$select_region_zoom){
+        #     if(input$select_region_zoom %in% map_data$name){
+        #       
+        #       loc_i <- which(map_data$name %in% input$select_region_zoom)
+        #       
+        #       map_data_zoom <- map_data[loc_i,] 
+        #       
+        #       map_data_zoom_extent <- map_data_zoom %>% extent()
+        #       
+        #       l <- l %>%
+        #         fitBounds(
+        #           lng1 = map_data_zoom_extent@xmin,
+        #           lat1 = map_data_zoom_extent@ymin,
+        #           lng2 = map_data_zoom_extent@xmax,
+        #           lat2 = map_data_zoom_extent@ymax
+        #         ) 
+        #       
+        #       # Tried to highlight the zoomed region, but encountered issues
+        #       # Keeping here in case useful when fixing.
+        #       #%>%
+        #       #addPolygons(data=map_data_zoom,
+        #       #            #label = ~ lapply(map_labels, htmltools::HTML),
+        #       #            #layerId = ~ name_id,
+        #       #            color="yellow",
+        #       #            opacity = 1.0, fillOpacity = 0)
+        #       
+        #       # Create a global of the previous zoom selected. Without this,
+        #       # the map would always zoom to the region if the user changes
+        #       # any other input - which is annoying. By grabing the selected
+        #       # region and only zooming when this value changes, we avoid
+        #       # that annoying, unwanted zooming.
+        #       previous_zoom_selection <<- input$select_region_zoom
+        #       
+        #     }
+        #   }
+        # }
         
         l
         
@@ -1077,7 +1131,7 @@ server = (function(input, output, session) {
             theme(plot.title = element_text(hjust = 0.5),
                   axis.text.x = element_text(angle = 45))
           
-
+          
           #### If % change or baseline, add dots showing baseline values and
           # a line for mean
           if(!(input$select_metric %in% "Count")){
@@ -1339,7 +1393,7 @@ server = (function(input, output, session) {
       })
       
       # **** 4.3.4 Total Observations/Subscribers ------------------------------
-
+      
       #### Total Subscribers
       output$subs_total <- renderPlotly({
         p <- ggplot(data=subs_total,
@@ -1353,12 +1407,12 @@ server = (function(input, output, session) {
           theme(plot.title = element_text(hjust = 0.5, face="bold", size=16, family="Times"),
                 axis.text = element_text(size=12, family="Times")) +
           scale_y_continuous(labels = scales::comma) # limits=c(4500000, 5500000)
- 
+        
         ggplotly(p) %>%
           config(displayModeBar = F)
       })
       
-
+      
       # ** 4.4 Titles - - - - - - - - - - - - - - - - - - - - - - - - - - - -----
       
       # Define titles that dynamically changed depending on inputs
@@ -1521,7 +1575,7 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Postos"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Zoom to Posto"), 
+                                h5("Select Posto"), 
                                 choices = sort(ward_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1534,7 +1588,7 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Districts"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Zoom to District"), 
+                                h5("Select District"), 
                                 choices = sort(district_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1599,7 +1653,7 @@ server = (function(input, output, session) {
           if(!is.null(input$select_metric)){
             
             if(input$select_metric %in% c("Count")){
-
+              
               out <- dateInput(
                 "date_ward",
                 NULL,
@@ -1607,7 +1661,7 @@ server = (function(input, output, session) {
                 min = "2020-03-01",
                 max = "2020-04-30" # max = "2020-03-29"
               )
-
+              
             } else{
               
               
@@ -1618,8 +1672,8 @@ server = (function(input, output, session) {
                 min = "2020-04-01",
                 max = "2020-04-30" # max = "2020-03-29"
               )
-
-       
+              
+              
             }
           }
           
@@ -1646,7 +1700,7 @@ server = (function(input, output, session) {
               multiple = F
             )
             
-
+            
           } else{
             
             
@@ -1661,7 +1715,7 @@ server = (function(input, output, session) {
               
               multiple = F
             )
-
+            
             
             
             

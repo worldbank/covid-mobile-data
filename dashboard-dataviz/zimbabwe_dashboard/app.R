@@ -65,7 +65,7 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = F
+Logged = T
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -105,6 +105,7 @@ variable_i <- "Density"
 timeunit_i <- "Daily"
 date_i <- "2020-02-01"
 previous_zoom_selection <- ""
+last_selected_adm <- ""
 metric_i <- "Count"
 
 WEEKLY_VALUES <- c("2020-03-04",
@@ -517,6 +518,18 @@ server = (function(input, output, session) {
       # **** 4.2.2 Telecom Data Filtering --------------------------------------
       ward_data_sp_filtered <- reactive({
         
+        # Update region based on clicking
+        if(!is.null(input$mapward_shape_click$id)){
+          if(last_selected_adm != input$mapward_shape_click$id){
+            
+            updateSelectInput(session, "select_region_zoom",
+                              selected = input$mapward_shape_click$id
+            )
+            last_selected_adm <<- input$mapward_shape_click$id
+            
+          }
+        }
+        
         # ****** 4.2.2.1 Grab inputs and define defaults -----------------------
         
         #### Grab inputs
@@ -539,8 +552,8 @@ server = (function(input, output, session) {
         ## Only update ward_i if user has clicked; otherwise, use default
         ward_i <- "Harare 6"
         
-        if (!is.null(input$mapward_shape_click$id)){
-          ward_i <- input$mapward_shape_click$id
+        if(!is.null(input$select_region_zoom)){
+          ward_i <- input$select_region_zoom
         }
         
         #### Clean Inputs
@@ -582,7 +595,7 @@ server = (function(input, output, session) {
         # time unit and make sure the selected date matches the time unit. For 
         # example, if a "Weekly" is selected, make sure the date inptu is in
         # a week format.
-
+        
         # Make sure is valid week day
         if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES)){
           date_i <- "2020-03-04"
@@ -602,8 +615,8 @@ server = (function(input, output, session) {
                                                     variable_i, "_",
                                                     timeunit_i, "_",
                                                     ward_i,".Rds")))
-        
-
+          
+          
           
           if(metric_i %in% "Count"){
             
@@ -1014,6 +1027,10 @@ server = (function(input, output, session) {
         if(sum(!is.na(map_values)) %in% 0) map_values <- rep(0, length(map_values))
         
         #### Map Aesthetics
+        # For counts, viridis; for % change and z-score, diverging palette for
+        # positive/negative. Define counts outside of if statement so has values
+        # for initializing.
+        
         # Legend color and labels. Not used in map, just to define the legend, 
         # so should mimic what we do with palette applied to map. 
         legend_colors <- rev(viridis(5))
@@ -1026,6 +1043,32 @@ server = (function(input, output, session) {
           na.color = "gray",
           reverse = F
         )
+        
+        
+        if(!is.null(input$select_metric)){
+          if(!(input$select_metric %in% "Count")){
+            
+            wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
+              as.vector()
+         
+          
+            legend_colors <- brewer.pal(4, "RdBu") %>% rev()
+            legend_labels <- c("Positive", "", "", "Negative")
+            
+            # Define pallete
+            max_value <- map_values[!is.na(map_values)] %>% abs() %>% max()
+
+            pal_ward <- colorNumeric(
+              palette = "RdBu",
+              domain = c(-max_value, max_value), # c(0, map_values)
+              na.color = "gray",
+              reverse = F
+            )
+            
+          }
+        }
+        
+        
         
         # If all non-NA values are NA, make purple
         if(sum(!is.na(map_values)) == sum(map_values %in% 0)){
@@ -1050,7 +1093,7 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
-
+        
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
@@ -1120,43 +1163,43 @@ server = (function(input, output, session) {
         #### Further Zoom to Region
         # Only change if choose something different than what is previously
         # selected.
-        if(!is.null(input$select_region_zoom)){
-          if(previous_zoom_selection != input$select_region_zoom){
-            if(input$select_region_zoom %in% map_data$name){
-              
-              loc_i <- which(map_data$name %in% input$select_region_zoom)
-              
-              map_data_zoom <- map_data[loc_i,] 
-              
-              map_data_zoom_extent <- map_data_zoom %>% extent()
-              
-              l <- l %>%
-                fitBounds(
-                  lng1 = map_data_zoom_extent@xmin,
-                  lat1 = map_data_zoom_extent@ymin,
-                  lng2 = map_data_zoom_extent@xmax,
-                  lat2 = map_data_zoom_extent@ymax
-                ) 
-              
-              # Tried to highlight the zoomed region, but encountered issues
-              # Keeping here in case useful when fixing.
-              #%>%
-              #addPolygons(data=map_data_zoom,
-              #            #label = ~ lapply(map_labels, htmltools::HTML),
-              #            #layerId = ~ name_id,
-              #            color="yellow",
-              #            opacity = 1.0, fillOpacity = 0)
-              
-              # Create a global of the previous zoom selected. Without this,
-              # the map would always zoom to the region if the user changes
-              # any other input - which is annoying. By grabing the selected
-              # region and only zooming when this value changes, we avoid
-              # that annoying, unwanted zooming.
-              previous_zoom_selection <<- input$select_region_zoom
-              
-            }
-          }
-        }
+        # if(!is.null(input$select_region_zoom)){
+        #   if(previous_zoom_selection != input$select_region_zoom){
+        #     if(input$select_region_zoom %in% map_data$name){
+        #       
+        #       loc_i <- which(map_data$name %in% input$select_region_zoom)
+        #       
+        #       map_data_zoom <- map_data[loc_i,] 
+        #       
+        #       map_data_zoom_extent <- map_data_zoom %>% extent()
+        #       
+        #       l <- l %>%
+        #         fitBounds(
+        #           lng1 = map_data_zoom_extent@xmin,
+        #           lat1 = map_data_zoom_extent@ymin,
+        #           lng2 = map_data_zoom_extent@xmax,
+        #           lat2 = map_data_zoom_extent@ymax
+        #         ) 
+        #       
+        #       # Tried to highlight the zoomed region, but encountered issues
+        #       # Keeping here in case useful when fixing.
+        #       #%>%
+        #       #addPolygons(data=map_data_zoom,
+        #       #            #label = ~ lapply(map_labels, htmltools::HTML),
+        #       #            #layerId = ~ name_id,
+        #       #            color="yellow",
+        #       #            opacity = 1.0, fillOpacity = 0)
+        #       
+        #       # Create a global of the previous zoom selected. Without this,
+        #       # the map would always zoom to the region if the user changes
+        #       # any other input - which is annoying. By grabing the selected
+        #       # region and only zooming when this value changes, we avoid
+        #       # that annoying, unwanted zooming.
+        #       previous_zoom_selection <<- input$select_region_zoom
+        #       
+        #     }
+        #   }
+        # }
         
         l
         
@@ -1204,7 +1247,7 @@ server = (function(input, output, session) {
             theme(plot.title = element_text(hjust = 0.5),
                   axis.text.x = element_text(angle = 45))
           
-
+          
           #### If % change or baseline, add dots showing baseline values and
           # a line for mean
           if(!(input$select_metric %in% "Count")){
@@ -1908,7 +1951,7 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Wards"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Zoom to Ward"), 
+                                h5("Select Ward"), 
                                 choices = sort(ward_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1921,7 +1964,7 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Districts"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Zoom to District"), 
+                                h5("Select District"), 
                                 choices = sort(district_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1984,7 +2027,7 @@ server = (function(input, output, session) {
           if(!is.null(input$select_metric)){
             
             if(input$select_metric %in% c("Count")){
-
+              
               out <- dateInput(
                 "date_ward",
                 NULL,
@@ -1992,7 +2035,7 @@ server = (function(input, output, session) {
                 min = "2020-02-01",
                 max = "2020-06-30" # max = "2020-03-29"
               )
-
+              
             } else{
               
               
@@ -2003,8 +2046,8 @@ server = (function(input, output, session) {
                 min = "2020-03-01",
                 max = "2020-06-30" # max = "2020-03-29"
               )
-
-       
+              
+              
             }
           }
           
@@ -2044,7 +2087,7 @@ server = (function(input, output, session) {
               multiple = F
             )
             
-
+            
           } else{
             
             
@@ -2071,7 +2114,7 @@ server = (function(input, output, session) {
               
               multiple = F
             )
-
+            
             
             
             
