@@ -71,7 +71,7 @@ provinces <- ward_sp$province %>% unique() %>% sort()
 provinces <- c("All", provinces)
 
 #### Totals
-#obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
+obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
 subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.Rds"))
 
 #### Data descriptions
@@ -289,12 +289,17 @@ ui_main <- fluidPage(
                       " ")
              ),
              fluidRow(
-               column(3,
+               column(2,
                       " "),
+               #column(4, align="left",
+                #      plotlyOutput("obs_total",
+                 #                  height=350,
+                  #                 width=450)
+               #),
                column(8, align="left",
                       plotlyOutput("subs_total",
                                    height=350,
-                                   width=860)
+                                   width=850)
                )
                
              )
@@ -937,14 +942,14 @@ server = (function(input, output, session) {
               as.vector()
             
             
-            legend_colors <- brewer.pal(4, "RdBu") %>% rev()
+            legend_colors <- brewer.pal(4, "PuOr") %>% rev()
             legend_labels <- c("Positive", "", "", "Negative")
             
             # Define pallete
             max_value <- map_values[!is.na(map_values)] %>% abs() %>% max()
             
             pal_ward <- colorNumeric(
-              palette = "RdBu", # "PuOr",
+              palette = "PuOr", # "PuOr",
               domain = c(-max_value, max_value), # c(0, map_values)
               na.color = "gray",
               reverse = F
@@ -1393,6 +1398,24 @@ server = (function(input, output, session) {
       })
       
       # **** 4.3.4 Total Observations/Subscribers ------------------------------
+      
+      #### Total Subscribers
+      output$obs_total <- renderPlotly({
+        p <- ggplot(data=obs_total,
+                    aes(x=Date, y=Observations)) +
+          geom_line(size=1.5, color="black") +
+          labs(x="",
+               y="",
+               title=" \nObservations") +
+          theme_minimal() +
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+          theme(plot.title = element_text(hjust = 0.5, face="bold", size=16, family="Times"),
+                axis.text = element_text(size=12, family="Times")) +
+          scale_y_continuous(labels = scales::comma) # limits=c(4500000, 5500000)
+        
+        ggplotly(p) %>%
+          config(displayModeBar = F)
+      })
       
       #### Total Subscribers
       output$subs_total <- renderPlotly({

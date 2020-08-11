@@ -65,7 +65,7 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -1052,14 +1052,14 @@ server = (function(input, output, session) {
               as.vector()
          
           
-            legend_colors <- brewer.pal(4, "RdBu") %>% rev()
+            legend_colors <- brewer.pal(4, "PuOr") %>% rev()
             legend_labels <- c("Positive", "", "", "Negative")
             
             # Define pallete
             max_value <- map_values[!is.na(map_values)] %>% abs() %>% max()
 
             pal_ward <- colorNumeric(
-              palette = "RdBu",
+              palette = "PuOr",
               domain = c(-max_value, max_value), # c(0, map_values)
               na.color = "gray",
               reverse = F
