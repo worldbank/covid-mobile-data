@@ -107,6 +107,24 @@ date_i <- "2020-02-01"
 previous_zoom_selection <- ""
 metric_i <- "Count"
 
+WEEKLY_VALUES <- c("2020-03-04",
+                   "2020-03-11", 
+                   "2020-03-18", 
+                   "2020-03-25", 
+                   "2020-04-01", 
+                   "2020-04-08", 
+                   "2020-04-15", 
+                   "2020-04-22",
+                   "2020-04-29", 
+                   "2020-05-06", 
+                   "2020-05-13", 
+                   "2020-05-20", 
+                   "2020-05-27",
+                   "2020-06-03",
+                   "2020-06-10",
+                   "2020-06-17",
+                   "2020-06-24")
+
 ##### ******************************************************************** #####
 # 3. UIs =======================================================================
 
@@ -564,40 +582,11 @@ server = (function(input, output, session) {
         # time unit and make sure the selected date matches the time unit. For 
         # example, if a "Weekly" is selected, make sure the date inptu is in
         # a week format.
-        if( (timeunit_i %in% "Weekly") & 
-            (substring(date_i,1,4) %in% "2020")){
+
+        # Make sure is valid week day
+        if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES)){
           date_i <- "2020-03-04"
         }
-        
-        if( (timeunit_i %in% "Daily") & 
-            (!(substring(date_i,1,4) %in% "2020"))){
-          date_i <- "2020-02-01"
-        }
-        
-        if( (timeunit_i %in% "Daily") & 
-            ((substring(date_i,1,7) %in% "2020-01"))){
-          date_i <- "2020-02-01"
-        }
-        
-        if((timeunit_i %in% "Daily") & !(variable_i %in% "Density")){
-          
-          if(date_i > "2020-03-29"){
-            date_i <- "2020-03-29"
-          }
-          
-        }
-        
-        # if((timeunit_i %in% "Weekly") & !(variable_i %in% "Density")){
-        #   
-        #   if(date_i %in% c("Mar 28 - Apr 03",
-        #                    "Apr 04 - Apr 10",
-        #                    "Apr 11 - Apr 17",
-        #                    "Apr 18 - Apr 24",
-        #                    "Apr 25 - May 01")){
-        #     date_i <- "Mar 21 - Mar 27"
-        #   }
-        #   
-        # }
         
         # ****** 4.2.2.2 Density -----------------------------------------------
         if(variable_i %in% c("Density")){
@@ -2110,8 +2099,7 @@ server = (function(input, output, session) {
                       "Net Movement",
                       "Movement Into Wards",
                       "Movement Out of Wards",
-                      "Mean Distance Traveled",
-                      "Std Dev Distance Traveled"),
+                      "Mean Distance Traveled"),
           multiple = F
         )
         
@@ -2123,8 +2111,7 @@ server = (function(input, output, session) {
                         "Net Movement",
                         "Movement Into Wards",
                         "Movement Out of Wards",
-                        "Mean Distance Traveled",
-                        "Std Dev Distance Traveled"),
+                        "Mean Distance Traveled"),
             multiple = F
           )
         }
@@ -2137,8 +2124,7 @@ server = (function(input, output, session) {
                         "Net Movement",
                         "Movement Into Districts",
                         "Movement Out of Districts",
-                        "Mean Distance Traveled",
-                        "Std Dev Distance Traveled"),
+                        "Mean Distance Traveled"),
             multiple = F
           )
         }

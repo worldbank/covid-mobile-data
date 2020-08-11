@@ -1,34 +1,57 @@
 # Clean Subscribers Data
 
-unit = "adm2"
-metric = "avg_dist"
-for(unit in c("adm2", "adm3")){
-  for(metric in c("avg_dist", "stddev")){
+unit = "district"
+metric = "mean_distance"
+for(unit in c("district", "ward")){
+  for(metric in c("mean_distance", "stdev_distance")){
     
     print(paste(unit, metric,  "---------------------------------------------"))
     
-    # Load Data / Set Paths ------------------------------------------------------
-    df_day <- read.csv(file.path(RAW_INDICATORS, paste0("indicator_07_home_",unit,"_day_result.csv")),
-                       stringsAsFactors=F)
-    admin_sp <- readRDS(file.path(GEO_PATH, paste0(unit, ".Rds")))
-    
-    if(unit %in% "adm2"){
+    # Set parameters -------------------------------------------------------------
+    if(unit %in% "district"){
+      RAW_DATA_PATH <- file.path(PANELINDICATORS_PATH)
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
+      admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
       
-      df_day <- clean_moz_names(df_day, 
-                                name = "H_adm2", 
-                                name_higher = "H_adm1", 
-                                type = "adm2")
-      
-    } 
-    if(unit %in% "adm3"){
+      #### Load Data
+      df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                   "clean",
+                                   "i7_admin2.csv"), 
+                         stringsAsFactors=F) 
+    }
+    
+    if(unit %in% "ward"){
+      RAW_DATA_PATH <- file.path(PANELINDICATORS_PATH)
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
+      admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
       
-      df_day <- clean_moz_names(df_day, 
-                                name = "H_adm3", 
-                                name_higher = "H_adm2", 
-                                type = "adm3")
+      #### Load Data
+      df_day <- read.csv(file.path(RAW_DATA_PATH, 
+                                   "clean",
+                                   "i7_admin3.csv"), 
+                         stringsAsFactors=F) 
+    }
+    
+  
+    # For wards, remove if tower is down ---------------------------------------
+    if(unit %in% "ward"){
       
+      towers_down <- read.csv(file.path(PROOF_CONCEPT_PATH, 
+                                        "outputs", 
+                                        "data-checks", 
+                                        "days_wards_with_low_hours_I1_panel.csv"))
+      
+      towers_down <- towers_down %>%
+        dplyr::select(region, date) %>%
+        mutate(tower_down = T) %>%
+        mutate(date = date %>% as.character)
+      
+      df_day <- df_day %>%
+        left_join(towers_down, 
+                  by = c("date" = "date",
+                         "home_region" = "region"))
+      
+      df_day[[metric]][df_day$tower_down %in% TRUE] <- NA
     }
     
     # Daily ----------------------------------------------------------------------
@@ -36,7 +59,7 @@ for(unit in c("adm2", "adm3")){
     
     df_day_clean <- df_day %>% 
       
-      tp_standardize_vars("pdate", paste0("H_", unit), metric) %>%
+      tp_standardize_vars("date", "home_region", metric) %>%
       
       # Clean datset
       tp_clean_date() %>%

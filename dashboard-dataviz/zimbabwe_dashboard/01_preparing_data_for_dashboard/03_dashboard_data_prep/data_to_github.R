@@ -2,7 +2,7 @@
 
 
 ## Remove previous files in github
-REMOVE_PREVIOUS_FILES <- F
+REMOVE_PREVIOUS_FILES <- T
 if(REMOVE_PREVIOUS_FILES){
   temp <- list.files(DASHBOARD_DATA_GITHUB_PATH, 
                      full.names = T, 

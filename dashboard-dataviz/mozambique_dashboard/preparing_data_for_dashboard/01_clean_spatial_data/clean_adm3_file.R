@@ -31,6 +31,13 @@ adm3$area <- geosphere::areaPolygon(adm3) / 1000^2
 
 adm3$province <- NA
 
+# Simplify (to speed up plotting) ----------------------------------------------
+# For ms_simplify, polygon IDs and other ID need to match
+pid <- sapply(slot(adm3, "polygons"), function(x) slot(x, "ID")) 
+row.names(adm3) <- pid
+
+adm3 <- rmapshaper::ms_simplify(adm3)
+
 # Arrange ----------------------------------------------------------------------
 #### Order by region
 adm3$region <- adm3$region %>% as.character()

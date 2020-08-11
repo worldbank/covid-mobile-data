@@ -56,7 +56,7 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -89,6 +89,16 @@ timeunit_i <- "Daily"
 date_i <- "2020-03-04"
 previous_zoom_selection <- ""
 metric_i <- "Count"
+
+WEEKLY_VALUES <- c("2020-03-04",
+                   "2020-03-11", 
+                   "2020-03-18", 
+                   "2020-03-25", 
+                   "2020-04-01", 
+                   "2020-04-08", 
+                   "2020-04-15", 
+                   "2020-04-22",
+                   "2020-04-29")
 
 ##### ******************************************************************** #####
 # 3. UIs =======================================================================
@@ -445,27 +455,10 @@ server = (function(input, output, session) {
         # time unit and make sure the selected date matches the time unit. For 
         # example, if a "Weekly" is selected, make sure the date inptu is in
         # a week format.
-        if( (timeunit_i %in% "Weekly") & 
-            (substring(date_i,1,4) %in% "2020")){
+        
+        # Make sure is valid week day
+        if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES)){
           date_i <- "2020-03-04"
-        }
-        
-        if( (timeunit_i %in% "Daily") & 
-            (!(substring(date_i,1,4) %in% "2020"))){
-          date_i <- "2020-03-15"
-        }
-        
-        if( (timeunit_i %in% "Daily") & 
-            ((substring(date_i,1,7) %in% "2020-01"))){
-          date_i <- "2020-03-15"
-        }
-        
-        if((timeunit_i %in% "Daily") & !(variable_i %in% "Density")){
-          
-          if(date_i > "2020-03-15"){
-            date_i <- "2020-03-15"
-          }
-          
         }
         
         # ****** 4.2.2.2 Density -----------------------------------------------
@@ -1696,8 +1689,7 @@ server = (function(input, output, session) {
                       "Net Movement",
                       "Movement Into Postos",
                       "Movement Out of Postos",
-                      "Mean Distance Traveled",
-                      "Std Dev Distance Traveled"),
+                      "Mean Distance Traveled"),
           multiple = F
         )
         
@@ -1709,8 +1701,7 @@ server = (function(input, output, session) {
                         "Net Movement",
                         "Movement Into Postos",
                         "Movement Out of Postos",
-                        "Mean Distance Traveled",
-                        "Std Dev Distance Traveled"),
+                        "Mean Distance Traveled"),
             multiple = F
           )
         }
@@ -1723,8 +1714,7 @@ server = (function(input, output, session) {
                         "Net Movement",
                         "Movement Into Districts",
                         "Movement Out of Districts",
-                        "Mean Distance Traveled",
-                        "Std Dev Distance Traveled"),
+                        "Mean Distance Traveled"),
             multiple = F
           )
         }
