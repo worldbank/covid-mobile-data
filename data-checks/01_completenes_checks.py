@@ -1,40 +1,35 @@
 #-----------------------------------------------------------------#
-# DATA CHECKS - completeness checks
+# DATA CHECKS - Completeness checks
 #-----------------------------------------------------------------#
 
+#-----------------------------------------------------------------#
+# Settings
 
-EXPORT_FIGURES = True
+from globals import *
 
-# This file checks all files to test if all0 dates and hours are 
-# present.
+EXPORT_FIGURES = False
 
-
-# flow_a2_file_list = os.listdir(IFLOWM_adm2_path)
-# flow_a3_file_list = os.listdir(IFLOWM_adm3_path)
-cust_a2_file_list = os.listdir(ICUST_adm2_path)
-cust_a3_file_list = os.listdir(ICUST_adm3_path)
-
-
-# Variables
+# Default variable names
 timevar = 'hour'
 regvar = 'region'
+
+INDICATORS_path = DATA_path + 'Zimbabwe/isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
+
 
 #-----------------------------------------------------------------#
 # Load data
 
-EXT_PATH = DATA_path + 'Zimbabwe/isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
-
-# Define loading functionp that depends on the existing folder 
+# Define loading function that depends on the existing folder 
 # structure but also remove headers in the middle of the data if
 # if there is any
 def loadfiles(file_name, 
               admin = 3,
-              ext_path = EXT_PATH):
+              path = INDICATORS_path):
     print(file_name, admin)
     # Load external file
-    ext_folder = ext_path + 'admin' + str(admin) + '/' 
+    folder = path + 'admin' + str(admin) + '/' 
     de = None
-    de = pd.read_csv(ext_folder + file_name)
+    de = pd.read_csv(folder + file_name)
     # Patch cleannig of headers in the middle of the data
     c1_name = de.columns[0]
     de = de[~de[c1_name].astype(str).str.contains(c1_name)]
@@ -130,9 +125,8 @@ f5_agg_date = f5\
 #----------------------------
 # Complete dates and time
 
-# This creates data sets with time indexes and fill blanks with 0s
-
-def time_complete(data, timevar, timefreq = 'D'):
+# Create data sets with time indexes and fill blanks with 0s
+def time_complete(data, timevar = timevar, timefreq = 'D'):
     data[timevar] = data[timevar].astype('datetime64')
     full_time_range = pd.date_range(data[timevar].min(),  
                                     data[timevar].max(), 
@@ -156,7 +150,7 @@ plt.figure(figsize=(12, 6))
 date_plot = sns.lineplot(f1_agg_date.index,
                          f1_agg_date['n_regions'])
 # Export
-date_plot.figure.savefig(OUT_hfcs + "i1_dates_ward_count.png")
+date_plot.figure.savefig(OUT_path + "i1_dates_ward_count.png")
 
 
 # Number of transactions plot
@@ -166,7 +160,7 @@ obs_per_day_plot = sns.lineplot(
     f1_agg_date['count'])
 # Export
 if EXPORT_FIGURES:
-    obs_per_day_plot.figure.savefig(OUT_hfcs + "i1_dates_n_obs.png")
+    obs_per_day_plot.figure.savefig(OUT_path + "i1_dates_n_obs.png")
 
 
 # Number of transactions scatter
@@ -198,7 +192,7 @@ hour_plot = sns.lineplot(
 
 # Export
 if EXPORT_FIGURES:
-    hour_plot.figure.savefig(OUT_hfcs + "i1_hours_ward_count.png")
+    hour_plot.figure.savefig(OUT_path + "i1_hours_ward_count.png")
 
 #----------------------------
 # Total count of transactions
@@ -214,14 +208,14 @@ obs_per_hour_plot = sns.lineplot(
 
 # Export
 if EXPORT_FIGURES:
-    obs_per_hour_plot.figure.savefig(OUT_hfcs + "i1_hours_n_obs.png")
+    obs_per_hour_plot.figure.savefig(OUT_path + "i1_hours_n_obs.png")
 
 
 # Table with hours 
 # fi_obs_per_hour[fi_obs_per_hour['date'] == dt.date(2020, 4, 30)]
 # apr30 = f1_agg_hour[f1_agg_hour['date'] == dt.date(2020, 4, 30)]    
 
-# apr30.to_csv(OUT_hfcs + "i1_hour_apr30.csv",
+# apr30.to_csv(OUT_path + "i1_hour_apr30.csv",
 #              index = False)
 
 
@@ -234,7 +228,7 @@ f5_plot = sns.lineplot(
     f5_agg_date['total_count'])
 # Export
 if EXPORT_FIGURES:
-    f5_plot.figure.savefig(OUT_hfcs + "i5_dates_total_count.png")
+    f5_plot.figure.savefig(OUT_path + "i5_dates_total_count.png")
 
 
 #-----------------------------------------------------------------#
@@ -245,4 +239,4 @@ if EXPORT_FIGURES:
 #     f9_agg_date['week'],
 #     f9_agg_date['mean_distance'])
 # # Export
-# f9_plot.figure.savefig(OUT_hfcs + "i9_week_mean_distance.png")
+# f9_plot.figure.savefig(OUT_path + "i9_week_mean_distance.png")
