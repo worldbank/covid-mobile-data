@@ -7,14 +7,13 @@
 
 from globals import *
 
-EXPORT_FIGURES = False
+EXPORT_FIGURES = True
 
 # Default variable names
 timevar = 'hour'
 regvar = 'region'
 
 INDICATORS_path = DATA_path + 'Zimbabwe/isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
-
 
 #-----------------------------------------------------------------#
 # Load data
@@ -53,7 +52,7 @@ f9 = loadfiles('week_home_vs_day_location_per_day.csv', admin = 2)
 # Processing data
 
 # Remove missings
-reg_missings_bol = fi['region'].isin(['99999','']) 
+reg_missings_bol = fi['region'].isin(missing_values) 
 fi_cl = fi[~reg_missings_bol]
 
 # Check for duplicates
@@ -74,7 +73,7 @@ f5['date'] = pd.to_datetime(f5['connection_date']).dt.date
 
 
 #-----------------------------------------------------------------#
-# Create aggregated datasets
+# Create aggregated datasets to the country level for ploting
 
 #----------------------------
 # I1 - transactions per hour
@@ -109,19 +108,6 @@ f5_agg_date = f5\
         .reset_index()\
         .sort_values('date')
 
-
-#----------------------------
-# I9 - OD matrix per day data
-
-# f9_agg_date = f9\
-#         .groupby('week')\
-#         .agg({'home_region' : pd.Series.nunique ,
-#               'mean_distance' : pd.Series.mean})\
-#         .reset_index()\
-#         .sort_values('week')
-
-
-
 #----------------------------
 # Complete dates and time
 
@@ -139,11 +125,10 @@ f1_agg_date = time_complete(f1_agg_date, 'date')
 f1_agg_hour = time_complete(f1_agg_hour, 'hour', 'H')
 f5_agg_date = time_complete(f5_agg_date, 'date')
 
-
-
 #-----------------------------------------------------------------#
 # I1 - Day Plots
 
+# PLot number of regions with transactions per day.
 
 # Number of regions plot
 plt.figure(figsize=(12, 6))
@@ -163,20 +148,10 @@ if EXPORT_FIGURES:
     obs_per_day_plot.figure.savefig(OUT_path + "i1_dates_n_obs.png")
 
 
-# Number of transactions scatter
-# def scatter_plot(data, var = 'count'):
-#     plot = sns.scatterplot(
-#         data.index,
-#         data[var])
-#     plot.set_xlim([data.index.min() - dt.timedelta(days=1), 
-#                   data.index.max() + dt.timedelta(days=1)])
-#     # plot.set(yscale="log")
-#     return plot
-
-# scatter_plot(f1_agg_date)
-
 #-----------------------------------------------------------------#
 # I1 - Hour Plots
+
+# Plot total number of transactions per hour to check for outliers
 
 #------------------
 # Number of regions 
@@ -221,6 +196,8 @@ if EXPORT_FIGURES:
 
 #-----------------------------------------------------------------#
 # I5 - Day Plots
+
+# Plot total number of movements per day
 
 # plot total count
 f5_plot = sns.lineplot(
