@@ -16,7 +16,16 @@ import seaborn as sns; sns.set()
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 
+from bokeh.plotting import figure, output_file, show
+from bokeh.models import Span
+from bokeh.io import export_png
+
+
 # GLOBALS
+
+# File paths
 DATA_path = "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/"
-INDICATORS_path = DATA_path + 'Zimbabwe/isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
 OUT_path = DATA_path + 'proof-of-concept/outputs/'
+
+# Default values
+missing_values = ['99999','']
