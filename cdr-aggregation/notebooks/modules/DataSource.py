@@ -66,6 +66,8 @@ class DataSource:
 
       elif self.spark_mode == 'cluster':
           self.spark = SparkSession.builder.master(self.spark_master) \
+              .config("spark.driver.memory", "200g") \
+              .config("spark.local.dir", "/data/wb550947/data") \
               .config("spark.sql.execution.arrow.enabled", "true")\
               .getOrCreate()
 
