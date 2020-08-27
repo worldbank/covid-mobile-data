@@ -84,10 +84,6 @@ district_sp <- readRDS(file.path("data_inputs_for_dashboard", "districts.Rds"))
 provinces <- ward_sp$province %>% unique() %>% sort()
 provinces <- c("All", provinces)
 
-#### Totals
-obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
-subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.Rds"))
-
 #### Risk analysis Data 
 risk_an <- fread(file.path("data_inputs_for_dashboard", 
                            "severe_disease_risk_district.csv"))
@@ -464,6 +460,12 @@ server = (function(input, output, session) {
             
             if(checkpw(Password, passwords_df_i$hashed_password) %in% TRUE){
               USER$Logged <- TRUE
+              
+              #### Totals
+              obs_total  <- readRDS_encrypted(file.path("data_inputs_for_dashboard","observations_total.Rds"),
+                                              data_key)
+              subs_total <- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
+                                              data_key)
             }
             
           }
