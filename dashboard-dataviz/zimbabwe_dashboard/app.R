@@ -67,6 +67,11 @@ library(geosphere)
 #### Logged; make false to enable password
 Logged = F
 
+# Read encrypted RDS file
+readRDS_encrypted <- function(filepath, data_key){
+  unserialize(aes_cbc_decrypt(readRDS(filepath), key = data_key))
+}
+
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
 # Load files that only need to load once at the beginning.
@@ -449,7 +454,10 @@ server = (function(input, output, session) {
           Username <- isolate(input$userName)
           Password <- isolate(input$passwd)
           
-          passwords_df <- readRDS("passwords.Rds")
+          # Key to unencrypt data
+          data_key <<- sha256(charToRaw(Password))
+          
+          passwords_df <- readRDS_encrypted("passwords.Rds", data_key)
           
           if (Username %in% passwords_df$username) {
             passwords_df_i <- passwords_df[passwords_df$username %in% Username,]
@@ -604,17 +612,19 @@ server = (function(input, output, session) {
         # ****** 4.2.2.2 Density -----------------------------------------------
         if(variable_i %in% c("Density")){
           
-          ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
                                                     timeunit_i, "_",
-                                                    date_i,".Rds")))
+                                                    date_i,".Rds")),
+                                             data_key)
           
-          time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
                                                     timeunit_i, "_",
-                                                    ward_i,".Rds")))
+                                                    ward_i,".Rds")),
+                                             data_key)
           
           
           
@@ -689,17 +699,19 @@ server = (function(input, output, session) {
                              "Mean Distance Traveled", 
                              "Std Dev Distance Traveled")){
           
-          ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
                                                     timeunit_i, "_",
-                                                    date_i,".Rds")))
+                                                    date_i,".Rds")),
+                                             data_key)
           
-          time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
                                                     timeunit_i, "_",
-                                                    ward_i,".Rds")))
+                                                    ward_i,".Rds")),
+                                             data_key)
           
           
           if(metric_i %in% "Count"){
@@ -770,24 +782,27 @@ server = (function(input, output, session) {
         if(variable_i %in% c("Movement Into",
                              "Movement Out of")){
           
-          ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
                                                     timeunit_i, "_",
-                                                    date_i,".Rds")))
+                                                    date_i,".Rds")),
+                                             data_key)
           
-          time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
                                                     variable_i, "_",
                                                     timeunit_i, "_",
-                                                    ward_i,".Rds")))
+                                                    ward_i,".Rds")),
+                                             data_key)
           
-          ward_time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
+          ward_time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                                   paste0(unit_i,"_",
                                                          variable_i, "_",
                                                          timeunit_i, "_",
                                                          ward_i,"_",
-                                                         date_i, ".Rds")))
+                                                         date_i, ".Rds")),
+                                                  data_key)
           
           
           if(metric_i %in% "Count"){
@@ -1376,11 +1391,12 @@ server = (function(input, output, session) {
           #### Add Sparkline
           # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
           trend_spark <- lapply(1:nrow(data_for_table), function(i){
-            df_out <- readRDS(file.path("data_inputs_for_dashboard",
+            df_out <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                         paste0(input$select_unit,"_",
                                                input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
                                                input$select_timeunit, "_",
-                                               data_for_table$name[i],".Rds"))) %>%
+                                               data_for_table$name[i],".Rds")),
+                                        data_key) %>%
               dplyr::mutate(group = i) 
             
             if(input$select_timeunit %in% "Daily"){
@@ -1609,8 +1625,9 @@ server = (function(input, output, session) {
         }) %>% do.call(what="rbind")
         
         #### Grab data
-        move_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                     paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")))
+        move_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                     paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")),
+                                     data_key)
         l_all$id <- 1:length(l_all)
         l_all$value <- move_df$value
         

@@ -30,7 +30,7 @@ for(unit in c("adm2", "adm3")){
   # Daily ----------------------------------------------------------------------
   df_day_clean <- df_day %>% 
     
-    tp_standardize_vars("pdate", unit, "total") %>%
+    tp_standardize_vars("pdate", unit, "totalimei") %>%
 
     # Clean datset
     tp_clean_date() %>%

@@ -77,7 +77,8 @@ subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.R
 #### Data descriptions
 data_methods_text <- read.table("text_inputs/data_methods.txt", sep="{")[[1]] %>% 
   as.character()
-data_source_description_text <- read.table("text_inputs/data_source_description.txt", sep="{")[[1]] %>%
+data_source_description_text <- read.table("text_inputs/data_source_description.txt", sep="{",
+                                           encoding = "UTF-8")[[1]] %>%
   as.character()
 
 #### Dummy default parameters on load
@@ -274,7 +275,7 @@ ui_main <- fluidPage(
                           h1("Data Description", align = "center"),
                           
                           h4("Data Sources"),
-                          data_source_description_text,
+                          HTML(data_source_description_text),
                           
                           h4("Methods"),
                           data_methods_text
@@ -291,15 +292,15 @@ ui_main <- fluidPage(
              fluidRow(
                column(2,
                       " "),
-               #column(4, align="left",
-                #      plotlyOutput("obs_total",
-                 #                  height=350,
-                  #                 width=450)
-               #),
-               column(8, align="left",
+               column(4, align="left",
+                      plotlyOutput("obs_total",
+                                   height=350,
+                                   width=450)
+               ),
+               column(4, align="left",
                       plotlyOutput("subs_total",
                                    height=350,
-                                   width=850)
+                                   width=450)
                )
                
              )
@@ -1411,7 +1412,8 @@ server = (function(input, output, session) {
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
           theme(plot.title = element_text(hjust = 0.5, face="bold", size=16, family="Times"),
                 axis.text = element_text(size=12, family="Times")) +
-          scale_y_continuous(labels = scales::comma) # limits=c(4500000, 5500000)
+          scale_y_continuous(labels = scales::comma,
+                             limits=c(0, 31000000)) # limits=c(4500000, 5500000)
         
         ggplotly(p) %>%
           config(displayModeBar = F)
@@ -1429,7 +1431,8 @@ server = (function(input, output, session) {
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
           theme(plot.title = element_text(hjust = 0.5, face="bold", size=16, family="Times"),
                 axis.text = element_text(size=12, family="Times")) +
-          scale_y_continuous(labels = scales::comma) # limits=c(4500000, 5500000)
+          scale_y_continuous(labels = scales::comma,
+                             limits=c(0, 31000000)) # limits=c(4500000, 5500000)
         
         ggplotly(p) %>%
           config(displayModeBar = F)
