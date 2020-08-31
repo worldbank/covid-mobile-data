@@ -374,7 +374,6 @@ class custom_aggregator(priority_aggregator):
       prep = self.df.where(time_filter)\
         .where((F.col('region_lag') != F.col('region')) |\
             (F.col('region_lag') == self.missing_value_code))\
-        .where(F.col('msisdn') == 129049848)\
         .withColumn('call_datetime_lead', F.lead('call_datetime').over(user_window))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
