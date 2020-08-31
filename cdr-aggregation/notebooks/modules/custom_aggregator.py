@@ -374,6 +374,7 @@ class custom_aggregator(priority_aggregator):
       prep = self.df.where(time_filter)\
         .where((F.col('region_lag') != F.col('region')) |\
             (F.col('region_lag') == self.missing_value_code))\
+        .where(F.col('msisdn') == 129049848)\
         .withColumn('call_datetime_lead', F.lead('call_datetime').over(user_window))\
         .withColumn('call_datetime_lead',
             F.when(F.col('call_datetime_lead').isNull(),
@@ -394,42 +395,47 @@ class custom_aggregator(priority_aggregator):
       result = prep\
         .join(self.incidence, join_condition, 'left')\
         .na.fill({'incidence' : 0})\
+        .withColumn('incidence_lag' ,F.lag("incidence", 1, 0).over(user_window))\
+        .withColumn('duration_lag' ,F.lag("duration", 1, 0).over(user_window))\
+        .withColumn('duration_lag_corrected' ,F.when(F.col('duration_lag') > 864000, 864000)\
+                    .otherwise(F.col('duration_lag')))\
+        .withColumn('imported_incidence_0', F.col('incidence_lag') * F.col('duration_lag_corrected'))
     
-      user_infection_pickup_window = Window\
-           .partitionBy('msisdn').orderBy('call_datetime_lead_long')\
-           .rangeBetween(Window.unboundedPreceding, 0)
+#       user_infection_pickup_window = Window\
+#            .partitionBy('msisdn').orderBy('call_datetime_lead_long')\
+#            .rangeBetween(Window.unboundedPreceding, 0)
 
-      result = result\
-         .withColumn('incidence_list',
-             F.collect_list('incidence').over(user_infection_pickup_window))\
-         .withColumn('duration_list',
-             F.collect_list('duration').over(user_infection_pickup_window))\
-         .withColumn('departure_list',
-             F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
-         .withColumn('region_list',
-             F.collect_list('region').over(user_infection_pickup_window))\
-         .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window)\
-         .withColumn('window_size', F.size('departure_list'))\
-         .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
-         .withColumn('full_zip', F.arrays_zip(F.col('incidence_list'),
-            F.col('duration_list'), F.col('departure_list'),
-            F.col('region_list'), F.col('window_start_list')))\
-         .withColumn('fitlered_full_zip', F.expr("filter(full_zip, x -> x['departure_list'] > window_start)"))\
-         .withColumn('incidence_list', F.col("fitlered_full_zip").getField('incidence_list'))\
-         .withColumn('duration_list', F.col("fitlered_full_zip").getField('duration_list'))\
-         .withColumn('departure_list', F.col("fitlered_full_zip").getField('departure_list'))\
-         .withColumn('region_list', F.col("fitlered_full_zip").getField('region_list'))\
-         .withColumn('window_start_list', F.col("fitlered_full_zip").getField('window_start_list'))\
-         .withColumn('duration_list_from_window_start',
-             F.expr("transform(arrays_zip(departure_list, window_start_list), x -> x.departure_list - x.window_start_list)"))\
-         .withColumn('duration_corrected_list',
-             F.expr("transform(arrays_zip(duration_list_from_window_start, duration_list), x -> case when x.duration_list_from_window_start > x.duration_list then x.duration_list else x.duration_list_from_window_start end)"))\
-         .withColumn('incidence_duration_list',
-             F.expr("transform(arrays_zip(duration_corrected_list, incidence_list), x -> x.duration_corrected_list * x.incidence_list)"))\
-         .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_duration_list')))\
-         .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
-         .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_duration_list'))\
-         .withColumn('imported_incidence_0', F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
+#       result = result\
+#          .withColumn('incidence_list',
+#              F.collect_list('incidence').over(user_infection_pickup_window))\
+#          .withColumn('duration_list',
+#              F.collect_list('duration').over(user_infection_pickup_window))\
+#          .withColumn('departure_list',
+#              F.collect_list('call_datetime_lead_long').over(user_infection_pickup_window))\
+#          .withColumn('region_list',
+#              F.collect_list('region').over(user_infection_pickup_window))\
+#          .withColumn('window_start', F.col('call_datetime_long') + start_infectious_window)\
+#          .withColumn('window_size', F.size('departure_list'))\
+#          .withColumn('window_start_list', F.expr('array_repeat(window_start, window_size)'))\
+#          .withColumn('full_zip', F.arrays_zip(F.col('incidence_list'),
+#             F.col('duration_list'), F.col('departure_list'),
+#             F.col('region_list'), F.col('window_start_list')))\
+#          .withColumn('fitlered_full_zip', F.expr("filter(full_zip, x -> x['departure_list'] > window_start)"))\
+#          .withColumn('incidence_list', F.col("fitlered_full_zip").getField('incidence_list'))\
+#          .withColumn('duration_list', F.col("fitlered_full_zip").getField('duration_list'))\
+#          .withColumn('departure_list', F.col("fitlered_full_zip").getField('departure_list'))\
+#          .withColumn('region_list', F.col("fitlered_full_zip").getField('region_list'))\
+#          .withColumn('window_start_list', F.col("fitlered_full_zip").getField('window_start_list'))\
+#          .withColumn('duration_list_from_window_start',
+#              F.expr("transform(arrays_zip(departure_list, window_start_list), x -> x.departure_list - x.window_start_list)"))\
+#          .withColumn('duration_corrected_list',
+#              F.expr("transform(arrays_zip(duration_list_from_window_start, duration_list), x -> case when x.duration_list_from_window_start > x.duration_list then x.duration_list else x.duration_list_from_window_start end)"))\
+#          .withColumn('incidence_duration_list',
+#              F.expr("transform(arrays_zip(duration_corrected_list, incidence_list), x -> x.duration_corrected_list * x.incidence_list)"))\
+#          .withColumn('zip', F.arrays_zip(F.col('region_list'), F.col('incidence_duration_list')))\
+#          .withColumn('filtered_zip', F.expr("filter(zip, x -> x['region_list'] != region)"))\
+#          .withColumn('filtered_incidence', F.col("filtered_zip").getField('incidence_duration_list'))\
+#          .withColumn('imported_incidence_0', F.expr('AGGREGATE(filtered_incidence, DOUBLE(0), (acc, x) -> acc + x)'))
 
       if import_in_one_day:
         result = result\
