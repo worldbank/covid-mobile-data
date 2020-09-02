@@ -48,7 +48,7 @@ As variations are a function of usage, it can reflect changes in cellphone usage
 
 **Standard time aggregation:** Day
 
-**Standard geographic aggregation:** Lowest admin level and up. 
+**Standard geographic aggregation:** Lowest administrative level and up. 
 
 Number of unique subscriber IDs that made a transaction within a day and region.
 
@@ -76,11 +76,11 @@ A proxy to changes in cellphone usage through time that can be used to scale oth
 
 This indicator uses a weekly home location (see indicator 6), it may be difficult to distinguish changes in home location to changes in usage. Additionally, there is natural attrition that happens as some people stop using their SIM and also as new SIMs are added, and this is not able to take account of this natural fluctuation so it will bias the results to look like the active subscribers is slowly going down over time, so then if this is used to scale other variables, it will lead to errors. We tested several other ways of doing this indicator, and the best seemed to be to look across all users during the entire period of interest, and then look at how many of them are active on any given day, and count it based on home region in case there is variability by region in active users.
 
-### Indicator 5 - 
+### Indicator 5 - Origin Destination Matrix - trips between two regions
 
 **Standard time aggregation:** 
 
-**Standard geographic aggregation:** 
+**Standard geographic aggregation:** Lowest administrative level and up. 
 
 
 **Analysis:**
@@ -88,81 +88,101 @@ This indicator uses a weekly home location (see indicator 6), it may be difficul
 
 **Caveats and limitations:** 
 
-### Indicator 6 - 
+### Indicator 6 - Number of residents
 
-**Standard time aggregation:** 
+**Standard time aggregation:** Week
 
-**Standard geographic aggregation:** 
+**Standard geographic aggregation:** Lowest administrative level.
 
-
-**Analysis:**
-
-
-**Caveats and limitations:** 
-
-
-### Indicator 7 - 
-
-**Standard time aggregation:** 
-
-**Standard geographic aggregation:** 
-
+Residency is defined as the modal location of the last observation on each day of the week. If there is more than one modal region, the one that is the subscriber's most recent last location of the day is selected. Count number of subscribers assigned to each region for the specific week.
 
 **Analysis:**
 
+It is a proxy for location of residency.  Weekly home locations may not capture the precise home location because people might make few calls in a week, so the location that is the mode may only have appeared on one or two days and may not represent the actual home location. Nevertheless, the weekly definition reflects the typical place a person is located in a given week and helps to capture if they deviate from the typical place. This is useful in situations like the announcement of a lockdown, when people might change their permanent location for some period of time during the lockdown, so this allows for an adjustment to reflect the new locations where people are located. Otherwise, if they are still assigned to their initial permanent home, it will look like there is a lot of movement and people not at home, but that is not contributing to risk necessarily if the person only moved once and then remained in the new location. This variable therefore helps to provide a flexible home location reflecting changing situations.
 
-**Caveats and limitations:** 
+**Caveats and limitations:**
 
+Due to the limited time dimension, weekly home location can be a poor measure for permanent residency depending on the phone usage, for example, if someone only has one or two observations a week. For permanent residency, usually a month or more of data would provide a better proxy, especially for infrequent users.
 
-### Indicator 8 - 
+### Indicator 7 - Mean and Standard Deviation of distance traveled (by home location)	
 
-**Standard time aggregation:** 
+**Standard time aggregation:** Day
 
-**Standard geographic aggregation:** 
+**Standard geographic aggregation:** Lowest administrative level and up. 
 
-
-**Analysis:**
-
-
-**Caveats and limitations:** 
-
-### Indicator 9 - 
-
-**Standard time aggregation:** 
-
-**Standard geographic aggregation:** 
-
+Total distance travelled by each SIM in that day, aggregated by averaging across SIMs with the same home location. Distance is defined as the distance between tower centroids of the current transaction and that of the previous transaction.
 
 **Analysis:**
 
+Proxy for daily distance travelled. Since it looks at movement between tower clusters, it not only captures movement across administrative areas (as all other mobility indicators), but also movement within an administrative area if there are multiple tower clusters in it. Therefore, it can help to better account for the amount of mobility happening.
 
 **Caveats and limitations:** 
 
-### Indicator 10 - 
+Distances are a function of the mobile phone towers density. In a rural area where there are fewer towers with wide coverage, distances may increase in discrete jumps as moving within the coverage of a tower will not be detected. Additionally, moving within the area of a single tower will not be detected, so in areas with only a few towers, many people will look like they have a distance of 0. In contrast, in urban settings with multiple towers there is significantly more precision. For that reason, this variable might be more useful in urban, high tower-density areas
 
-**Standard time aggregation:** 
+### Indicator 8 - Mean and Standard Deviation of distance traveled (by home location)	
 
-**Standard geographic aggregation:** 
+**Standard time aggregation:** Week
 
+**Standard geographic aggregation:** Lowest administrative level and up. 
+
+Total distance travelled by each SIM in that week, aggregated by averaging across SIMs with the same home location. Distance is defined as the distance between tower centroids of the current transaction and that of the previous transaction.
 
 **Analysis:**
 
+Proxy for weekly distance travelled. Since it looks at movement between tower clusters, it not only captures movement across administrative areas (as all other mobility indicators), but also movement within an administrative area if there are multiple tower clusters in it. Therefore, it can help to better account for the amount of mobility happening. Also, the weekly nature (compared to the daily) better helps to capture changes for individuals with less observations for whom no distance traveled might be captured when looking daily, but when looking weekly, we may see them traveling across areas.
 
 **Caveats and limitations:** 
 
-### Indicator 11 - 
+'Distances are a function of the mobile phone towers density. In a rural area where there are fewer towers with wide coverage, distances may increase in discrete jumps as moving within the coverage of a tower will not be detected. Additionally, moving within the area of a single tower will not be detected, so in areas with only a few towers, many people will look like they have a distance of 0. In contrast, in urban settings with multiple towers there is significantly more precision. For that reason, this variable might be more useful in urban, high tower-density areas.
 
-**Standard time aggregation:** 
+### Indicator 9 - Daily locations based on Home Region with average stay time and SD of stay time	
 
-**Standard geographic aggregation:** 
+**Standard time aggregation:** Day
 
+**Standard geographic aggregation:** Lowest administrative level and up. 
+
+Region where users spent most of the time in that day and duration of that stay. Time is defined as the difference between time of first call in reference region to the time of first call outside the region. The users are than aggregated by their home regoin and the region where they spent the most time that day. Users that do not have any observations that day are not included.
 
 **Analysis:**
 
+This variable is used for epidemiological Agent Based Modeling. It makes it possible to calculate the probability that an individual from a given home location is likely to be in their home location on a given day. This then allows for assigning agents in an ABM a probability of being in some other region outside of their home on any given day. Since the weekly home location definition is used, the focus is on movement away from the home happening in the given week. If monthly home location were used, it could look like many people have a probability of traveling on a given day, but actually they are now semi-permanently in a new location and do not represent a high risk because they are no longer moving after the initial move. 
 
 **Caveats and limitations:** 
 
+'This way of looking at mobility misses out on all the movement that might happen on a given day between different locations where the person only spends a little bit of time, which could be relevant for highly transmissable infectious diseases such as respiratory infections. If we try to look at the probability of being outside of the home location at any point that day, we end up in situations where for some admin areas, there's more than a 90% likelihood of going outside of the home area. For the Zimbabwe ABM, it was decided that this would overmeasure movement (this is especially true for people that live at the border of admin areas and might look like they are engaging in lots of movement outside of the home region, but actually their calls just are routed through different nearby towers that are within range of them), and so we went with the more conservative measure of having had to spend the majority of the day in a location.
 
+### Indicator 10 - Simple Origin Destination Matrix - trips between consecutive in time regions with time	
+
+**Standard time aggregation:** Day
+
+**Standard geographic aggregation:** Lowest administrative level and up. 
+
+Simple Origin Destination Matrix - Similar to indicator 5, but only counts consecutive trips. For example, the sequence [A, A, B, C, D] would result in the pairings [AA, AB,  BC,  CD]. It counts the number of times each pair appears and time spent at both origin and destination regions. It also includes consecutive trips across days up to 7 days.
+
+**Analysis:**
+
+It is a proxy for daily mobility across regions with more information on commuting patterns since it also contains information on the approximate duration of stay in a location. It can be used in two ways. First, it counts all the pairs of consecutive moves. So unlike indicator 5, in the situation of ABABABAB in a single day, it will count 7 different moves rather than just 2. Second, combined with the duration, it can help to calculate an estimate of imported disease incidence if combined with incidence data. If we know the incidence in all locations at a given point in time, we can multiply it times the average duration to calculate the probability of being infected and sum across the total number of people entering to calculate total imported incidence. The standard deviation can be used in cases where there is an incubation period and the average duration is less than the incubation period, to recreate the distribution and still count those that stay for a duration longer than the incubation period.
+
+**Caveats and limitations:** 
+
+Importantly, since the indicator only looks at consecutive movement, if someone is passing through a location on their way to their final destination, the link between the origin and final destination will be missed. This especially impacts longer travel and will underestimate longer distance travel and durations.  Also, as only movements associated with a cellphone transaction are observed, we miss movement happening when there are no observations from a given location and time comparisons can be biased if users change their cellphone usage behaviour.
+
+### Indicator 11 - Number of residents
+
+**Standard time aggregation:** Month
+
+**Standard geographic aggregation:** Lowest administrative level and up. 
+
+Residency is defined as the modal location of the last observation on each day of the month. If there is more than one modal region, the one that is the subscriber's most recent last location of the day is selected. Count number of subscribers assigned to each region for the specific week.
+
+**Analysis:**
+
+It is a proxy for location of permanent residency. It can help to demonstrate if there are more permanent shifts in the location of a population.
+
+**Caveats and limitations:** 
+
+It could fail to capture temporary relocations, for example, if people move to the country area to spend lockdown away from the city. Additionally, if a permanent relocation happens in the middle of a month, then within that month, for part of the month it will look like the person is constantly away from their permanent residence, when actually they have moved to a new one, this could lead to bias when calculating number of people away from home, especially if a large event causes a lot of people to relocate permanently. 
 
 
 
