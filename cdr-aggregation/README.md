@@ -3,6 +3,7 @@
 ### Table of content
 This table of content will be made into links.
 
+* [Summary of indicators](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#summary-of-indicators)
 * [Initial set-up](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#set-up)
   * [DataSource class and config file](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#datasource-class-and-config-file)
   * [Docker set-up](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#docker-set-up)
@@ -11,7 +12,9 @@ This table of content will be made into links.
 * [Indicators](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#indicators)
 * [Folder structure](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#folder-structure)
 
-### Set-up
+### Summary of indicators
+
+### Initial Set-up
 
 The standardization and aggregation scripts in this repository are written for deployment using pyspark on linux and pyspark on Databricks (connected to a datalake). If you want to test the scripts and/or run them on a standalone machine, you can use the Dockerfile provided, which is based on the [jupyter/pyspark-notebook](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html) image. We have special instructions for deploying the code on Databricks. In case you want to deploy the code using a different cluster setup and run into problems, please get in touch and we will do our best to help. Pull requests to add code that expands the range of deployment settings supported are welcome! Regardless which set-up you are using, you should start by creating a config file
 that will be read by the [DataSource](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/modules/DataSource.py) class.
