@@ -1,7 +1,6 @@
 # Files for aggregation of CDR Data
 
-### Table of content
-This table of content will be made into links.
+### Table of contents
 
 * [Summary of indicators](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#summary-of-indicators)
 * [Initial set-up](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#set-up)
@@ -38,11 +37,133 @@ Number of unique subscriber IDs that made a transaction within an hour and regio
 
 **Analysis:**
 
-This indicatThis indicator is a proxy for population and can be used to asses changes in  population density. The hourly nature of the indicator is more conducive to use in urban settings where there is higher phone usage and changes over the course of a day. This indicator is especially useful to identify areas that might experience sudden influxes of people (for example an area with a market), and therefore useful for identifying possible hotspots for spread of disease. 
+his indicator is a proxy for population and can be used to asses changes in population density. The hourly nature of the indicator is more conducive to use in urban settings where there is higher phone usage and changes over the course of a day. This indicator is especially useful to identify areas that might experience sudden influxes of people (for example an area with a market), and therefore useful for identifying possible hotspots for spread of disease. 
 
 **Caveats and limitations:** 
 
 As variations are a function of usage, it can reflect changes in cellphone usage instead of changes in population. In areas with few towers, this indicator is unlikely to be useful since it will primarily capture phone useage rather than people going in and out of an area. or is a simple measure of transaction volume and can show variations in cell phone usage over time. It's main use is to help in potentially scaling other indicators in case there are sudden changes in usage patterns which could in turn affect the measures of other indicators.
+
+
+### Indicator 3 - Count of unique subscribers	
+
+**Standard time aggregation:** Day
+
+**Standard geographic aggregation:** Lowest admin level and up. 
+
+Number of unique subscriber IDs that made a transaction within a day and region.
+
+**Analysis:**
+
+This indicator is a proxy for population and can be used to asses changes in population density. 							
+
+**Caveats and limitations:** 
+
+As variations are a function of usage, it can reflect changes in cellphone usage instead of changes in population. Given that it is highly dependent on phone usage, and how many subscribers are active on a given day, scaling by the total subscribers active in the country is one way to try to account for this.
+
+### Indicator 4 - Ratio of residents active that day based on those present during baseline
+
+**Standard time aggregation:** Day
+
+**Standard geographic aggregation:** Country 
+
+Ratio of residents active that day based on those present during baseline, set as at least a month before lockdwon measures to prevent the spread of SARS-CoV-2. Active users are defined as those that have made at least one transaction on that day, restricted to SIMs that had at least one observation during the baseline period.
+
+**Analysis:**
+
+A proxy to changes in cellphone usage through time that can be used to scale other indicators to account for days/locations where people may be less or more likely to use their phone.
+
+**Caveats and limitations:** 
+
+This indicator uses a weekly home location (see indicator 6), it may be difficult to distinguish changes in home location to changes in usage. Additionally, there is natural attrition that happens as some people stop using their SIM and also as new SIMs are added, and this is not able to take account of this natural fluctuation so it will bias the results to look like the active subscribers is slowly going down over time, so then if this is used to scale other variables, it will lead to errors. We tested several other ways of doing this indicator, and the best seemed to be to look across all users during the entire period of interest, and then look at how many of them are active on any given day, and count it based on home region in case there is variability by region in active users.
+
+### Indicator 5 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+### Indicator 6 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+
+### Indicator 7 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+
+### Indicator 8 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+### Indicator 9 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+### Indicator 10 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+### Indicator 11 - 
+
+**Standard time aggregation:** 
+
+**Standard geographic aggregation:** 
+
+
+**Analysis:**
+
+
+**Caveats and limitations:** 
+
+
+
 
 
 ## Initial Set-up
