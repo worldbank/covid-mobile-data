@@ -13,7 +13,7 @@
 
 ## Summary of indicators
 
-This section presents a short summary of the key indicators produced and their limitations. The table also contains indicators standard levels of aggregation as produced, by our team, but these may vary depending on country context. 
+This section had a short summary of the key indicators produced, how they should be interpreted, and their limitations. It also contains indicators standard levels of aggregation as produced by our team, but these may vary depending on country context. 
 
 ### Indicator 1 - Count of observations
 
