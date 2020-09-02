@@ -105,7 +105,7 @@ In the _aggregation_ task the following is done:
 * The parquet files will be processed using spark to produce aggregate indicators. See list of indicators in the indicator section.
 * Save the aggregated indicators in normal unpartitioned csv files in the `<base_path>/results/<country_code>/<telecom_alias>`  folder.
 
-**To run the aggregation, either run the [aggregation_offiste.ipynb](./notebooks/agregation_offsite.ipynb) notebook or the [aggregation_offiste.py](./notebooks/agregation_offsite.py) script.**
+**To run the aggregation, either run the [aggregation_master.ipynb](https://github.com/worldbank/covid-mobile-data/blob/master/cdr-aggregation/notebooks/aggregation_master.ipynb) notebook or the [aggregation_master.py](./notebooks/aggregation_master.py) script.**
 
 The aggregation  builds on much of the work that has been developed by [Flowminder](https://web.flowminder.org) for the purpose of supporting MNOs in producing basic indicators. Their code can be found in their [GitHub account](https://github.com/Flowminder).
 
