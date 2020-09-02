@@ -14,6 +14,8 @@ This table of content will be made into links.
 
 ### Summary of indicators
 
+This section presents a short summary of the key indicators produced and their limitations. The table also contains indicators standard levels of aggregation as produced, by our team, but these may vary depending on country context. 
+
 | | Indicator |	 Standard time level |Description | Analysis | Caveats and limitations |
 |-|-----------|----------------------|------------|----------|-------------------------|
 |1|	Count of observations |	 Hour | Sum of all transactions (calls or messages) made within an hour and ward | This indicator is a simple measure of transaction volume and can show variations in cell phone usage over time. It's main use is to help in potentially scaling other indicators in case there are sudden changes in usage patterns which could in turn affect the measures of other indicators. |	|
