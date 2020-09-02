@@ -14,6 +14,18 @@ This table of content will be made into links.
 
 ### Summary of indicators
 
+| | Indicator |	Description | Analysis | Caveats and limitations |
+|-|-----------|------------------|------------------|------------------|
+|1|	Count of observations|	Sum of all transactions (calls or messages) made within an hour and ward | This indicator is a simple measure of transaction volume and can show variations in cell phone usage over time. It's main use is to help in potentially scaling other indicators in case there are sudden changes in usage patterns which could in turn affect the measures of other indicators. |	|
+|2| Count of unique subscribers | Number of unique subscriber IDs that made a transaction within an hour and region. | This indicator is a proxy for population and can be used to asses changes in  population density. The hourly nature of the indicator is more conducive to use in urban settings where there is higher phone usage and changes over the course of a day. This indicator is especially useful to identify areas that might experience sudden influxes of people (for example an area with a market), and therefore useful for identifying possible hotspots for spread of disease. | As variations are a function of usage, it can reflect changes in cellphone usage instead of changes in population. In areas with few towers, this indicator is unlikely to be useful since it will primarily capture phone useage rather than people going in and out of an area. |
+							
+							
+							
+							
+							
+							
+
+
 ### Initial Set-up
 
 The standardization and aggregation scripts in this repository are written for deployment using pyspark on linux and pyspark on Databricks (connected to a datalake). If you want to test the scripts and/or run them on a standalone machine, you can use the Dockerfile provided, which is based on the [jupyter/pyspark-notebook](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html) image. We have special instructions for deploying the code on Databricks. In case you want to deploy the code using a different cluster setup and run into problems, please get in touch and we will do our best to help. Pull requests to add code that expands the range of deployment settings supported are welcome! Regardless which set-up you are using, you should start by creating a config file
