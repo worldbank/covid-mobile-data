@@ -11,7 +11,7 @@ The aggregation code is written in python for an Azure Databricks environment bu
 
 ### data-checks
 
-This R code reads the output from the cdr-aggregation and runs quality checks. See more [here](https://github.com/worldbank/covid-mobile-data/tree/master/data-checks).
+This code reads the output from the cdr-aggregation and runs quality checks. See more [here](https://github.com/worldbank/covid-mobile-data/tree/master/data-checks).
 
 ### dashboard-dataviz
 
