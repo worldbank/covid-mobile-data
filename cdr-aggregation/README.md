@@ -14,19 +14,19 @@ This table of content will be made into links.
 
 ### Summary of indicators
 
-| | Indicator |	Description | Analysis | Caveats and limitations |
-|-|-----------|------------------|------------------|------------------|
-|1|	Count of observations|	Sum of all transactions (calls or messages) made within an hour and ward | This indicator is a simple measure of transaction volume and can show variations in cell phone usage over time. It's main use is to help in potentially scaling other indicators in case there are sudden changes in usage patterns which could in turn affect the measures of other indicators. |	|
-|2| Count of unique subscribers | Number of unique subscriber IDs that made a transaction within an hour and region. | This indicator is a proxy for population and can be used to asses changes in  population density. The hourly nature of the indicator is more conducive to use in urban settings where there is higher phone usage and changes over the course of a day. This indicator is especially useful to identify areas that might experience sudden influxes of people (for example an area with a market), and therefore useful for identifying possible hotspots for spread of disease. | As variations are a function of usage, it can reflect changes in cellphone usage instead of changes in population. In areas with few towers, this indicator is unlikely to be useful since it will primarily capture phone useage rather than people going in and out of an area. |
-|3| Count of unique subscribers	 | | | |
-|4| Ratio of residents active that day based on those present during baseline | | | |
-|5| Origin Destination Matrix - trips between two regions | | | |
-|6| Residents living in area | | | |
-|7| Mean and Standard Deviation of distance traveled (by home location)	| | | |
-|8| Mean and Standard Deviation of distance traveled (by home location)	| | | |
-|9| Daily locations based on Home Region with average stay time and SD of stay time | | | |
-|10| Simple Origin Destination Matrix - trips between consecutive in time regions with time | | | |
-|11| Residents living in area| | | |
+| | Indicator |	 Standard time level |Description | Analysis | Caveats and limitations |
+|-|-----------|----------------------|------------|----------|-------------------------|
+|1|	Count of observations |	 Hour | Sum of all transactions (calls or messages) made within an hour and ward | This indicator is a simple measure of transaction volume and can show variations in cell phone usage over time. It's main use is to help in potentially scaling other indicators in case there are sudden changes in usage patterns which could in turn affect the measures of other indicators. |	|
+|2| Count of unique subscribers | Hour  | Number of unique subscriber IDs that made a transaction within an hour and region. | This indicator is a proxy for population and can be used to asses changes in  population density. The hourly nature of the indicator is more conducive to use in urban settings where there is higher phone usage and changes over the course of a day. This indicator is especially useful to identify areas that might experience sudden influxes of people (for example an area with a market), and therefore useful for identifying possible hotspots for spread of disease. | As variations are a function of usage, it can reflect changes in cellphone usage instead of changes in population. In areas with few towers, this indicator is unlikely to be useful since it will primarily capture phone useage rather than people going in and out of an area. |
+|3| Count of unique subscribers	 | Day | Sum of all transactions (calls or messages) made within an hour and region | This indicator is a simple measure of transaction volume and can show variations in cell phone usage over time. It's main use is to help in potentially scaling other indicators in case there are sudden changes in usage patterns which could in turn affect the measures of other indicators. | |
+|4| Ratio of residents active that day based on those present during baseline | Country | Active users are defined as those that have made at least one transaction on that day, restricted to SIMs that had at least one observation during the baseline period. | A proxy to changes in cellphone usage through time that can be used to scale other indicators to account for days/locations where people may be less or more likely to use their phone. | This indicator uses a weekly home location (see indicator 6), it may be difficult to distinguish changes in home location to changes in usage. Additionally, there is natural attrition that happens as some people stop using their SIM and also as new SIMs are added, and this is not able to take account of this natural fluctuation so it will bias the results to look like the active subscribers is slowly going down over time, so then if this is used to scale other variables, it will lead to errors. We tested several other ways of doing this indicator, and the best seemed to be to look across all users during the entire period of interest, and then look at how many of them are active on any given day, and count it based on home region in case there is variability by region in active users. |
+|5| Origin Destination Matrix - trips between two regions | Day| | | |
+|6| Residents living in area | Week | | | |
+|7| Mean and Standard Deviation of distance traveled (by home location) | Day | | | |
+|8| Mean and Standard Deviation of distance traveled (by home location)	| Week | | | |
+|9| Daily locations based on Home Region with average stay time and SD of stay time | Day| | | |
+|10| Simple Origin Destination Matrix - trips between consecutive in time regions with time | Day | | | |
+|11| Residents living in area | Month | | | |
 
 							
 							
