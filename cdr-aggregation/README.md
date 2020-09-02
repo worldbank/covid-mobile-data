@@ -9,7 +9,7 @@ This table of content will be made into links.
   * [Docker set-up](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#docker-set-up)
   * [Databricks/datalake set-up](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#databricksdatalake-set-up)
 * [Workflow description](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#workflow-description)
-* [Indicators](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#indicators)
+* [Indicators computation](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#indicators-computation)
 * [Folder structure](https://github.com/worldbank/covid-mobile-data/tree/master/cdr-aggregation#folder-structure)
 
 ## Summary of indicators
@@ -143,7 +143,7 @@ In the _aggregation_ task the following is done:
 
 The aggregation  builds on much of the work that has been developed by [Flowminder](https://web.flowminder.org) for the purpose of supporting MNOs in producing basic indicators. Their code can be found in their [GitHub account](https://github.com/Flowminder).
 
-## Indicators
+## Indicators computation
 
 * __Timeframe__: Indicators are built using data from Feb 1 2020 and going forward in real time.
 * __Data Type__: CDR or, if available, network probes.
