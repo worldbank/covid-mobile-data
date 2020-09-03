@@ -172,7 +172,7 @@ class DataSource:
 
     #Load csv file or files using load option and schema
     raw_df = self.spark.read\
-      .option("seperator", self.load_seperator)\
+      .option("delimiter", self.load_seperator)\
       .option("header", self.load_header)\
       .option("mode", self.load_mode)\
       .csv(newfolder_data_paths, schema=self.schema)
