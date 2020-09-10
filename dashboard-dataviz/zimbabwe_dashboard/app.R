@@ -1167,6 +1167,7 @@ server = (function(input, output, session) {
         covid_cases$N_weight <- covid_cases$N^(1/1.2)
         
         #### Main Leaflet Map 
+        print(map_labels)
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
             label = ~ lapply(map_labels, htmltools::HTML),
@@ -1186,7 +1187,7 @@ server = (function(input, output, session) {
                 color = "#666",
                 dashArray = "",
                 fillOpacity = 1,
-                bringToFront = TRUE
+                bringToFront = FALSE
               ),
             
             labelOptions = labelOptions(
@@ -1199,9 +1200,15 @@ server = (function(input, output, session) {
           addCircles(data = covid_cases,
                      lng = ~longitude,
                      lat = ~latitude,
-                     label = ~label,
+                     label = ~lapply(label, htmltools::HTML),
                      color = "red",
                      weight = ~N_weight,
+                     labelOptions = labelOptions(
+                       style = list("font-weight" = "normal",
+                                    padding = "3px 8px"),
+                       textsize = "15px",
+                       direction = "auto"
+                     ),
                      group = "District Level<br>COVID-19 Cases") %>%
           clearControls() %>%
           addLegend(
