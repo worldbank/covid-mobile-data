@@ -18,7 +18,7 @@ for(unit in c("ward", "district")){
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
                                  "clean",
-                                 "i5_admin2.csv"), 
+                                 "i5_2.csv"), 
                        stringsAsFactors=F)
   }
   
@@ -30,7 +30,7 @@ for(unit in c("ward", "district")){
     #### Load Data
     df_day <- read.csv(file.path(RAW_DATA_PATH, 
                                  "clean",
-                                 "i5_admin3.csv"), 
+                                 "i5_3.csv"), 
                        stringsAsFactors=F) 
   }
   

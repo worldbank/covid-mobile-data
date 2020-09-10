@@ -63,6 +63,7 @@ library(htmltools)
 library(scales)
 library(lubridate)
 library(geosphere)
+library(openssl)
 
 #### Logged; make false to enable password
 Logged = F
@@ -144,7 +145,8 @@ ui_password <- function() {
         passwordInput("passwd", "Password"),
         br(),
         actionButton("Login", "Log in")
-      )
+      ),
+      htmlOutput("password_warning")
     ),
     tags$style(
       type = "text/css",
@@ -447,18 +449,30 @@ server = (function(input, output, session) {
     if (USER$Logged == FALSE) {
       if (!is.null(input$Login)) {
         if (input$Login > 0) {
+          
           Username <- isolate(input$userName)
           Password <- isolate(input$passwd)
           
           # Key to unencrypt data
           data_key <<- sha256(charToRaw(Password))
+
+          # Load passwords. If wrong password, will return error. This catches
+          # error, where if error return empty dataframe
+          passwords_df <- tryCatch(
+            {
+              readRDS_encrypted("passwords.Rds", data_key)
+            },
+            error = function(e){data.frame(NULL)}
+          )
           
-          passwords_df <- readRDS_encrypted("passwords.Rds", data_key)
+          
           
           if (Username %in% passwords_df$username) {
             passwords_df_i <- passwords_df[passwords_df$username %in% Username,]
             
             if(checkpw(Password, passwords_df_i$hashed_password) %in% TRUE){
+              password_warning <<- "correct"
+              
               USER$Logged <- TRUE
               
               #### Totals
@@ -466,13 +480,43 @@ server = (function(input, output, session) {
                                               data_key)
               subs_total <- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
                                               data_key)
+            } else{
+              password_warning <<- "incorrect"
             }
             
+          } else{
+            password_warning <<- "incorrect"
           }
+          
+          
+          
+          
+          output$password_warning <- renderText({
+            
+            out <- ""
+            
+            if(!is.null(password_warning)){
+              
+              if(password_warning %in% "incorrect"){
+                out <- '<center><h4 style="color:red"><b>Wrong username or password</b></h4></center>'
+              } 
+              
+            }
+            
+            out
+            
+          })
+          
+          
+          
+          
+          
         }
       }
     }
   })
+  
+
   
   #### Toggle between UIs (password vs main)
   observe({
@@ -620,6 +664,7 @@ server = (function(input, output, session) {
                                                     timeunit_i, "_",
                                                     date_i,".Rds")),
                                              data_key)
+
           
           time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
                                              paste0(unit_i,"_",
