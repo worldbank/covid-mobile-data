@@ -1747,7 +1747,7 @@ server = (function(input, output, session) {
                        weight = ~ value_weight,
                        color = ~ pal_move_lines(value_alpha),
                        label = ~ label,
-                       group = "Movement",
+                       group = "<b>Movement</b><br>Thicker lines indicate<br>greater movement",
                        labelOptions = labelOptions(
                          style = list("font-weight" = "normal",
                                       padding = "3px 8px"),
@@ -1765,7 +1765,7 @@ server = (function(input, output, session) {
                     labFormat = labelFormat(transform = function(x) sort(x, decreasing = T)),
                     position = 'bottomleft') %>%
           addLayersControl(
-            overlayGroups = c("Movement"),
+            overlayGroups = c("<b>Movement</b><br>Thicker lines indicate<br>greater movement"),
             position = 'bottomleft',
             options = layersControlOptions(collapsed = FALSE)
           )
