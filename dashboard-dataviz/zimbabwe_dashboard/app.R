@@ -455,7 +455,7 @@ server = (function(input, output, session) {
           
           # Key to unencrypt data
           data_key <<- sha256(charToRaw(Password))
-
+          
           # Load passwords. If wrong password, will return error. This catches
           # error, where if error return empty dataframe
           passwords_df <- tryCatch(
@@ -516,7 +516,7 @@ server = (function(input, output, session) {
     }
   })
   
-
+  
   
   #### Toggle between UIs (password vs main)
   observe({
@@ -659,18 +659,18 @@ server = (function(input, output, session) {
         if(variable_i %in% c("Density")){
           
           ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    date_i,".Rds")),
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              date_i,".Rds")),
                                              data_key)
-
+          
           
           time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    ward_i,".Rds")),
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              ward_i,".Rds")),
                                              data_key)
           
           
@@ -747,17 +747,17 @@ server = (function(input, output, session) {
                              "Std Dev Distance Traveled")){
           
           ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    date_i,".Rds")),
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              date_i,".Rds")),
                                              data_key)
           
           time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    ward_i,".Rds")),
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              ward_i,".Rds")),
                                              data_key)
           
           
@@ -830,25 +830,25 @@ server = (function(input, output, session) {
                              "Movement Out of")){
           
           ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    date_i,".Rds")),
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              date_i,".Rds")),
                                              data_key)
           
           time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    ward_i,".Rds")),
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              ward_i,".Rds")),
                                              data_key)
           
           ward_time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                                  paste0(unit_i,"_",
-                                                         variable_i, "_",
-                                                         timeunit_i, "_",
-                                                         ward_i,"_",
-                                                         date_i, ".Rds")),
+                                                            paste0(unit_i,"_",
+                                                                   variable_i, "_",
+                                                                   timeunit_i, "_",
+                                                                   ward_i,"_",
+                                                                   date_i, ".Rds")),
                                                   data_key)
           
           
@@ -1112,14 +1112,14 @@ server = (function(input, output, session) {
             
             wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
               as.vector()
-         
-          
+            
+            
             legend_colors <- brewer.pal(4, "PuOr") %>% rev()
             legend_labels <- c("Positive", "", "", "Negative")
             
             # Define pallete
             max_value <- map_values[!is.na(map_values)] %>% abs() %>% max()
-
+            
             pal_ward <- colorNumeric(
               palette = "PuOr",
               domain = c(-max_value, max_value), # c(0, map_values)
@@ -1312,74 +1312,23 @@ server = (function(input, output, session) {
           
           #### If % change or baseline, add dots showing baseline values and
           # a line for mean
-          if(!(input$select_metric %in% "Count")){
-            
-            dow_i <- input$date_ward %>% as.Date() %>% wday()
-            data_dow_i <- data_line[data_line$dow %in% dow_i,] 
-            
-            data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 2,]
-            
-            p <- p + 
-              geom_point(data=data_dow_i, aes(x = Date,
-                                              y = N), color="orange4") +
-              geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
-            
+          if(!is.null(input$select_metric)){
+            if(!(input$select_metric %in% "Count")){
+              
+              dow_i <- input$date_ward %>% as.Date() %>% wday()
+              data_dow_i <- data_line[data_line$dow %in% dow_i,] 
+              
+              data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 2,]
+              
+              p <- p + 
+                geom_point(data=data_dow_i, aes(x = Date,
+                                                y = N), color="orange4") +
+                geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
+              
+            }
           }
           
         }
-        
-        # Weekly - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if (input$select_timeunit %in% "Weekly") {
-        #   
-        #   #### Main Line Graph Element
-        #   #data_line <- data_line[!grepl("Mar 28", data_line$Date),]
-        # 
-        #   
-        #   data_line$Date_short <- data_line$Date %>%
-        #     as.character() %>%
-        #     substring(1,6) %>%
-        #     factor(levels = c("Feb 01",
-        #                       "Feb 08",
-        #                       "Feb 15",
-        #                       "Feb 22",
-        #                       "Feb 29",
-        #                       "Mar 07",
-        #                       "Mar 14",
-        #                       "Mar 21",
-        #                       "Mar 28",
-        #                       "Apr 04",
-        #                       "Apr 11",
-        #                       "Apr 18"),
-        #            ordered = T)
-        #   
-        # 
-        #   
-        #   p <- ggplot(data_line,
-        #               aes(
-        #                 x = Date_short,
-        #                 y = N,
-        #                 group = 1
-        #               )) +
-        #     geom_line(size = 1, color = "orange") +
-        #     geom_point(size = 1, color = "orange") +
-        #     geom_point(data=data_line[as.character(data_line$Date) %in% as.character(input$date_ward),],
-        #                aes(x = Date_short,
-        #                    y = N),
-        #                size = 2.5, pch = 1, color = "forestgreen") +
-        #     labs(
-        #       x = "",
-        #       y = "",
-        #       title = "",
-        #       color = ""
-        #     ) +
-        #     scale_y_continuous(labels = scales::comma, 
-        #                        limits = c(min(data_line$N, na.rm=T), 
-        #                                   max(data_line$N, na.rm =
-        #                                         T))) +
-        #     theme_minimal() +
-        #     theme(plot.title = element_text(hjust = 0.5),
-        #           axis.text.x = element_text(angle = 45))
-        # }
         
         # Define Plotly - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         ggplotly(p, tooltip = c("Date", "N")) %>%
@@ -1433,16 +1382,19 @@ server = (function(input, output, session) {
         data_for_table <- data_for_table[!is.na(data_for_table$name),]
         table_max <- nrow(data_for_table)
         
-        if(nrow(data_for_table) > 0){
+        if((nrow(data_for_table) > 0) & 
+           !is.null(input$select_unit) &
+           !is.null(input$select_variable) &
+           !is.null(input$select_timeunit)){
           
           #### Add Sparkline
           # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
           trend_spark <- lapply(1:nrow(data_for_table), function(i){
             df_out <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                        paste0(input$select_unit,"_",
-                                               input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
-                                               input$select_timeunit, "_",
-                                               data_for_table$name[i],".Rds")),
+                                                  paste0(input$select_unit,"_",
+                                                         input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
+                                                         input$select_timeunit, "_",
+                                                         data_for_table$name[i],".Rds")),
                                         data_key) %>%
               dplyr::mutate(group = i) 
             
@@ -1522,8 +1474,10 @@ server = (function(input, output, session) {
         }
         
         ## Add metric if not count
-        if(input$select_metric %in% c("% Change", "Z-Score")){
-          var_name <- paste0(var_name, ": ", input$select_metric)
+        if(!is.null(input$select_metric)){
+          if(input$select_metric %in% c("% Change", "Z-Score")){
+            var_name <- paste0(var_name, ": ", input$select_metric)
+          }
         }
         
         #### Make Table
@@ -1673,7 +1627,7 @@ server = (function(input, output, session) {
         
         #### Grab data
         move_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
-                                     paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")),
+                                               paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")),
                                      data_key)
         l_all$id <- 1:length(l_all)
         l_all$value <- move_df$value
