@@ -187,7 +187,7 @@ ui_main <- fluidPage(
         fluidRow(
           
           column(2,
-                 strong(textOutput("metric_description"))),
+                 strong(htmlOutput("metric_description"))),
           
           column(2,
                  align = "center",
@@ -404,7 +404,7 @@ ui_main <- fluidPage(
                           data_source_description_text,
                           
                           h4("Methods"),
-                          data_methods_text
+                          HTML(data_methods_text)
                           
                           
                         )
@@ -479,9 +479,9 @@ server = (function(input, output, session) {
               
               #### Totals
               obs_total  <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","observations_total.Rds"),
-                                              data_key)
+                                               data_key)
               subs_total <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
-                                              data_key)
+                                               data_key)
             } else{
               password_warning <<- "incorrect"
             }
@@ -1867,12 +1867,30 @@ server = (function(input, output, session) {
         
         if(!is.null(input$select_metric)){
           if(input$select_metric %in% "% Change"){
-            out <- "% Change calculated relevant to baseline values"
+            out <- '<span style="color:red">% Change</span> calculated relevant to baseline values.'
+            
           }
           
           if(input$select_metric %in% "Z-Score"){
-            out <- "Z-Score is the change in value relevant to average baseline values scaled by the typical deviation in baseline values."
+            out <- '<span style="color:red">Z-Score</span> is the change in value relative to average baseline values scaled by the typical deviation in baseline values.'
           }
+        }
+        
+        
+        if(!is.null(input$select_timeunit)){
+          
+          if(out != ""){
+            
+            
+            if(input$select_timeunit %in% "Daily"){
+              out <- paste(out, 'Baseline values are days of the same day of week between February 1 and March 15.')
+            }
+            
+            if(input$select_timeunit %in% "Weekly"){
+              out <- paste(out, 'Baseline values are weeks between February 1 and March 15.')
+            }
+          }
+          
         }
         
         out
