@@ -478,9 +478,9 @@ server = (function(input, output, session) {
               USER$Logged <- TRUE
               
               #### Totals
-              obs_total  <- readRDS_encrypted(file.path("data_inputs_for_dashboard","observations_total.Rds"),
+              obs_total  <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","observations_total.Rds"),
                                               data_key)
-              subs_total <- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
+              subs_total <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
                                               data_key)
             } else{
               password_warning <<- "incorrect"
@@ -1558,7 +1558,7 @@ server = (function(input, output, session) {
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
           theme(plot.title = element_text(hjust = 0.5, face="bold", size=16, family="Times"),
                 axis.text = element_text(size=12, family="Times")) +
-          scale_y_continuous(labels = scales::comma, limits=c(4500000, 5500000))
+          scale_y_continuous(labels = scales::comma) # limits=c(4500000, 5500000)
         ggplotly(p) %>%
           config(displayModeBar = F)
       })
