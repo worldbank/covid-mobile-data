@@ -306,13 +306,13 @@ ui_main <- fluidPage(
                           label = h4("Select Indicator"),
                           
                           # Cambiarra braba arrumar isso dai
-                          choices = c("HIV prevalence quintile", 
-                                      "Anaemia prevalence quintile",
-                                      "Respiratory illness prevalence quintile",
-                                      "Overweight prevalence quintile", 
-                                      "Smoking prevalence quintile",
-                                      "Severe COVID-19 risk"),
-                          selected = "HIV prevalence quintile",
+                          choices = c("Severe COVID-19 risk",
+                                      "HIV prevalence", 
+                                      "Anaemia prevalence",
+                                      "Respiratory illness prevalence",
+                                      "Overweight prevalence", 
+                                      "Smoking prevalence"),
+                          selected = "Severe COVID-19 risk",
                           multiple = F)
                  ),
                  
@@ -324,7 +324,7 @@ ui_main <- fluidPage(
           
           column(7, 
                  fluidRow(
-                   column(3, align="center", offset=3,
+                   column(4, align="center", offset=2,
                           
                           selectInput(
                             "move_date_risk",
@@ -1571,12 +1571,13 @@ server = (function(input, output, session) {
                 by.x = "name",
                 by.y = "NAME_2")
         
+        data[["risk_var"]] <- data[["severe_covid_risk_with_age"]]
         
-        data[["risk_var"]] <- data[["severe_covid_risk"]]
+   
+        
         if(!is.null(input$select_risk_indicator)){
           # Select variable based on UI input
           data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
-          
         } 
         
         # Return final data
@@ -1694,9 +1695,18 @@ server = (function(input, output, session) {
             na.color = "gray",
             reverse = F)
         
+        # Needed reversed for legend
+        pal_rev <- 
+          colorNumeric(
+            palette = wes,
+            domain = c(risk_dist_sp()@data$risk_var), # c(0, map_values)
+            na.color = "gray",
+            reverse = T)
+        
         # legend parameters
         leg_labels = sort(unique(risk_map@data$risk_var)) %>% rev()
         lg_colors = pal(sort(unique(risk_map@data$risk_var))) %>% rev()
+        
         
         map_label <- risk_map@data$name
         
@@ -1736,9 +1746,12 @@ server = (function(input, output, session) {
           
           clearControls() %>% 
           addLegend(title = input$select_risk_indicator,
-                    position = 'bottomleft',
-                    colors = lg_colors,
-                    labels = leg_labels) %>%
+                    pal = pal_rev,
+                    values = risk_dist_sp()@data$risk_var,
+                    #colors = lg_colors,
+                    #labels = leg_labels,
+                    labFormat = labelFormat(transform = function(x) sort(x, decreasing = T)),
+                    position = 'bottomleft') %>%
           addLayersControl(
             overlayGroups = c("Movement"),
             position = 'bottomleft',
@@ -1750,14 +1763,14 @@ server = (function(input, output, session) {
       # **** 4.3.6 Risk Table --------------------------------------------------
       output$risk_table <- renderFormattable({
         
-        risk_var_i <- "HIV prevalence quintile"
+        risk_var_i <- "Severe COVID-19 risk"
         if(!is.null(input$select_risk_indicator)){
-          if(input$select_risk_indicator %in% "HIV prevalence quintile") risk_var_i <- "mean_hiv_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Anaemia prevalence quintile") risk_var_i <- "mean_anaemia_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Respiratory illness prevalence quintile") risk_var_i <- "mean_resp_risk_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Overweight prevalence quintile") risk_var_i <- "mean_overweight_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Smoking prevalence quintile") risk_var_i <- "mean_smoker_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Severe COVID-19 risk") risk_var_i <- "severe_covid_risk"
+          if(input$select_risk_indicator %in% "HIV prevalence") risk_var_i <- "mean_hiv_pop_weighted"
+          if(input$select_risk_indicator %in% "Anaemia prevalence") risk_var_i <- "mean_anaemia_pop_weighted"
+          if(input$select_risk_indicator %in% "Respiratory illness prevalence") risk_var_i <- "mean_resp_risk_pop_weighted"
+          if(input$select_risk_indicator %in% "Overweight prevalence") risk_var_i <- "mean_overweight_pop_weighted"
+          if(input$select_risk_indicator %in% "Smoking prevalence") risk_var_i <- "mean_smoker_pop_weighted"
+          if(input$select_risk_indicator %in% "Severe COVID-19 risk") risk_var_i <- "severe_covid_risk_with_age"
         }
         
         risk_an_df <- as.data.frame(risk_an)
@@ -1768,9 +1781,14 @@ server = (function(input, output, session) {
         #### Prep Data for Table
         data_for_table <- risk_an_i %>%
           dplyr::select(name, value) %>%
-          mutate(value = value %>% round(2)) %>%
           arrange(name) %>%
           arrange(desc(value)) 
+        
+        if(risk_var_i %in% "severe_covid_risk_with_age"){
+          data_for_table$value <- data_for_table$value %>% round(4)
+        } else{
+          data_for_table$value <- data_for_table$value %>% round(2)
+        }
         
         #### Make Table
         # https://stackoverflow.com/questions/49885176/is-it-possible-to-use-more-than-2-colors-in-the-color-tile-function
