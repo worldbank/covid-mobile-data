@@ -1217,7 +1217,8 @@ server = (function(input, output, session) {
             overlayGroups = c("District Level<br>COVID-19 Cases"),
             position = 'bottomleft',
             options = layersControlOptions(collapsed = FALSE)
-          )
+          ) %>% 
+          hideGroup("District Level<br>COVID-19 Cases")
         
         #### Add Origin/Desintation Polygon in Red
         if(!is.null(input$select_variable)){
