@@ -30,6 +30,7 @@ library(geosphere)
 library(lubridate)
 library(data.table)
 library(mapview)
+library(readxl)
 
 #### File paths #### ===========================================================
 
