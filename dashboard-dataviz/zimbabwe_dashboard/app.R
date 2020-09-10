@@ -485,6 +485,9 @@ server = (function(input, output, session) {
                                                data_key)
               subs_total <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
                                                data_key)
+              covid_cases <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","covid_cases_districts_centroids.Rds"),
+                                               data_key)
+              
             } else{
               password_warning <<- "incorrect"
             }
@@ -1160,6 +1163,8 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
+        #covid_cases$N_weight <- log(covid_cases$N + 1)
+        covid_cases$N_weight <- covid_cases$N
         
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
@@ -1191,6 +1196,13 @@ server = (function(input, output, session) {
               direction = "auto"
             )
           ) %>%
+          addCircles(data = covid_cases,
+                     lng = ~longitude,
+                     lat = ~latitude,
+                     label = ~label,
+                     color = "red",
+                     weight = ~N_weight,
+                     group = "District Level<br>COVID-19 Cases") %>%
           clearControls() %>%
           addLegend(
             values = c(map_values), # c(0, map_values)
@@ -1200,6 +1212,11 @@ server = (function(input, output, session) {
             title = "Legend",
             position = "topright",
             na.label = "Origin"
+          ) %>%
+          addLayersControl(
+            overlayGroups = c("District Level<br>COVID-19 Cases"),
+            position = 'bottomleft',
+            options = layersControlOptions(collapsed = FALSE)
           )
         
         #### Add Origin/Desintation Polygon in Red
