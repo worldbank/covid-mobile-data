@@ -73,6 +73,8 @@ readRDS_encrypted <- function(filepath, data_key){
   unserialize(aes_cbc_decrypt(readRDS(filepath), key = data_key))
 }
 
+source("functions.R")
+
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
 # Load files that only need to load once at the beginning.
@@ -1573,7 +1575,6 @@ server = (function(input, output, session) {
         
         data[["risk_var"]] <- data[["severe_covid_risk_with_age"]]
         
-   
         
         if(!is.null(input$select_risk_indicator)){
           # Select variable based on UI input
@@ -1647,6 +1648,17 @@ server = (function(input, output, session) {
         
         
         l_all <- l_all[!is.na(l_all$value),]
+        
+        l_all_arrows <- lapply(1:nrow(l_all), extract_arrows, l_all, 5, move_type_i) %>% 
+          do.call(what="rbind")
+        
+        ## Append
+        # Make sure same variables and crs before appending
+        for(var in names(l_all)) l_all_arrows[[var]] <- l_all[[var]]
+        crs(l_all_arrows) <- crs(l_all)
+        
+        l_all <- rbind(l_all,
+                       l_all_arrows)
         
         #### Return
         l_all
