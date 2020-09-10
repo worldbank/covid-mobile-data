@@ -1164,7 +1164,7 @@ server = (function(input, output, session) {
         }
         
         #covid_cases$N_weight <- log(covid_cases$N + 1)
-        covid_cases$N_weight <- covid_cases$N
+        covid_cases$N_weight <- covid_cases$N^(1/1.2)
         
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
