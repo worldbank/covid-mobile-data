@@ -318,8 +318,11 @@ ui_main <- fluidPage(
                           multiple = F)
                  ),
                  
-                 p(risk_analysis_text[1]),
-                 p(risk_analysis_text[2])
+                 HTML(risk_analysis_text[1]),
+                 br(), br(),
+                 HTML(risk_analysis_text[2]),
+                 br(), br(),
+                 HTML(risk_analysis_text[3])
                  
                  
           ),
