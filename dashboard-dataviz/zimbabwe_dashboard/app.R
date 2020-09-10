@@ -63,9 +63,17 @@ library(htmltools)
 library(scales)
 library(lubridate)
 library(geosphere)
+library(openssl)
 
 #### Logged; make false to enable password
 Logged = F
+
+# Read encrypted RDS file
+readRDS_encrypted <- function(filepath, data_key){
+  unserialize(aes_cbc_decrypt(readRDS(filepath), key = data_key))
+}
+
+source("functions.R")
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -78,10 +86,6 @@ district_sp <- readRDS(file.path("data_inputs_for_dashboard", "districts.Rds"))
 #### Province List for Select Input
 provinces <- ward_sp$province %>% unique() %>% sort()
 provinces <- c("All", provinces)
-
-#### Totals
-obs_total  <- readRDS(file.path("data_inputs_for_dashboard","observations_total.Rds"))
-subs_total <- readRDS(file.path("data_inputs_for_dashboard","subscribers_total.Rds"))
 
 #### Risk analysis Data 
 risk_an <- fread(file.path("data_inputs_for_dashboard", 
@@ -105,6 +109,7 @@ variable_i <- "Density"
 timeunit_i <- "Daily"
 date_i <- "2020-02-01"
 previous_zoom_selection <- ""
+last_selected_adm <- ""
 metric_i <- "Count"
 
 WEEKLY_VALUES <- c("2020-03-04",
@@ -142,7 +147,8 @@ ui_password <- function() {
         passwordInput("passwd", "Password"),
         br(),
         actionButton("Login", "Log in")
-      )
+      ),
+      htmlOutput("password_warning")
     ),
     tags$style(
       type = "text/css",
@@ -302,13 +308,13 @@ ui_main <- fluidPage(
                           label = h4("Select Indicator"),
                           
                           # Cambiarra braba arrumar isso dai
-                          choices = c("HIV prevalence quintile", 
-                                      "Anaemia prevalence quintile",
-                                      "Respiratory illness prevalence quintile",
-                                      "Overweight prevalence quintile", 
-                                      "Smoking prevalence quintile",
-                                      "Severe COVID-19 risk"),
-                          selected = "HIV prevalence quintile",
+                          choices = c("Severe COVID-19 risk",
+                                      "HIV prevalence", 
+                                      "Anaemia prevalence",
+                                      "Respiratory illness prevalence",
+                                      "Overweight prevalence", 
+                                      "Smoking prevalence"),
+                          selected = "Severe COVID-19 risk",
                           multiple = F)
                  ),
                  
@@ -320,7 +326,7 @@ ui_main <- fluidPage(
           
           column(7, 
                  fluidRow(
-                   column(3, align="center", offset=3,
+                   column(4, align="center", offset=2,
                           
                           selectInput(
                             "move_date_risk",
@@ -445,23 +451,74 @@ server = (function(input, output, session) {
     if (USER$Logged == FALSE) {
       if (!is.null(input$Login)) {
         if (input$Login > 0) {
+          
           Username <- isolate(input$userName)
           Password <- isolate(input$passwd)
           
-          passwords_df <- readRDS("passwords.Rds")
+          # Key to unencrypt data
+          data_key <<- sha256(charToRaw(Password))
+          
+          # Load passwords. If wrong password, will return error. This catches
+          # error, where if error return empty dataframe
+          passwords_df <- tryCatch(
+            {
+              readRDS_encrypted("passwords.Rds", data_key)
+            },
+            error = function(e){data.frame(NULL)}
+          )
+          
+          
           
           if (Username %in% passwords_df$username) {
             passwords_df_i <- passwords_df[passwords_df$username %in% Username,]
             
             if(checkpw(Password, passwords_df_i$hashed_password) %in% TRUE){
+              password_warning <<- "correct"
+              
               USER$Logged <- TRUE
+              
+              #### Totals
+              obs_total  <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","observations_total.Rds"),
+                                              data_key)
+              subs_total <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
+                                              data_key)
+            } else{
+              password_warning <<- "incorrect"
             }
             
+          } else{
+            password_warning <<- "incorrect"
           }
+          
+          
+          
+          
+          output$password_warning <- renderText({
+            
+            out <- ""
+            
+            if(!is.null(password_warning)){
+              
+              if(password_warning %in% "incorrect"){
+                out <- '<center><h4 style="color:red"><b>Wrong username or password</b></h4></center>'
+              } 
+              
+            }
+            
+            out
+            
+          })
+          
+          
+          
+          
+          
         }
       }
     }
   })
+  
+  
   
   #### Toggle between UIs (password vs main)
   observe({
@@ -517,6 +574,18 @@ server = (function(input, output, session) {
       # **** 4.2.2 Telecom Data Filtering --------------------------------------
       ward_data_sp_filtered <- reactive({
         
+        # Update region based on clicking
+        if(!is.null(input$mapward_shape_click$id)){
+          if(last_selected_adm != input$mapward_shape_click$id){
+            
+            updateSelectInput(session, "select_region_zoom",
+                              selected = input$mapward_shape_click$id
+            )
+            last_selected_adm <<- input$mapward_shape_click$id
+            
+          }
+        }
+        
         # ****** 4.2.2.1 Grab inputs and define defaults -----------------------
         
         #### Grab inputs
@@ -539,8 +608,8 @@ server = (function(input, output, session) {
         ## Only update ward_i if user has clicked; otherwise, use default
         ward_i <- "Harare 6"
         
-        if (!is.null(input$mapward_shape_click$id)){
-          ward_i <- input$mapward_shape_click$id
+        if(!is.null(input$select_region_zoom)){
+          ward_i <- input$select_region_zoom
         }
         
         #### Clean Inputs
@@ -582,7 +651,7 @@ server = (function(input, output, session) {
         # time unit and make sure the selected date matches the time unit. For 
         # example, if a "Weekly" is selected, make sure the date inptu is in
         # a week format.
-
+        
         # Make sure is valid week day
         if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES)){
           date_i <- "2020-03-04"
@@ -591,19 +660,22 @@ server = (function(input, output, session) {
         # ****** 4.2.2.2 Density -----------------------------------------------
         if(variable_i %in% c("Density")){
           
-          ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    date_i,".Rds")))
+          ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              date_i,".Rds")),
+                                             data_key)
           
-          time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    ward_i,".Rds")))
-        
-
+          
+          time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              ward_i,".Rds")),
+                                             data_key)
+          
+          
           
           if(metric_i %in% "Count"){
             
@@ -676,17 +748,19 @@ server = (function(input, output, session) {
                              "Mean Distance Traveled", 
                              "Std Dev Distance Traveled")){
           
-          ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    date_i,".Rds")))
+          ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              date_i,".Rds")),
+                                             data_key)
           
-          time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    ward_i,".Rds")))
+          time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              ward_i,".Rds")),
+                                             data_key)
           
           
           if(metric_i %in% "Count"){
@@ -757,24 +831,27 @@ server = (function(input, output, session) {
         if(variable_i %in% c("Movement Into",
                              "Movement Out of")){
           
-          ward_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    date_i,".Rds")))
+          ward_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              date_i,".Rds")),
+                                             data_key)
           
-          time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                             paste0(unit_i,"_",
-                                                    variable_i, "_",
-                                                    timeunit_i, "_",
-                                                    ward_i,".Rds")))
+          time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                       paste0(unit_i,"_",
+                                                              variable_i, "_",
+                                                              timeunit_i, "_",
+                                                              ward_i,".Rds")),
+                                             data_key)
           
-          ward_time_level_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                                  paste0(unit_i,"_",
-                                                         variable_i, "_",
-                                                         timeunit_i, "_",
-                                                         ward_i,"_",
-                                                         date_i, ".Rds")))
+          ward_time_level_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                            paste0(unit_i,"_",
+                                                                   variable_i, "_",
+                                                                   timeunit_i, "_",
+                                                                   ward_i,"_",
+                                                                   date_i, ".Rds")),
+                                                  data_key)
           
           
           if(metric_i %in% "Count"){
@@ -1014,6 +1091,10 @@ server = (function(input, output, session) {
         if(sum(!is.na(map_values)) %in% 0) map_values <- rep(0, length(map_values))
         
         #### Map Aesthetics
+        # For counts, viridis; for % change and z-score, diverging palette for
+        # positive/negative. Define counts outside of if statement so has values
+        # for initializing.
+        
         # Legend color and labels. Not used in map, just to define the legend, 
         # so should mimic what we do with palette applied to map. 
         legend_colors <- rev(viridis(5))
@@ -1026,6 +1107,32 @@ server = (function(input, output, session) {
           na.color = "gray",
           reverse = F
         )
+        
+        
+        if(!is.null(input$select_metric)){
+          if(!(input$select_metric %in% "Count")){
+            
+            wes <- wesanderson::wes_palette("Zissou1", type = "continuous") %>%
+              as.vector()
+            
+            
+            legend_colors <- brewer.pal(4, "PuOr") %>% rev()
+            legend_labels <- c("Positive", "", "", "Negative")
+            
+            # Define pallete
+            max_value <- map_values[!is.na(map_values)] %>% abs() %>% max()
+            
+            pal_ward <- colorNumeric(
+              palette = "PuOr",
+              domain = c(-max_value, max_value), # c(0, map_values)
+              na.color = "gray",
+              reverse = F
+            )
+            
+          }
+        }
+        
+        
         
         # If all non-NA values are NA, make purple
         if(sum(!is.na(map_values)) == sum(map_values %in% 0)){
@@ -1050,7 +1157,7 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
-
+        
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
@@ -1120,43 +1227,43 @@ server = (function(input, output, session) {
         #### Further Zoom to Region
         # Only change if choose something different than what is previously
         # selected.
-        if(!is.null(input$select_region_zoom)){
-          if(previous_zoom_selection != input$select_region_zoom){
-            if(input$select_region_zoom %in% map_data$name){
-              
-              loc_i <- which(map_data$name %in% input$select_region_zoom)
-              
-              map_data_zoom <- map_data[loc_i,] 
-              
-              map_data_zoom_extent <- map_data_zoom %>% extent()
-              
-              l <- l %>%
-                fitBounds(
-                  lng1 = map_data_zoom_extent@xmin,
-                  lat1 = map_data_zoom_extent@ymin,
-                  lng2 = map_data_zoom_extent@xmax,
-                  lat2 = map_data_zoom_extent@ymax
-                ) 
-              
-              # Tried to highlight the zoomed region, but encountered issues
-              # Keeping here in case useful when fixing.
-              #%>%
-              #addPolygons(data=map_data_zoom,
-              #            #label = ~ lapply(map_labels, htmltools::HTML),
-              #            #layerId = ~ name_id,
-              #            color="yellow",
-              #            opacity = 1.0, fillOpacity = 0)
-              
-              # Create a global of the previous zoom selected. Without this,
-              # the map would always zoom to the region if the user changes
-              # any other input - which is annoying. By grabing the selected
-              # region and only zooming when this value changes, we avoid
-              # that annoying, unwanted zooming.
-              previous_zoom_selection <<- input$select_region_zoom
-              
-            }
-          }
-        }
+        # if(!is.null(input$select_region_zoom)){
+        #   if(previous_zoom_selection != input$select_region_zoom){
+        #     if(input$select_region_zoom %in% map_data$name){
+        #       
+        #       loc_i <- which(map_data$name %in% input$select_region_zoom)
+        #       
+        #       map_data_zoom <- map_data[loc_i,] 
+        #       
+        #       map_data_zoom_extent <- map_data_zoom %>% extent()
+        #       
+        #       l <- l %>%
+        #         fitBounds(
+        #           lng1 = map_data_zoom_extent@xmin,
+        #           lat1 = map_data_zoom_extent@ymin,
+        #           lng2 = map_data_zoom_extent@xmax,
+        #           lat2 = map_data_zoom_extent@ymax
+        #         ) 
+        #       
+        #       # Tried to highlight the zoomed region, but encountered issues
+        #       # Keeping here in case useful when fixing.
+        #       #%>%
+        #       #addPolygons(data=map_data_zoom,
+        #       #            #label = ~ lapply(map_labels, htmltools::HTML),
+        #       #            #layerId = ~ name_id,
+        #       #            color="yellow",
+        #       #            opacity = 1.0, fillOpacity = 0)
+        #       
+        #       # Create a global of the previous zoom selected. Without this,
+        #       # the map would always zoom to the region if the user changes
+        #       # any other input - which is annoying. By grabing the selected
+        #       # region and only zooming when this value changes, we avoid
+        #       # that annoying, unwanted zooming.
+        #       previous_zoom_selection <<- input$select_region_zoom
+        #       
+        #     }
+        #   }
+        # }
         
         l
         
@@ -1204,77 +1311,26 @@ server = (function(input, output, session) {
             theme(plot.title = element_text(hjust = 0.5),
                   axis.text.x = element_text(angle = 45))
           
-
+          
           #### If % change or baseline, add dots showing baseline values and
           # a line for mean
-          if(!(input$select_metric %in% "Count")){
-            
-            dow_i <- input$date_ward %>% as.Date() %>% wday()
-            data_dow_i <- data_line[data_line$dow %in% dow_i,] 
-            
-            data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 2,]
-            
-            p <- p + 
-              geom_point(data=data_dow_i, aes(x = Date,
-                                              y = N), color="orange4") +
-              geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
-            
+          if(!is.null(input$select_metric)){
+            if(!(input$select_metric %in% "Count")){
+              
+              dow_i <- input$date_ward %>% as.Date() %>% wday()
+              data_dow_i <- data_line[data_line$dow %in% dow_i,] 
+              
+              data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 2,]
+              
+              p <- p + 
+                geom_point(data=data_dow_i, aes(x = Date,
+                                                y = N), color="orange4") +
+                geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
+              
+            }
           }
           
         }
-        
-        # Weekly - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if (input$select_timeunit %in% "Weekly") {
-        #   
-        #   #### Main Line Graph Element
-        #   #data_line <- data_line[!grepl("Mar 28", data_line$Date),]
-        # 
-        #   
-        #   data_line$Date_short <- data_line$Date %>%
-        #     as.character() %>%
-        #     substring(1,6) %>%
-        #     factor(levels = c("Feb 01",
-        #                       "Feb 08",
-        #                       "Feb 15",
-        #                       "Feb 22",
-        #                       "Feb 29",
-        #                       "Mar 07",
-        #                       "Mar 14",
-        #                       "Mar 21",
-        #                       "Mar 28",
-        #                       "Apr 04",
-        #                       "Apr 11",
-        #                       "Apr 18"),
-        #            ordered = T)
-        #   
-        # 
-        #   
-        #   p <- ggplot(data_line,
-        #               aes(
-        #                 x = Date_short,
-        #                 y = N,
-        #                 group = 1
-        #               )) +
-        #     geom_line(size = 1, color = "orange") +
-        #     geom_point(size = 1, color = "orange") +
-        #     geom_point(data=data_line[as.character(data_line$Date) %in% as.character(input$date_ward),],
-        #                aes(x = Date_short,
-        #                    y = N),
-        #                size = 2.5, pch = 1, color = "forestgreen") +
-        #     labs(
-        #       x = "",
-        #       y = "",
-        #       title = "",
-        #       color = ""
-        #     ) +
-        #     scale_y_continuous(labels = scales::comma, 
-        #                        limits = c(min(data_line$N, na.rm=T), 
-        #                                   max(data_line$N, na.rm =
-        #                                         T))) +
-        #     theme_minimal() +
-        #     theme(plot.title = element_text(hjust = 0.5),
-        #           axis.text.x = element_text(angle = 45))
-        # }
         
         # Define Plotly - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         ggplotly(p, tooltip = c("Date", "N")) %>%
@@ -1328,16 +1384,20 @@ server = (function(input, output, session) {
         data_for_table <- data_for_table[!is.na(data_for_table$name),]
         table_max <- nrow(data_for_table)
         
-        if(nrow(data_for_table) > 0){
+        if((nrow(data_for_table) > 0) & 
+           !is.null(input$select_unit) &
+           !is.null(input$select_variable) &
+           !is.null(input$select_timeunit)){
           
           #### Add Sparkline
           # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
           trend_spark <- lapply(1:nrow(data_for_table), function(i){
-            df_out <- readRDS(file.path("data_inputs_for_dashboard",
-                                        paste0(input$select_unit,"_",
-                                               input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
-                                               input$select_timeunit, "_",
-                                               data_for_table$name[i],".Rds"))) %>%
+            df_out <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                                  paste0(input$select_unit,"_",
+                                                         input$select_variable %>% str_replace_all(" Districts| Wards", "") , "_",
+                                                         input$select_timeunit, "_",
+                                                         data_for_table$name[i],".Rds")),
+                                        data_key) %>%
               dplyr::mutate(group = i) 
             
             if(input$select_timeunit %in% "Daily"){
@@ -1416,8 +1476,10 @@ server = (function(input, output, session) {
         }
         
         ## Add metric if not count
-        if(input$select_metric %in% c("% Change", "Z-Score")){
-          var_name <- paste0(var_name, ": ", input$select_metric)
+        if(!is.null(input$select_metric)){
+          if(input$select_metric %in% c("% Change", "Z-Score")){
+            var_name <- paste0(var_name, ": ", input$select_metric)
+          }
         }
         
         #### Make Table
@@ -1496,7 +1558,7 @@ server = (function(input, output, session) {
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
           theme(plot.title = element_text(hjust = 0.5, face="bold", size=16, family="Times"),
                 axis.text = element_text(size=12, family="Times")) +
-          scale_y_continuous(labels = scales::comma, limits=c(4500000, 5500000))
+          scale_y_continuous(labels = scales::comma) # limits=c(4500000, 5500000)
         ggplotly(p) %>%
           config(displayModeBar = F)
       })
@@ -1511,12 +1573,12 @@ server = (function(input, output, session) {
                 by.x = "name",
                 by.y = "NAME_2")
         
+        data[["risk_var"]] <- data[["severe_covid_risk_with_age"]]
         
-        data[["risk_var"]] <- data[["severe_covid_risk"]]
+        
         if(!is.null(input$select_risk_indicator)){
           # Select variable based on UI input
           data[["risk_var"]] <- data[[risk_an_labs$var[risk_an_labs$group == input$select_risk_indicator]]]
-          
         } 
         
         # Return final data
@@ -1566,8 +1628,9 @@ server = (function(input, output, session) {
         }) %>% do.call(what="rbind")
         
         #### Grab data
-        move_df <- readRDS(file.path("data_inputs_for_dashboard",
-                                     paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")))
+        move_df <- readRDS_encrypted(file.path("data_inputs_for_dashboard",
+                                               paste0("Districts_",move_type_i,"_Weekly_",district_i,"_",move_date_i,".Rds")),
+                                     data_key)
         l_all$id <- 1:length(l_all)
         l_all$value <- move_df$value
         
@@ -1585,6 +1648,17 @@ server = (function(input, output, session) {
         
         
         l_all <- l_all[!is.na(l_all$value),]
+        
+        l_all_arrows <- lapply(1:nrow(l_all), extract_arrows, l_all, 5, move_type_i) %>% 
+          do.call(what="rbind")
+        
+        ## Append
+        # Make sure same variables and crs before appending
+        for(var in names(l_all)) l_all_arrows[[var]] <- l_all[[var]]
+        crs(l_all_arrows) <- crs(l_all)
+        
+        l_all <- rbind(l_all,
+                       l_all_arrows)
         
         #### Return
         l_all
@@ -1633,9 +1707,18 @@ server = (function(input, output, session) {
             na.color = "gray",
             reverse = F)
         
+        # Needed reversed for legend
+        pal_rev <- 
+          colorNumeric(
+            palette = wes,
+            domain = c(risk_dist_sp()@data$risk_var), # c(0, map_values)
+            na.color = "gray",
+            reverse = T)
+        
         # legend parameters
         leg_labels = sort(unique(risk_map@data$risk_var)) %>% rev()
         lg_colors = pal(sort(unique(risk_map@data$risk_var))) %>% rev()
+        
         
         map_label <- risk_map@data$name
         
@@ -1675,9 +1758,12 @@ server = (function(input, output, session) {
           
           clearControls() %>% 
           addLegend(title = input$select_risk_indicator,
-                    position = 'bottomleft',
-                    colors = lg_colors,
-                    labels = leg_labels) %>%
+                    pal = pal_rev,
+                    values = risk_dist_sp()@data$risk_var,
+                    #colors = lg_colors,
+                    #labels = leg_labels,
+                    labFormat = labelFormat(transform = function(x) sort(x, decreasing = T)),
+                    position = 'bottomleft') %>%
           addLayersControl(
             overlayGroups = c("Movement"),
             position = 'bottomleft',
@@ -1689,14 +1775,14 @@ server = (function(input, output, session) {
       # **** 4.3.6 Risk Table --------------------------------------------------
       output$risk_table <- renderFormattable({
         
-        risk_var_i <- "HIV prevalence quintile"
+        risk_var_i <- "Severe COVID-19 risk"
         if(!is.null(input$select_risk_indicator)){
-          if(input$select_risk_indicator %in% "HIV prevalence quintile") risk_var_i <- "mean_hiv_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Anaemia prevalence quintile") risk_var_i <- "mean_anaemia_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Respiratory illness prevalence quintile") risk_var_i <- "mean_resp_risk_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Overweight prevalence quintile") risk_var_i <- "mean_overweight_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Smoking prevalence quintile") risk_var_i <- "mean_smoker_pop_weighted_cat"
-          if(input$select_risk_indicator %in% "Severe COVID-19 risk") risk_var_i <- "severe_covid_risk"
+          if(input$select_risk_indicator %in% "HIV prevalence") risk_var_i <- "mean_hiv_pop_weighted"
+          if(input$select_risk_indicator %in% "Anaemia prevalence") risk_var_i <- "mean_anaemia_pop_weighted"
+          if(input$select_risk_indicator %in% "Respiratory illness prevalence") risk_var_i <- "mean_resp_risk_pop_weighted"
+          if(input$select_risk_indicator %in% "Overweight prevalence") risk_var_i <- "mean_overweight_pop_weighted"
+          if(input$select_risk_indicator %in% "Smoking prevalence") risk_var_i <- "mean_smoker_pop_weighted"
+          if(input$select_risk_indicator %in% "Severe COVID-19 risk") risk_var_i <- "severe_covid_risk_with_age"
         }
         
         risk_an_df <- as.data.frame(risk_an)
@@ -1707,9 +1793,14 @@ server = (function(input, output, session) {
         #### Prep Data for Table
         data_for_table <- risk_an_i %>%
           dplyr::select(name, value) %>%
-          mutate(value = value %>% round(2)) %>%
           arrange(name) %>%
           arrange(desc(value)) 
+        
+        if(risk_var_i %in% "severe_covid_risk_with_age"){
+          data_for_table$value <- data_for_table$value %>% round(4)
+        } else{
+          data_for_table$value <- data_for_table$value %>% round(2)
+        }
         
         #### Make Table
         # https://stackoverflow.com/questions/49885176/is-it-possible-to-use-more-than-2-colors-in-the-color-tile-function
@@ -1908,7 +1999,7 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Wards"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Zoom to Ward"), 
+                                h5("Select Ward"), 
                                 choices = sort(ward_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1921,7 +2012,7 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Districts"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Zoom to District"), 
+                                h5("Select District"), 
                                 choices = sort(district_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1984,7 +2075,7 @@ server = (function(input, output, session) {
           if(!is.null(input$select_metric)){
             
             if(input$select_metric %in% c("Count")){
-
+              
               out <- dateInput(
                 "date_ward",
                 NULL,
@@ -1992,7 +2083,7 @@ server = (function(input, output, session) {
                 min = "2020-02-01",
                 max = "2020-06-30" # max = "2020-03-29"
               )
-
+              
             } else{
               
               
@@ -2003,8 +2094,8 @@ server = (function(input, output, session) {
                 min = "2020-03-01",
                 max = "2020-06-30" # max = "2020-03-29"
               )
-
-       
+              
+              
             }
           }
           
@@ -2044,7 +2135,7 @@ server = (function(input, output, session) {
               multiple = F
             )
             
-
+            
           } else{
             
             
@@ -2071,7 +2162,7 @@ server = (function(input, output, session) {
               
               multiple = F
             )
-
+            
             
             
             
