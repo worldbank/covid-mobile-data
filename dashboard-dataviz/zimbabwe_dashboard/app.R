@@ -1163,8 +1163,12 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
+        covid_cases <- covid_cases[covid_cases$N > 0,]
+        
         #covid_cases$N_weight <- log(covid_cases$N + 1)
-        covid_cases$N_weight <- covid_cases$N^(1/1.2)
+        #covid_cases$N_weight <- covid_cases$N^(1/1.2)
+        covid_cases$N_weight <- covid_cases$N^(1/1.7)*3
+        #covid_cases$N_weight <- log(covid_cases$N + 1, base=2) * 7
         
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
@@ -1201,6 +1205,7 @@ server = (function(input, output, session) {
                      lat = ~latitude,
                      label = ~lapply(label, htmltools::HTML),
                      color = "red",
+                     opacity = 1,
                      weight = ~N_weight,
                      labelOptions = labelOptions(
                        style = list("font-weight" = "normal",
@@ -1208,7 +1213,7 @@ server = (function(input, output, session) {
                        textsize = "15px",
                        direction = "auto"
                      ),
-                     group = "District Level<br>COVID-19 Cases") %>%
+                     group = "District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
           clearControls() %>%
           addLegend(
             values = c(map_values), # c(0, map_values)
@@ -1220,11 +1225,11 @@ server = (function(input, output, session) {
             na.label = "Origin"
           ) %>%
           addLayersControl(
-            overlayGroups = c("District Level<br>COVID-19 Cases"),
+            overlayGroups = c("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>"),
             position = 'topright',
             options = layersControlOptions(collapsed = FALSE)
           ) %>% 
-          hideGroup("District Level<br>COVID-19 Cases")
+          hideGroup("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>")
         
         #### Add Origin/Desintation Polygon in Red
         if(!is.null(input$select_variable)){
