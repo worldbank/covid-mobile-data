@@ -318,8 +318,11 @@ ui_main <- fluidPage(
                           multiple = F)
                  ),
                  
-                 p(risk_analysis_text[1]),
-                 p(risk_analysis_text[2])
+                 HTML(risk_analysis_text[1]),
+                 br(), br(),
+                 HTML(risk_analysis_text[2]),
+                 br(), br(),
+                 HTML(risk_analysis_text[3])
                  
                  
           ),
@@ -482,6 +485,9 @@ server = (function(input, output, session) {
                                                data_key)
               subs_total <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
                                                data_key)
+              covid_cases <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","covid_cases_districts_centroids.Rds"),
+                                               data_key)
+              
             } else{
               password_warning <<- "incorrect"
             }
@@ -1157,6 +1163,12 @@ server = (function(input, output, session) {
           alpha = 1 # 0.75 fix clear shapes before do this.
         }
         
+        covid_cases <- covid_cases[covid_cases$N > 0,]
+        
+        #covid_cases$N_weight <- log(covid_cases$N + 1)
+        #covid_cases$N_weight <- covid_cases$N^(1/1.2)
+        covid_cases$N_weight <- covid_cases$N^(1/1.7)*3
+        #covid_cases$N_weight <- log(covid_cases$N + 1, base=2) * 7
         
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
@@ -1178,7 +1190,7 @@ server = (function(input, output, session) {
                 color = "#666",
                 dashArray = "",
                 fillOpacity = 1,
-                bringToFront = TRUE
+                bringToFront = FALSE
               ),
             
             labelOptions = labelOptions(
@@ -1188,6 +1200,20 @@ server = (function(input, output, session) {
               direction = "auto"
             )
           ) %>%
+          addCircles(data = covid_cases,
+                     lng = ~longitude,
+                     lat = ~latitude,
+                     label = ~lapply(label, htmltools::HTML),
+                     color = "red",
+                     opacity = 1,
+                     weight = ~N_weight,
+                     labelOptions = labelOptions(
+                       style = list("font-weight" = "normal",
+                                    padding = "3px 8px"),
+                       textsize = "15px",
+                       direction = "auto"
+                     ),
+                     group = "District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
           clearControls() %>%
           addLegend(
             values = c(map_values), # c(0, map_values)
@@ -1197,7 +1223,13 @@ server = (function(input, output, session) {
             title = "Legend",
             position = "topright",
             na.label = "Origin"
-          )
+          ) %>%
+          addLayersControl(
+            overlayGroups = c("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>"),
+            position = 'topright',
+            options = layersControlOptions(collapsed = FALSE)
+          ) %>% 
+          hideGroup("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>")
         
         #### Add Origin/Desintation Polygon in Red
         if(!is.null(input$select_variable)){
@@ -1747,7 +1779,7 @@ server = (function(input, output, session) {
                        weight = ~ value_weight,
                        color = ~ pal_move_lines(value_alpha),
                        label = ~ label,
-                       group = "Movement",
+                       group = "<b>Movement</b><br>Thicker lines indicate<br>greater movement",
                        labelOptions = labelOptions(
                          style = list("font-weight" = "normal",
                                       padding = "3px 8px"),
@@ -1765,7 +1797,7 @@ server = (function(input, output, session) {
                     labFormat = labelFormat(transform = function(x) sort(x, decreasing = T)),
                     position = 'bottomleft') %>%
           addLayersControl(
-            overlayGroups = c("Movement"),
+            overlayGroups = c("<b>Movement</b><br>Thicker lines indicate<br>greater movement"),
             position = 'bottomleft',
             options = layersControlOptions(collapsed = FALSE)
           )
