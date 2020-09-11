@@ -1167,7 +1167,6 @@ server = (function(input, output, session) {
         covid_cases$N_weight <- covid_cases$N^(1/1.2)
         
         #### Main Leaflet Map 
-        print(map_labels)
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
             label = ~ lapply(map_labels, htmltools::HTML),
@@ -1222,7 +1221,7 @@ server = (function(input, output, session) {
           ) %>%
           addLayersControl(
             overlayGroups = c("District Level<br>COVID-19 Cases"),
-            position = 'bottomleft',
+            position = 'topright',
             options = layersControlOptions(collapsed = FALSE)
           ) %>% 
           hideGroup("District Level<br>COVID-19 Cases")
