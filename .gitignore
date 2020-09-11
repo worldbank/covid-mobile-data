@@ -98,8 +98,7 @@ passwords/
 
 generate_password.R
 generate_password*
-data_to_github_encrypt.R
-data_to_github_encrypt*
+
 
 
 #######################
