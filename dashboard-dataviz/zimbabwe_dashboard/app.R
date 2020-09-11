@@ -5,7 +5,7 @@
 
 #### R Shiny Deployment Options
 options(rsconnect.max.bundle.files = 400000)
-options(rsconnect.max.bundle.size = 31457280000)
+options(rsconnect.max.bundle.size = 99999999999)
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
