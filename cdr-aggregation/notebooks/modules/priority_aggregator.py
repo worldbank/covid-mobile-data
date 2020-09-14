@@ -724,6 +724,7 @@ class priority_aggregator(aggregator):
            F.sum('duration_change_only_lag').alias('total_duration_origin'),
            F.avg('duration_change_only_lag').alias('avg_duration_origin'),
            F.count('duration_change_only_lag').alias('count_origin'),
-           F.stddev_pop('duration_change_only_lag').alias('stddev_duration_origin'))
+           F.stddev_pop('duration_change_only_lag').alias('stddev_duration_origin'))\
+        .where((F.col('count_origin') > self.privacy_filter) & (F.col('count_destination') > self.privacy_filter))
 
       return result
