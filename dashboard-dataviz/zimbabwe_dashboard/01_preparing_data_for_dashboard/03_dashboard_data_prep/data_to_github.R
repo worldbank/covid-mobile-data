@@ -1,9 +1,11 @@
 # Transfer dashboard data from OneDrive to Github and encrypt them
 
-REMOVE_PREVIOUS_FILES <- F # delete previous data files in github repo. Files 
+REMOVE_PREVIOUS_FILES <- T # delete previous data files in github repo. Files 
                            # will always be overwritten by this script, but this
                            # this is useful when changing namining conventions 
                            # of files
+
+ENCRYPT <- F # whether to encrypt files
 
 # Define Password --------------------------------------------------------------
 PASSWORD <- readline(prompt="Enter password: ")
@@ -33,12 +35,18 @@ temp <- telecom_files %>%
     
     df <- readRDS(file.path(DASHBOARD_DATA_ONEDRIVE_PATH, file_i))
     
-    # Don't encrypt district/ward shapefiles
+    # Never encrypt district/ward shapefiles
     if(file_i %in% c("wards_aggregated.Rds", "districts.Rds")){
       saveRDS(df, file.path(DASHBOARD_DATA_GITHUB_PATH, file_i), version=2)
     } else{
       #### Files to encrypt
-      saveRDS(aes_cbc_encrypt(serialize(df, NULL), key = data_key), file.path(DASHBOARD_DATA_GITHUB_PATH, file_i), version=2)
+      if(ENCRYPT){
+        saveRDS(aes_cbc_encrypt(serialize(df, NULL), key = data_key), file.path(DASHBOARD_DATA_GITHUB_PATH, file_i), version=2)
+      } else{
+        saveRDS(df, file.path(DASHBOARD_DATA_GITHUB_PATH, file_i), version=2)
+      }
+      
+      
     }
 
   })
@@ -51,4 +59,3 @@ for(file_i in list.files(RISK_ANALYSIS_PATH)){
 }
 
 
-#a <- readRDS_encrypted(file.path(DASHBOARD_DATA_GITHUB_PATH, telecom_files[1]), data_key)
