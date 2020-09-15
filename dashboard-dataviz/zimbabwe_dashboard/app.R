@@ -5,7 +5,7 @@
 
 #### R Shiny Deployment Options
 options(rsconnect.max.bundle.files = 400000)
-options(rsconnect.max.bundle.size = 99999999999)
+#options(rsconnect.max.bundle.size = 99999999999)
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "robmarty") {
@@ -71,7 +71,8 @@ Logged = F
 
 # Read encrypted RDS file
 readRDS_encrypted <- function(filepath, data_key){
-  unserialize(aes_cbc_decrypt(readRDS(filepath), key = data_key))
+  #unserialize(aes_cbc_decrypt(readRDS(filepath), key = data_key))
+  readRDS(filepath)
 }
 
 source("functions.R")
@@ -244,7 +245,7 @@ ui_main <- fluidPage(
               left = 40,
               width = 220,
               fixed = TRUE,
-              draggable = F,
+              draggable = T,
               height = 400,
               align = "center",
               
@@ -466,7 +467,10 @@ server = (function(input, output, session) {
           # error, where if error return empty dataframe
           passwords_df <- tryCatch(
             {
-              readRDS_encrypted("passwords.Rds", data_key)
+              #readRDS_encrypted("passwords.Rds", data_key)
+          
+              unserialize(aes_cbc_decrypt(readRDS("passwords.Rds"), key = data_key))
+              
             },
             error = function(e){data.frame(NULL)}
           )

@@ -25,7 +25,7 @@ if(REMOVE_PREVIOUS_FILES){
 telecom_files <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, pattern = "*.Rds")
 
 # Select subset if only need to move some
-telecom_files <- telecom_files[grepl("covid_cases_districts", telecom_files)]
+#telecom_files <- telecom_files[grepl("covid_cases_districts", telecom_files)]
 
 i <- 1
 temp <- telecom_files %>%
