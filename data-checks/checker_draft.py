@@ -43,15 +43,18 @@ class checker:
         assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
         # ---------------------------------------------------------
         # Load indicator files
-        def load_indicators():
-            pass
-        def completeness_checks():
-            pass
-        def summary_stats():
-            pass
-        def towers_down():
-            pass
+    def load_indicators(self):
+        path = self.path + '/'
+        self.i1 = pd.read_csv(path + self.ind_dict['i1'])
+    def completeness_checks():
+        pass
+    def summary_stats():
+        pass
+    def towers_down():
+        pass
         # self.i1 = pd.read_csv(self.)
 
 
 foo = checker(path = data, level = 'admin2')
+
+# foo.load_indicators()
