@@ -15,6 +15,9 @@
 # Settings
 import os
 import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+
 
 data = 'C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/Zimbabwe/telecel'
 
@@ -51,9 +54,14 @@ class checker:
         # Otherwise specify dict manually
         else:
             self.ind_dict = ind_dict
+        
         # Check if files exist
-        files_bol = all([os.path.isfile(self.path + '/' + ind_names[key]) for key in ind_names.keys()])
+        files_bol = all([os.path.isfile(self.path + '/' + self.ind_dict[key]) for key in self.ind_dict.keys()])
         assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
+        
+        # Run data loading and processing methods
+        self.load_indicators()
+        self.run_aggregations()
     # ---------------------------------------------------------
     # Load indicator files
     def load_indicators(self):
@@ -78,50 +86,87 @@ class checker:
         self.i2 = load(path + self.ind_dict['i2'])
         self.i5 = load(path + self.ind_dict['i5'])
         self.i7 = load(path + self.ind_dict['i7'], 'day')
+    
     # ---------------------------------------------------------
-    # Aggregations
-    
-    def remove_missings(df, regionvar = 'region', missing_values = [99999, '99999']):
-        return df[~df[regionvar].isin(missing_values)]
-    
-    # Create data sets with time indexes and fill blanks with 0s
-    def time_complete(data, timevar = data.columns[0], timefreq = 'D'):
-        data[timevar] = data[timevar].astype('datetime64')
-        full_time_range = pd.date_range(data[timevar].min(),  
-                                        data[timevar].max(), 
-                                        freq = timefreq)
-        data = data.set_index(timevar)
-        data = data.reindex(full_time_range,  fill_value=0)
-        return(data)
-    
+    # Aggregations    
     # Aggregated i1 versions
-    
+    def run_aggregations(self):
+        # Missing region remove function
+        def remove_missings(df, regionvar = 'region', missing_values = [99999, '99999']):
+            return df[~df[regionvar].isin(missing_values)]
+        
+        # Create data sets with time indexes and fill blanks with 0s
+        def time_complete(data, timevar = None, timefreq = 'D'):
+            if timevar is None:
+                data.columns[0]
+            data[timevar] = data[timevar].astype('datetime64')
+            full_time_range = pd.date_range(data[timevar].min(),  
+                                            data[timevar].max(), 
+                                            freq = timefreq)
+            data = data.set_index(timevar)
+            data = data.reindex(full_time_range,  fill_value=0)
+            return(data)
+        
+        # Indicator 1
+        self.i1_hour = remove_missings(self.i1)\
+            .groupby(['date', 'hour'])\
+            .agg({'region' : pd.Series.nunique ,
+                'count' : np.sum})\
+            .reset_index()\
+            .sort_values(['date', 'hour'])\
+            .rename(columns = {'region' : 'n_regions'})
+        self.i1_date = remove_missings(self.i1)\
+            .groupby('date')\
+            .agg({'region' : pd.Series.nunique ,
+                'count' : np.sum})\
+            .reset_index()\
+            .sort_values(['date'])\
+            .rename(columns = {'region' : 'n_regions'})
+        
+        # Complete dates
+        self.i1_date = time_complete(self.i1_date, 'date')
+        self.i1_hour = time_complete(self.i1_hour, 'hour', 'H')
+        
+        # Indicator 5
+        i5_nmissing = remove_missings(remove_missings(self.i5,'region_from' ), 'region_to')
+        self.i5_date = i5_nmissing\
+        .groupby('date')\
+        .agg({'region_from' : pd.Series.nunique ,
+              'region_to' : pd.Series.nunique,
+              'total_count' : np.sum})\
+        .reset_index()\
+        .sort_values('date')
+        
+        self.i5_date = time_complete(self.i5_date, 'date')
     
     # ---------------------------------------------------------
     # Plots
     
     # ---------------------------------------------------------
     # Check pipelines
-    def completeness_checks():
+    def completeness_checks(self):
         pass
-    def summary_stats():
+    def summary_stats(self):
         pass
-    def towers_down():
+    def towers_down(self):
         pass
         # self.i1 = pd.read_csv(self.)
 
 
 foo = checker(path = data, level = 'admin2')
 
-foo.load_indicators()
-
-def aggregation(df, sumvars, uniquevars):
-    pass
-
-def remove_missings(df, regionvar = 'region', missing_values = [99999, '99999']):
-    return df[~df[regionvar].isin(missing_values)]
-
-remove_missings(foo.i1)
+# foo.load_indicators()
+# foo.run_aggregations()
 
 
-# pd.to_datetime(foo.i1['hour']).dt.date
+import plotly.graph_objects as go
+fig = go.Figure(data=go.Scatter(x=foo.i1_date.index, y=foo.i1_date['count']))
+fig.show()
+
+fig = go.Figure(data=go.Scatter(x=foo.i1_date.index, y=foo.i1_date['n_regions']))
+fig.show()
+
+fig = go.Figure(data=go.Scatter(x=foo.i5_date.index, y=foo.i5_date['total_count']))
+fig.show()
+
+foo.i1_hour
