@@ -51,8 +51,6 @@ class checker:
         # Otherwise specify dict manually
         else:
             self.ind_dict = ind_dict
-        # Add full filepath
-        
         # Check if files exist
         files_bol = all([os.path.isfile(self.path + '/' + ind_names[key]) for key in ind_names.keys()])
         assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
@@ -60,27 +58,50 @@ class checker:
     # Load indicator files
     def load_indicators(self):
         # Loading function
-        def load(file_path):
+        def load(file_path, timevar = None):
+            # Load data
             df = pd.read_csv(file_path)
             # Patch cleannig of headers in the middle of the data
             c1_name = df.columns[0]
             df = df[~df[c1_name].astype(str).str.contains(c1_name)]
+            # Convert date vars
+            if timevar is None:
+                timevar = df.columns[0]
+            else:
+                timevar = timevar
+            # Create date variable
+            df['date'] = pd.to_datetime(df[timevar]).dt.date
             return df
         # Load indicators
         path = self.path + '/'
         self.i1 = load(path + self.ind_dict['i1'])
         self.i2 = load(path + self.ind_dict['i2'])
         self.i5 = load(path + self.ind_dict['i5'])
-        self.i7 = load(path + self.ind_dict['i7'])
-    # Process files
-    def process_indicator(df, date_var = df.columns[0]):
-        # Remove missings
-        
-        # Convert date vars
-        
-        pass
+        self.i7 = load(path + self.ind_dict['i7'], 'day')
     # ---------------------------------------------------------
-    # Checks
+    # Aggregations
+    
+    def remove_missings(df, regionvar = 'region', missing_values = [99999, '99999']):
+        return df[~df[regionvar].isin(missing_values)]
+    
+    # Create data sets with time indexes and fill blanks with 0s
+    def time_complete(data, timevar = data.columns[0], timefreq = 'D'):
+        data[timevar] = data[timevar].astype('datetime64')
+        full_time_range = pd.date_range(data[timevar].min(),  
+                                        data[timevar].max(), 
+                                        freq = timefreq)
+        data = data.set_index(timevar)
+        data = data.reindex(full_time_range,  fill_value=0)
+        return(data)
+    
+    # Aggregated i1 versions
+    
+    
+    # ---------------------------------------------------------
+    # Plots
+    
+    # ---------------------------------------------------------
+    # Check pipelines
     def completeness_checks():
         pass
     def summary_stats():
@@ -93,3 +114,14 @@ class checker:
 foo = checker(path = data, level = 'admin2')
 
 foo.load_indicators()
+
+def aggregation(df, sumvars, uniquevars):
+    pass
+
+def remove_missings(df, regionvar = 'region', missing_values = [99999, '99999']):
+    return df[~df[regionvar].isin(missing_values)]
+
+remove_missings(foo.i1)
+
+
+# pd.to_datetime(foo.i1['hour']).dt.date
