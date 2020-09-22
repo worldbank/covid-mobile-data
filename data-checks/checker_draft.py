@@ -1,3 +1,18 @@
+
+# ---------------------------------------------------------
+# To Do
+
+# Number of missings in region columns?
+# Plot number of regions with transactions per day
+# Plot number of transactions per day
+# Plot total number of transactions per hour to check for outliers
+# Plot total number of movements per day
+# Comparisson between pre and post lockdown stats
+# Compare regions that received and sent visitors
+#  Tower down outliers
+
+# ---------------------------------------------------------
+# Settings
 import os
 import pandas as pd
 
@@ -41,11 +56,31 @@ class checker:
         # Check if files exist
         files_bol = all([os.path.isfile(self.path + '/' + ind_names[key]) for key in ind_names.keys()])
         assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
-        # ---------------------------------------------------------
-        # Load indicator files
+    # ---------------------------------------------------------
+    # Load indicator files
     def load_indicators(self):
+        # Loading function
+        def load(file_path):
+            df = pd.read_csv(file_path)
+            # Patch cleannig of headers in the middle of the data
+            c1_name = df.columns[0]
+            df = df[~df[c1_name].astype(str).str.contains(c1_name)]
+            return df
+        # Load indicators
         path = self.path + '/'
-        self.i1 = pd.read_csv(path + self.ind_dict['i1'])
+        self.i1 = load(path + self.ind_dict['i1'])
+        self.i2 = load(path + self.ind_dict['i2'])
+        self.i5 = load(path + self.ind_dict['i5'])
+        self.i7 = load(path + self.ind_dict['i7'])
+    # Process files
+    def process_indicator(df, date_var = df.columns[0]):
+        # Remove missings
+        
+        # Convert date vars
+        
+        pass
+    # ---------------------------------------------------------
+    # Checks
     def completeness_checks():
         pass
     def summary_stats():
@@ -57,4 +92,4 @@ class checker:
 
 foo = checker(path = data, level = 'admin2')
 
-# foo.load_indicators()
+foo.load_indicators()
