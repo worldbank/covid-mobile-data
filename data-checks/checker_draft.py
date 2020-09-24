@@ -32,7 +32,8 @@ class checker:
                 outputs_path = None,
                 level = None,
                 ind_dict = None,
-                export_plots = True):
+                export_plots = True,
+                htrahshold = -3):
         # Set data path
         if level is None:
             self.path = path
@@ -68,6 +69,7 @@ class checker:
         
         # Constants
         self.missing_values = [99999, '99999', '', None]
+        self.htrahshold = htrahshold
         
         # Run data loading and processing methods
         self.load_indicators()
@@ -132,11 +134,9 @@ class checker:
             .reset_index()\
             .sort_values(['date'])\
             .rename(columns = {'region' : 'n_regions'})
-        
         # Complete dates
         self.i1_date = time_complete(self.i1_date, 'date')
         self.i1_hour = time_complete(self.i1_hour, 'hour', 'H')
-        
         # Indicator 5
         i5_nmissing = remove_missings(remove_missings(self.i5,'region_from' ), 'region_to')
         self.i5_date = i5_nmissing\
@@ -167,6 +167,13 @@ class checker:
         plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i5_count.html', auto_open=False)
         if show:
             fig.show()
+    def plot_i5_region_count(self, show = True):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_to'], marker=dict(color="blue"), name = 'Regions to'))
+        fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_from'], marker=dict(color="red"), name = 'Regions from'))
+        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i5_region_count.html', auto_open=False)
+        if show:
+            fig.show()
     def plot_region_missings(self, show = True):
         n_missing = self.i1['region'].isin(self.missing_values).sum() 
         labels = ['Missing region','Non-missing region']
@@ -179,24 +186,59 @@ class checker:
     # ---------------------------------------------------------
     # Check pipelines 
     def completeness_checks(self):
-        self.plot_missings()
+        self.plot_region_missings()
         self.plot_i1_count()
         self.plot_i1_n_regions()
         self.plot_i5_count()
+        self.plot_i5_region_count()
         
     def summary_stats(self):
         pass
-    def towers_down(self):
-        pass
-        # self.i1 = pd.read_csv(self.)
+    # USAGE OUTILERS: Indicator wards and days with towers down
+    def usage_outliers(self, htrahshold = None):
+        data = self.i1
+        if htrahshold is None:
+             htrahshold = self.htrahshold
+        # Number of hours with transactions per region day
+        hours_per_day = data.groupby(['region', 'date']).size()
+        hours_per_day = hours_per_day.reset_index() # ger regions to be a column
+        hours_per_day.columns = ['region', 'date', 'hcount']
+    
+        # Average hours per day per region
+        avg_hours = (hours_per_day.groupby(['region'])
+            .mean()
+            .rename(columns={'hcount' :'avg_hours' }))
+        # Create region day data set
+        i1_ag_df = hours_per_day.merge(avg_hours,
+                                        on = 'region')
+        
+        # Difference from average usage per hour
+        i1_ag_df['h_diff'] = i1_ag_df['hcount'] - i1_ag_df['avg_hours']
+        
+        # Create data only with pairs of wards and days potential 
+        # towers down
+        i1_ag_df_tower_down = i1_ag_df[i1_ag_df['h_diff'] < htrahshold]
+        
+        #----------------------------------------------------------------------
+        # Export
+        # Read me text
+        readme_text = "This file contains a combinations of wards and  days that are assumed to have a tower down."
+        readme_text += "If a day has " + str(abs(htrahshold))  
+        readme_text += " hours with any calls below the daily avergage for that ward,"
+        readme_text += " it is considered to have a trower down at some point that day."  
+    
+        (i1_ag_df_tower_down.to_csv(self.outputs_path + 'days_wards_with_low_hours_i1.csv', index = False) )
+        # Read me file
+        file = open(self.outputs_path + "days_wards_with_low_hours_i1.txt", "w") 
+        file.write(readme_text) 
+        file.close() 
 
 
 foo = checker(path = data, level = 'admin2')
-# foo.completeness_checks()
+foo.usage_outliers()
 
 
 
-foo.plot_i1_count()
 
 
 
