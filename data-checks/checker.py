@@ -1,15 +1,6 @@
-
 # ---------------------------------------------------------
-# To Do
+# Data checker class definition
 
-# Number of missings in region columns?
-# Plot number of regions with transactions per day
-# Plot number of transactions per day
-# Plot total number of transactions per hour to check for outliers
-# Plot total number of movements per day
-# Comparisson between pre and post lockdown stats
-# Compare regions that received and sent visitors
-#  Tower down outliers
 
 # ---------------------------------------------------------
 # Settings
@@ -20,7 +11,6 @@ import plotly
 import plotly.graph_objects as go
 
 
-data = 'C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/Zimbabwe/telecel'
 
 class checker:
     """
@@ -154,24 +144,37 @@ class checker:
     
     def plot_i1_count(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['count']))
-        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i1_count.html', auto_open=False)
+        
+        file_name = self.outputs_path + '/' + 'i1_count.html'
+        print('Saving: ' + file_name)
+        plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
+        
     def plot_i1_n_regions(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['n_regions']))
-        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i1_n_region.html', auto_open=False)
+        
+        file_name = self.outputs_path + '/' + 'i1_n_region.html'
+        print('Saving: ' + file_name)
+        plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
     def plot_i5_count(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i5_date.index, y=self.i5_date['total_count']))
-        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i5_count.html', auto_open=False)
+        
+        file_name = self.outputs_path + '/' + 'i5_count.html'
+        print('Saving: ' + file_name)
+        plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
     def plot_i5_region_count(self, show = True):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_to'], marker=dict(color="blue"), name = 'Regions to'))
         fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_from'], marker=dict(color="red"), name = 'Regions from'))
-        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i5_region_count.html', auto_open=False)
+        
+        filename = self.outputs_path + '/' + 'i5_region_count.html'
+        print('Saving: ' + file_name)
+        plotly.offline.plot(fig, filename= file_name , auto_open=False)
         if show:
             fig.show()
     def plot_region_missings(self, show = True):
@@ -180,7 +183,10 @@ class checker:
         values = [n_missing, len(self.i1) - n_missing]
         
         fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'region_missings.html', auto_open=False)
+        
+        file_name = self.outputs_path + '/' + 'region_missings.html'
+        print('Saving: ' + file_name)
+        plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
     # ---------------------------------------------------------
@@ -192,8 +198,6 @@ class checker:
         self.plot_i5_count()
         self.plot_i5_region_count()
         
-    def summary_stats(self):
-        pass
     # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
         data = self.i1
@@ -226,16 +230,14 @@ class checker:
         readme_text += "If a day has " + str(abs(htrahshold))  
         readme_text += " hours with any calls below the daily avergage for that ward,"
         readme_text += " it is considered to have a trower down at some point that day."  
-    
-        (i1_ag_df_tower_down.to_csv(self.outputs_path + 'days_wards_with_low_hours_i1.csv', index = False) )
+        
+        file_name = self.outputs_path + '/' + 'days_wards_with_low_hours_i1.csv'
+        print('Saving: ' + file_name)
+        (i1_ag_df_tower_down.to_csv(file_name, index = False) )
         # Read me file
-        file = open(self.outputs_path + "days_wards_with_low_hours_i1.txt", "w") 
+        file = open(self.outputs_path + '/' +"days_wards_with_low_hours_i1.txt", "w") 
         file.write(readme_text) 
         file.close() 
-
-
-foo = checker(path = data, level = 'admin2')
-foo.usage_outliers()
 
 
 
