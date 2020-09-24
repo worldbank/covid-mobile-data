@@ -22,7 +22,7 @@ from utils import *
 #-----------------------------------------------------------------#
 # Settings 
 
-EXPORT = True
+EXPORT = False
 
 #-----------------------------------------------------------------#
 # Folder structure
@@ -317,11 +317,10 @@ indicators = panel_constructor(ilevels_dict = {
 indicators.dirty_panel()
 
 #-----------------------------------------------------------------#
-# Create usage outliers files
+# Load usage outliers file
 
-i1 = indicators.i1_3
-exec(open(CODE_path + 'usage_outliers.py').read())
-
+# This file is created in data-checks
+i1_ag_df_tower_down = pd.read_csv("Path/to/usage-outliers/file")
 
 #-----------------------------------------------------------------#
 # Export comparisson panel
