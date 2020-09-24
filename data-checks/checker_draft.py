@@ -16,6 +16,7 @@
 import os
 import pandas as pd
 import numpy as np
+import plotly
 import plotly.graph_objects as go
 
 
@@ -28,13 +29,19 @@ class checker:
     """
     def __init__(self,
                 path,
+                outputs_path = None,
                 level = None,
-                ind_dict = None):
+                ind_dict = None,
+                export_plots = True):
         # Set data path
         if level is None:
             self.path = path
         else:
             self.path = path + '/' + level
+        if outputs_path is None:
+            self.outputs_path = self.path + '/' + 'out'
+            if not os.path.exists(self.outputs_path):
+                os.mkdir(self.outputs_path)
         # List files in path
         self.files = os.listdir(self.path)
         # Indicator default file names
@@ -58,6 +65,9 @@ class checker:
         # Check if files exist
         files_bol = all([os.path.isfile(self.path + '/' + self.ind_dict[key]) for key in self.ind_dict.keys()])
         assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
+        
+        # Constants
+        self.missing_values = [99999, '99999', '', None]
         
         # Run data loading and processing methods
         self.load_indicators()
@@ -92,7 +102,7 @@ class checker:
     # Aggregated i1 versions
     def run_aggregations(self):
         # Missing region remove function
-        def remove_missings(df, regionvar = 'region', missing_values = [99999, '99999']):
+        def remove_missings(df, regionvar = 'region', missing_values = self.missing_values):
             return df[~df[regionvar].isin(missing_values)]
         
         # Create data sets with time indexes and fill blanks with 0s
@@ -142,10 +152,38 @@ class checker:
     # ---------------------------------------------------------
     # Plots
     
+    def plot_i1_count(self, show = True):
+        fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['count']))
+        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i1_count.html', auto_open=False)
+        if show:
+            fig.show()
+    def plot_i1_n_regions(self, show = True):
+        fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['n_regions']))
+        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i1_n_region.html', auto_open=False)
+        if show:
+            fig.show()
+    def plot_i5_count(self, show = True):
+        fig = go.Figure(data=go.Scatter(x=self.i5_date.index, y=self.i5_date['total_count']))
+        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'i5_count.html', auto_open=False)
+        if show:
+            fig.show()
+    def plot_region_missings(self, show = True):
+        n_missing = self.i1['region'].isin(self.missing_values).sum() 
+        labels = ['Missing region','Non-missing region']
+        values = [n_missing, len(self.i1) - n_missing]
+        
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+        plotly.offline.plot(fig, filename = self.outputs_path + '/' + 'region_missings.html', auto_open=False)
+        if show:
+            fig.show()
     # ---------------------------------------------------------
-    # Check pipelines
+    # Check pipelines 
     def completeness_checks(self):
-        pass
+        self.plot_missings()
+        self.plot_i1_count()
+        self.plot_i1_n_regions()
+        self.plot_i5_count()
+        
     def summary_stats(self):
         pass
     def towers_down(self):
@@ -154,19 +192,12 @@ class checker:
 
 
 foo = checker(path = data, level = 'admin2')
-
-# foo.load_indicators()
-# foo.run_aggregations()
+# foo.completeness_checks()
 
 
-import plotly.graph_objects as go
-fig = go.Figure(data=go.Scatter(x=foo.i1_date.index, y=foo.i1_date['count']))
-fig.show()
 
-fig = go.Figure(data=go.Scatter(x=foo.i1_date.index, y=foo.i1_date['n_regions']))
-fig.show()
+foo.plot_i1_count()
 
-fig = go.Figure(data=go.Scatter(x=foo.i5_date.index, y=foo.i5_date['total_count']))
-fig.show()
 
-foo.i1_hour
+
+# plotly.offline.plot(fig, filename = data + '/' + 'filename.html', auto_open=False)
