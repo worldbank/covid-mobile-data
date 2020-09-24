@@ -235,7 +235,7 @@ class checker:
         print('Saving: ' + file_name)
         (i1_ag_df_tower_down.to_csv(file_name, index = False) )
         # Read me file
-        file = open(self.outputs_path + '/' +"days_wards_with_low_hours_i1.txt", "w") 
+        file = open(self.outputs_path + '/' + "days_wards_with_low_hours_i1.txt", "w") 
         file.write(readme_text) 
         file.close() 
 
