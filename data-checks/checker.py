@@ -144,6 +144,7 @@ class checker:
     
     def plot_i1_count(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['count']))
+        fig.update_layout(title_text="Indicator 1: Total number of transactions.")
         
         file_name = self.outputs_path + '/' + 'i1_count.html'
         print('Saving: ' + file_name)
@@ -153,14 +154,17 @@ class checker:
         
     def plot_i1_n_regions(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['n_regions']))
+        fig.update_layout(title_text="Indicator 1: Number of unique regions.")
         
         file_name = self.outputs_path + '/' + 'i1_n_region.html'
         print('Saving: ' + file_name)
         plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
+    
     def plot_i5_count(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i5_date.index, y=self.i5_date['total_count']))
+        fig.update_layout(title_text="Indicator 5: Total number of movements.")
         
         file_name = self.outputs_path + '/' + 'i5_count.html'
         print('Saving: ' + file_name)
@@ -169,20 +173,23 @@ class checker:
             fig.show()
     def plot_i5_region_count(self, show = True):
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_to'], marker=dict(color="blue"), name = 'Regions to'))
-        fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_from'], marker=dict(color="red"), name = 'Regions from'))
+        fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_to'], marker=dict(color="blue"), name = 'Destination regions'))
+        fig.add_trace(go.Scatter(x=self.i5_date.index, y=self.i5_date['region_from'], marker=dict(color="red"), name = 'Origin regions'))
+        fig.update_layout(title_text="Indicator 5: Number of unique regions.")
         
-        filename = self.outputs_path + '/' + 'i5_region_count.html'
+        file_name = self.outputs_path + '/' + 'i5_region_count.html'
         print('Saving: ' + file_name)
         plotly.offline.plot(fig, filename= file_name , auto_open=False)
         if show:
             fig.show()
+    
     def plot_region_missings(self, show = True):
         n_missing = self.i1['region'].isin(self.missing_values).sum() 
         labels = ['Missing region','Non-missing region']
         values = [n_missing, len(self.i1) - n_missing]
         
         fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+        fig.update_layout(title_text="Indicator 1: Number of transactions not mapped to region.")
         
         file_name = self.outputs_path + '/' + 'region_missings.html'
         print('Saving: ' + file_name)
