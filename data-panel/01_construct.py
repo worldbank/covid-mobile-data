@@ -42,24 +42,27 @@ indicators_df['path_ecnt'] = DATA_path + indicators_df['path_ecnt']
 
 #-------------------#
 # Set default values
-default_levels_dict = {1: [3], 
-                       2: [3],
-                       3: [2,3],
-                       4: ['country'],
-                       5: [2,3,'tc_harare', 'tc_bulawayo'],
-                       6: [3],
-                       7: [2,3],
-                       8: [2,3],
-                       9: [2,3],
-                       #9: [2,3,'tc_harare', 'tc_bulawayo'],
-                    #    10: [2,3],
-                       11: [2,3]}
+# levels_dict = { 1: [3],
+#                 2: [3],
+#                 3: [2,3],
+#                #    4: ['country'],
+#                #  5: [2,3,'tc_harare', 'tc_bulawayo'],
+#                 5: [2,3],
+#                 6: [3],
+#                 7: [2,3],
+#                 8: [2,3],
+#                 9: [2,3],
+#                 #9: [2,3,'tc_harare', 'tc_bulawayo'],
+#                 10: [2,3],
+#                 11: [2,3]}
 
+levels_dict = { 1: [3],
+                10: [2,3]}
 
 #-----------------------------------------------------------------#
 # Load indicators and create comparisson "dirty" panel
 
-indicators = panel_constructor(default_levels_dict, indicators_df)
+indicators = panel_constructor(levels_dict, indicators_df)
 
 # Create class instance
 # If no levels dictionary is provided, it will use the default, which is all of them!
@@ -76,7 +79,7 @@ indicators.dirty_panel()
 i1_ag_df_tower_down = pd.read_csv("C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/outputs/data-checks/days_wards_with_low_hours_I1_panel.csv")
 
 #-----------------------------------------------------------------#
-# Export comparisson panel
+# Export comparison panel
 
 if EXPORT:
     indicators.export(DATA_panel_comp)
@@ -90,6 +93,17 @@ if EXPORT:
 indicators.clean_panel(i1_ag_df_tower_down)
 
 #-----------------------------------------------------------------#
+
+
+indicators.add_other_provider(mno_path =  "C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/Zimbabwe/telecel/", 
+                              mno_suffix = '_tel')
+
+indicators.i10_2.add_provider(indicators.i10_2_tel)
+indicators.i10_3.add_provider(indicators.i10_3_tel)
+
+
+
+#-----------------------------------------------------------------#
 # Export
 if EXPORT:
-    indicators.export(DATA_panel_clean + 'test/')
+    indicators.export(DATA_panel_clean + 'mutlple-mnos/')
