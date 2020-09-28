@@ -310,23 +310,34 @@ class panel_constructor:
         self.load_other_mno(mno_path, mno_suffix)
         # Add to panel
         self.i1_3.add_provider(getattr(self, 'i1_3' + mno_suffix))
-        self.i2_3.add_provider(getattr(self, 'i2_3' + mno_suffix))
-        self.i3_2.add_provider(getattr(self, 'i3_2' + mno_suffix))
-        self.i3_3.add_provider(getattr(self, 'i3_3' + mno_suffix))
-        # self.i4_country.add_provider(getattr(self, 'i4_country' + mno_suffix))
-        self.i5_2.add_provider(getattr(self, 'i5_2' + mno_suffix))
-        self.i5_3.add_provider(getattr(self, 'i5_3' + mno_suffix))
-        self.i6_3.add_provider(getattr(self, 'i6_3' + mno_suffix))
-        self.i7_2.add_provider(getattr(self, 'i7_2' + mno_suffix))
-        self.i7_3.add_provider(getattr(self, 'i7_3' + mno_suffix))
-        self.i8_2.add_provider(getattr(self, 'i8_2' + mno_suffix))
-        self.i8_3.add_provider(getattr(self, 'i8_3' + mno_suffix))
-        self.i9_2.add_provider(getattr(self, 'i9_2' + mno_suffix))
-        self.i9_3.add_provider(getattr(self, 'i9_3' + mno_suffix))
-        # self.i10_2.add_provider(getattr(self, 'i10_2' + mno_suffix))
-        # self.i10_3.add_provider(getattr(self, 'i10_3' + mno_suffix))
-        self.i11_2.add_provider(getattr(self, 'i11_2' + mno_suffix))
-        self.i11_3.add_provider(getattr(self, 'i11_3' + mno_suffix))
+        
+        if 2 in self.ilevels_dict.keys():
+            self.i2_3.add_provider(getattr(self, 'i2_3' + mno_suffix))
+        if 3 in self.ilevels_dict.keys():
+            self.i3_2.add_provider(getattr(self, 'i3_2' + mno_suffix))
+            self.i3_3.add_provider(getattr(self, 'i3_3' + mno_suffix))
+        if 4 in self.ilevels_dict.keys():
+            self.i4_country.add_provider(getattr(self, 'i4_country' + mno_suffix))
+        if 5 in self.ilevels_dict.keys():
+            self.i5_2.add_provider(getattr(self, 'i5_2' + mno_suffix))
+            self.i5_3.add_provider(getattr(self, 'i5_3' + mno_suffix))
+        if 6 in self.ilevels_dict.keys():
+            self.i6_3.add_provider(getattr(self, 'i6_3' + mno_suffix))
+        if 7 in self.ilevels_dict.keys():    
+            self.i7_2.add_provider(getattr(self, 'i7_2' + mno_suffix))
+            self.i7_3.add_provider(getattr(self, 'i7_3' + mno_suffix))
+        if 8 in self.ilevels_dict.keys():
+            self.i8_2.add_provider(getattr(self, 'i8_2' + mno_suffix))
+            self.i8_3.add_provider(getattr(self, 'i8_3' + mno_suffix))
+        if 9 in self.ilevels_dict.keys():
+            self.i9_2.add_provider(getattr(self, 'i9_2' + mno_suffix))
+            self.i9_3.add_provider(getattr(self, 'i9_3' + mno_suffix))
+        if 10 in self.ilevels_dict.keys():
+            self.i10_2.add_provider(getattr(self, 'i10_2' + mno_suffix))
+            self.i10_3.add_provider(getattr(self, 'i10_3' + mno_suffix))
+        if 11 in self.ilevels_dict.keys():
+            self.i11_2.add_provider(getattr(self, 'i11_2' + mno_suffix))
+            self.i11_3.add_provider(getattr(self, 'i11_3' + mno_suffix))
         
     # Export panel datasets for all loaded indicators
     def export(self, path):
