@@ -131,6 +131,26 @@ class i_indicator:
         else:
             self.panel = clean_columns(self, self.time_var)
     
+    # Add another provider to panel
+    # Add function
+    def add_provider(self, other_mno_df,
+                     suffixes = ['_ecnt', '_tel']):
+        # Merge datasets
+        ndf = self.panel.merge(other_mno_df, on = self.index_cols,
+                       how = 'left', suffixes = suffixes)
+        # Rename and sum columns
+        cols = ndf.filter(like = suffixes[0]).columns.to_list()
+        for i in range(0,len(cols)):
+            p1_col = cols[i]
+            p2_col = cols[i].replace(suffixes[0], '') + suffixes[1]
+            final_col = cols[i].replace(suffixes[0], '')
+            ndf[final_col] = ndf[p1_col].fillna(0) + ndf[p2_col].fillna(0)
+        # Reorder columns
+        ncols = ['date']
+        ncols.extend(ndf.drop(['date'], axis = 1).columns.to_list())
+        self.panel = ndf[ncols]
+        # Final df
+    
     # Set a saving method
     def save(self, path):
         self.panel.sort_values(self.index_cols).to_csv(path, index = False)
@@ -147,7 +167,8 @@ class panel_constructor:
     """
     def __init__(self, 
                  ilevels_dict,
-                 indicators_df):
+                 indicators_df,
+                 ind_dict = None):
         self.ilevels_dict = ilevels_dict
         self.indicators_df = indicators_df
         # List all indicators loaded flattening dictionary of inficators and levels
@@ -156,6 +177,23 @@ class panel_constructor:
             i_list.append(['i' + str(i) + '_' + str(y) for y in self.ilevels_dict[i]] )
         self.i_list = list(chain.from_iterable(i_list))
         
+        # Set default indicators dictionary
+        if ind_dict is None:
+            self.ind_dict = {
+                 1 : 'transactions_per_hour.csv',
+                 2 : 'unique_subscribers_per_hour.csv',
+                 3 : 'unique_subscribers_per_day.csv',
+                 4 : 'percent_of_all_subscribers_active_per_day.csv',
+                 5 : 'origin_destination_connection_matrix_per_day.csv',
+                 6 : 'unique_subscriber_home_locations_per_week.csv',
+                 7 : 'mean_distance_per_day.csv',
+                 8 : 'mean_distance_per_week.csv',
+                 9 : 'week_home_vs_day_location_per_day.csv',
+                 10: 'origin_destination_matrix_time_per_day.csv',
+                 11: 'unique_subscriber_home_locations_per_month.csv'}
+        else:
+            self.ind_dict = ind_dict
+        #----------------------------------------------------------#
         # Load indicators:
         # 1. Transactions per hour - Always created since it is needed for usage outliers
         self.i1_3 = i_indicator(num = 1,  index_cols = ['hour', 'region'], files_df = self.indicators_df)
@@ -235,13 +273,61 @@ class panel_constructor:
         for i in self.i_list:
             getattr(self, i).create_panel()
             print('Created comp. panel ' + i)
-
+    
     # Create clean panel for all loaded indicators
     def clean_panel(self, outliers_df):
         for i in self.i_list:
             getattr(self, i).create_clean_panel(outliers_df = outliers_df)
             print('Created clean panel ' + i)
         # i1.create_clean_panel(outliers_df = outliers_df)
+    
+    # Load other mno indicators
+    def load_other_mno(self, mno_path, mno_suffix):
+        def admin_prefix(x):
+            if x == 2:
+                prefix = 'admin2'
+            elif x == 3:
+                prefix = 'admin3'
+            else:
+                prefix = x
+            return prefix
+        
+        # Loop through levels dict values and load attributes
+        for i in list(self.ilevels_dict.keys()):
+            for j in range(0, len(self.ilevels_dict[i])):
+                # print(str(i) + '_' + str(j))
+                path = os.path.join(mno_path, 
+                                    admin_prefix(self.ilevels_dict[i][j]),
+                                    self.ind_dict[i])
+                attr_name = 'i' + str(i) + '_' + str(self.ilevels_dict[i][j]) + mno_suffix
+                df = pd.read_csv(path)
+                # Create attributes
+                print('Loading:' + attr_name + 'from ' + path)
+                setattr(self, attr_name, df)
+    # Add other mno to panel
+    def add_other_provider(self, mno_path, mno_suffix):
+        # Load other mno data
+        self.load_other_mno(mno_path, mno_suffix)
+        # Add to panel
+        self.i1_3.add_provider(getattr(self, 'i1_3' + mno_suffix))
+        self.i2_3.add_provider(getattr(self, 'i2_3' + mno_suffix))
+        self.i3_2.add_provider(getattr(self, 'i3_2' + mno_suffix))
+        self.i3_3.add_provider(getattr(self, 'i3_3' + mno_suffix))
+        # self.i4_country.add_provider(getattr(self, 'i4_country' + mno_suffix))
+        self.i5_2.add_provider(getattr(self, 'i5_2' + mno_suffix))
+        self.i5_3.add_provider(getattr(self, 'i5_3' + mno_suffix))
+        self.i6_3.add_provider(getattr(self, 'i6_3' + mno_suffix))
+        self.i7_2.add_provider(getattr(self, 'i7_2' + mno_suffix))
+        self.i7_3.add_provider(getattr(self, 'i7_3' + mno_suffix))
+        self.i8_2.add_provider(getattr(self, 'i8_2' + mno_suffix))
+        self.i8_3.add_provider(getattr(self, 'i8_3' + mno_suffix))
+        self.i9_2.add_provider(getattr(self, 'i9_2' + mno_suffix))
+        self.i9_3.add_provider(getattr(self, 'i9_3' + mno_suffix))
+        # self.i10_2.add_provider(getattr(self, 'i10_2' + mno_suffix))
+        # self.i10_3.add_provider(getattr(self, 'i10_3' + mno_suffix))
+        self.i11_2.add_provider(getattr(self, 'i11_2' + mno_suffix))
+        self.i11_3.add_provider(getattr(self, 'i11_3' + mno_suffix))
+        
     # Export panel datasets for all loaded indicators
     def export(self, path):
         print("Saving in " + path)
