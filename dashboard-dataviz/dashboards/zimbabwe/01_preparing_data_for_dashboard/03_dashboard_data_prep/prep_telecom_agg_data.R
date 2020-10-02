@@ -124,7 +124,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       temp <- make_sparkline(df_distance_mean,
                              unit = unit,
                              timeunit = timeunit,
-                             varname = "Density")
+                             varname = "Mean Distance Traveled")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_mean$date),
@@ -157,7 +157,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       temp <- make_sparkline(df_distance_stdev,
                              unit = unit,
                              timeunit = timeunit,
-                             varname = "Density")
+                             varname = "Std Dev Distance Traveled")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_stdev$date),
@@ -189,7 +189,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       temp <- make_sparkline(df_movement_net,
                              unit = unit,
                              timeunit = timeunit,
-                             varname = "Density")
+                             varname = "Net Movement")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_movement_net$date),
