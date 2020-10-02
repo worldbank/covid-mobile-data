@@ -1,4 +1,8 @@
-# Zimbabwe Mobility Dashboard
+# Mozambique Mobility Dashboard
+
+# TODO:
+# 1. Add sparkline to label
+# 2. Fix zooming to reigon, now that not in proxy. 
 
 ##### ******************************************************************** #####
 # 1. PACKAGES AND SETUP ========================================================
@@ -224,8 +228,9 @@ ui_main <- fluidPage(
                    align = "center"),
             
             column(12, align = "center", htmlOutput("var_definitions")),
-            leafletOutput("mapward",
-                          height = 720),
+            #leafletOutput("mapward",
+            #              height = 720),
+            uiOutput("mapward"),
             
             absolutePanel(
               id = "controls",
@@ -799,24 +804,25 @@ server = (function(input, output, session) {
       # **** 4.3.1 Indicator Map -----------------------------------------------
       
       #### Basemap
-      output$mapward <- renderLeaflet({
-        
-        map_sp <- ward_sp_filter()
-        map_extent <- map_sp %>% extent()
-        
-        leaflet() %>%
-          addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-          fitBounds(
-            lng1 = map_extent@xmin,
-            lat1 = map_extent@ymin,
-            lng2 = map_extent@xmax,
-            lat2 = map_extent@ymax
-          ) 
-        
-      })
+      # output$mapward <- renderLeaflet({
+      #   
+      #   map_sp <- ward_sp_filter()
+      #   map_extent <- map_sp %>% extent()
+      #   
+      #   leaflet() %>%
+      #     addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+      #     fitBounds(
+      #       lng1 = map_extent@xmin,
+      #       lat1 = map_extent@ymin,
+      #       lng2 = map_extent@xmax,
+      #       lat2 = map_extent@ymax
+      #     ) 
+      #   
+      # })
       
       #### Add polygons to map reactively
-      observe({
+      output$mapward <- renderUI({
+        #observe({
         
         #### Grab polygon
         map_data <- ward_sp_filter()
@@ -1004,36 +1010,68 @@ server = (function(input, output, session) {
         }
         
         
+        #### Load sparkline
+        if(!is.null(input$select_unit) & !is.null(input$select_variable) &
+           !is.null(input$select_timeunit)){
+          #  
+          data_spark <- readRDS(file.path("data_inputs_for_dashboard",
+                                          paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
+          spark <- data_spark$l_spark
+          
+          map_labels <- paste0(map_labels, "<br>", spark)
+          
+          #map_labelsa <<- paste0(map_labels, "<br>", spark)
+          #map_dataa <<- map_data
+          
+          # map_dataa$l <- map_labelsa
+          # leaflet() %>%
+          #   addPolygons(data=map_dataa,
+          #               label = lapply(map_labelsa, htmltools::HTML),
+          #               popupOptions = popupOptions(minWidth = 200,
+          #                                           maxHeight = 150)) %>%
+          #   onRender("function(el,x) {
+          #     this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+          #   }") %>%
+          #   add_deps("sparkline") %>%
+          # browsable()
+          
+        }
+        
         #### Main Leaflet Map 
-        l <- leafletProxy("mapward", data = map_data) %>%
-          addPolygons(
-            label = ~ lapply(map_labels, htmltools::HTML),
-            color = ~ pal_ward(map_values),
-            
-            layerId = ~ name,
-            
-            stroke = TRUE,
-            weight = 1,
-            smoothFactor = 0.2,
-            fillOpacity = alpha,
-            dashArray = "3",
-            
-            highlight =
-              highlightOptions(
-                weight = 5,
-                color = "#666",
-                dashArray = "",
-                fillOpacity = 1,
-                bringToFront = TRUE
-              ),
-            
-            labelOptions = labelOptions(
-              style = list("font-weight" = "normal",
-                           padding = "3px 8px"),
-              textsize = "15px",
-              direction = "auto"
-            )
+        #l <- leafletProxy("mapward", data = map_data) %>%
+        l <- leaflet(height = "720px") %>%
+          addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+          addPolygons(data = map_data,
+                      label = ~ lapply(map_labels, htmltools::HTML),
+                      color = ~ pal_ward(map_values),
+                      
+                      layerId = ~ name,
+                      
+                      stroke = TRUE,
+                      weight = 1,
+                      smoothFactor = 0.2,
+                      fillOpacity = alpha,
+                      dashArray = "3",
+                      
+                      highlight =
+                        highlightOptions(
+                          weight = 5,
+                          color = "#666",
+                          dashArray = "",
+                          fillOpacity = 1,
+                          bringToFront = TRUE
+                        ),
+                      
+                      labelOptions = labelOptions(
+                        style = list("font-weight" = "normal",
+                                     padding = "3px 8px"),
+                        textsize = "15px",
+                        direction = "auto"
+                      )
           ) %>%
+          onRender("function(el,x) {
+                this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+             }") %>%
           clearControls() %>%
           addLegend(
             values = c(map_values), # c(0, map_values)
@@ -1111,7 +1149,27 @@ server = (function(input, output, session) {
         #   }
         # }
         
-        l
+        as.character.htmlwidget <- function(x, ...) {
+          htmltools::HTML(
+            htmltools:::as.character.shiny.tag.list(
+              htmlwidgets:::as.tags.htmlwidget(
+                x
+              ),
+              ...
+            )
+          )
+        }
+        
+        add_deps <- function(dtbl, name, pkg = name) {
+          tagList(
+            dtbl,
+            htmlwidgets::getDependency(name, pkg)
+          )
+        }
+        
+        l %>%
+          add_deps("sparkline") %>%
+          browsable()
         
       })
       
