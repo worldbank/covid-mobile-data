@@ -72,29 +72,23 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
     # Short name for time unit, needed for file paths
     if(timeunit %in% "Daily") timeunit_short <- "daily"
     if(timeunit %in% "Weekly") timeunit_short <- "weekly"
-  
+    
     ##### Process Non-OD Data ##### --------------------------------------------
     
     # Process Density Data -----------------------------------------------------
     if(PROCESS_DENSITY_DATA){
       
       ### Load Data
-      if(timeunit_short %in% "day"){
-        #df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-        #                                paste0("count_unique_subscribers_per_region_per_",
-        #                                       timeunit_short,
-        #                                       "_scaled.Rds")))
-        df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("i3_",
-                                               timeunit_short,
-                                               ".Rds")))
-      } else {
-        df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("i3_",
-                                               timeunit_short,
-                                               ".Rds")))
-      }
-
+      df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
+                                      paste0("i3_",
+                                             timeunit_short,
+                                             ".Rds")))
+      
+      ### make_sparkline
+      temp <- make_sparkline(df_density,
+                             unit = unit,
+                             timeunit = timeunit,
+                             varname = "Density")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_density$date),
@@ -113,7 +107,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      timeunit = timeunit,
                      varname = "Density",
                      vars_include = "density")
-
+      
     }
     
     # Process Mean Distance Data -----------------------------------------------
@@ -121,10 +115,16 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       ## Load data
       df_distance_mean <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                       paste0("i7_",
-                                              timeunit_short,
-                                              "_mean_distance",
-                                              ".Rds")))
+                                            paste0("i7_",
+                                                   timeunit_short,
+                                                   "_mean_distance",
+                                                   ".Rds")))
+      
+      ### make_sparkline
+      temp <- make_sparkline(df_distance_mean,
+                             unit = unit,
+                             timeunit = timeunit,
+                             varname = "Density")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_mean$date),
@@ -148,10 +148,16 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       
       ## Load data
       df_distance_stdev <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                            paste0("i7_",
-                                                   timeunit_short,
-                                                   "_stdev_distance",
-                                                   ".Rds")))
+                                             paste0("i7_",
+                                                    timeunit_short,
+                                                    "_stdev_distance",
+                                                    ".Rds")))
+      
+      ### make_sparkline
+      temp <- make_sparkline(df_distance_stdev,
+                             unit = unit,
+                             timeunit = timeunit,
+                             varname = "Density")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_stdev$date),
@@ -179,6 +185,12 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                                                   timeunit_short,
                                                   ".Rds")))
       
+      ### make_sparkline
+      temp <- make_sparkline(df_movement_net,
+                             unit = unit,
+                             timeunit = timeunit,
+                             varname = "Density")
+      
       ### prep_density_date_i
       temp <- lapply(unique(df_movement_net$date),
                      prep_nonod_date_i,
@@ -195,7 +207,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      timeunit = timeunit,
                      varname = "Net Movement")
     }
-
+    
     ##### Process OD Data ##### ------------------------------------------------
     
     # Process Movement Data ----------------------------------------------------
@@ -216,7 +228,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      timeunit,
                      admin_sp)
       
-
+      
       ### prep_movement_adminname_i
       temp <- lapply(unique(unique(df_movement$name_dest),
                             unique(df_movement$name_origin)),  
@@ -224,11 +236,11 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      df_movement,  
                      unit,
                      timeunit)
-
+      
       ### prep_movement_adminname_i_date_i
       # Loop through units and dates; apply function separately for moving in 
       # and out
-
+      
       i <- 1
       t <- Sys.time()
       for(name_i in unique(unique(df_movement$name_dest),
@@ -257,16 +269,16 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                          admin_df,
                          admin_sp,
                          mc.cores = N_CORES)
-      
+        
         i <- i + 1
         difftime(Sys.time(), t, units="secs") %>% print()
         t <- Sys.time()
       }
       
-
-    
+      
+      
     }
-
+    
   }
 }
 

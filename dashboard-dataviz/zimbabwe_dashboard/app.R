@@ -50,6 +50,7 @@ library(htmlwidgets)
 library(tidyverse)
 library(sf)
 library(tidyverse)
+library(htmlwidgets)
 library(raster)
 library(leaflet)
 library(leaflet.extras)
@@ -78,8 +79,9 @@ readRDS_encrypted <- function(filepath, data_key){
 source("functions.R")
 
 ##### ******************************************************************** #####
-# 2. LOAD/PREP DATA ============================================================
-# Load files that only need to load once at the beginning.
+# 2. LOAD DATA AND SET PARAMETERS ==============================================
+# Load files that only need to load once at the beginning and set select
+# parameters
 
 #### Spatial base layers
 ward_sp <- readRDS(file.path("data_inputs_for_dashboard", "wards_aggregated.Rds"))
@@ -103,34 +105,30 @@ data_source_description_text <- read.table("text_inputs/data_source_description.
 risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
   as.character()
 
-#### Dummy default parameters on load
-# These defaults aren't the first things to display. They are needed as the app
-# initially loads, before the capture the detauls defined later.
-unit_i <- "Wards"
-variable_i <- "Density"
-timeunit_i <- "Daily"
-date_i <- "2020-02-01"
-previous_zoom_selection <- ""
-last_selected_adm <- ""
-metric_i <- "Count"
+WEEKLY_VALUES_ALL <- c("2020-01-29",
+                       "2020-02-05",
+                       "2020-02-12",
+                       "2020-02-19",
+                       "2020-02-26",
+                       "2020-03-04",
+                       "2020-03-11", 
+                       "2020-03-18", 
+                       "2020-03-25", 
+                       "2020-04-01", 
+                       "2020-04-08", 
+                       "2020-04-15", 
+                       "2020-04-22",
+                       "2020-04-29", 
+                       "2020-05-06", 
+                       "2020-05-13", 
+                       "2020-05-20", 
+                       "2020-05-27",
+                       "2020-06-03",
+                       "2020-06-10",
+                       "2020-06-17",
+                       "2020-06-24")
 
-WEEKLY_VALUES <- c("2020-03-04",
-                   "2020-03-11", 
-                   "2020-03-18", 
-                   "2020-03-25", 
-                   "2020-04-01", 
-                   "2020-04-08", 
-                   "2020-04-15", 
-                   "2020-04-22",
-                   "2020-04-29", 
-                   "2020-05-06", 
-                   "2020-05-13", 
-                   "2020-05-20", 
-                   "2020-05-27",
-                   "2020-06-03",
-                   "2020-06-10",
-                   "2020-06-17",
-                   "2020-06-24")
+WEEKLY_VALUES_POST_BASELINE <- WEEKLY_VALUES_ALL[WEEKLY_VALUES_ALL > "2020-03-04"]
 
 ##### ******************************************************************** #####
 # 3. UIs =======================================================================
@@ -237,6 +235,7 @@ ui_main <- fluidPage(
             
             leafletOutput("mapward",
                           height = 720),
+            #uiOutput("mapward"),
             
             absolutePanel(
               id = "controls",
@@ -302,66 +301,33 @@ ui_main <- fluidPage(
       dashboardBody(
         fluidRow(
           
-          column(2,
-                 column(12,
-                        align="center",
-                        selectInput(
-                          "select_risk_indicator",
-                          label = h4("Select Indicator"),
-                          
-                          # Cambiarra braba arrumar isso dai
-                          choices = c("Severe COVID-19 risk",
-                                      "HIV prevalence", 
-                                      "Anaemia prevalence",
-                                      "Respiratory illness prevalence",
-                                      "Overweight prevalence", 
-                                      "Smoking prevalence"),
-                          selected = "Severe COVID-19 risk",
-                          multiple = F)
-                 ),
+          ## Selectors
+          column(9,
                  
-                 HTML(risk_analysis_text[1]),
-                 br(), br(),
-                 HTML(risk_analysis_text[2]),
-                 br(), br(),
-                 HTML(risk_analysis_text[3])
-                 
-                 
-          ),
-          
-          column(7, 
                  fluidRow(
-                   column(4, align="center", offset=2,
-                          
+                   
+                   column(4, align = "center",
+                          selectInput(
+                            "select_risk_indicator",
+                            label = h4("Select Indicator"),
+                            
+                            choices = c("Severe COVID-19 risk",
+                                        "HIV prevalence", 
+                                        "Anaemia prevalence",
+                                        "Respiratory illness prevalence",
+                                        "Overweight prevalence", 
+                                        "Smoking prevalence"),
+                            selected = "Severe COVID-19 risk",
+                            multiple = F)
+                   ),
+                   column(4, align = "center",
                           selectInput(
                             "move_date_risk",
                             label = h4("Movement Date - Week Of:"),
-                            choices = c("2020-01-29",
-                                        "2020-02-05",
-                                        "2020-02-12",
-                                        "2020-02-19",
-                                        "2020-02-26",
-                                        "2020-03-04",
-                                        "2020-03-11", 
-                                        "2020-03-18", 
-                                        "2020-03-25", 
-                                        "2020-04-01", 
-                                        "2020-04-08", 
-                                        "2020-04-15", 
-                                        "2020-04-22",
-                                        "2020-04-29", 
-                                        "2020-05-06", 
-                                        "2020-05-13", 
-                                        "2020-05-20", 
-                                        "2020-05-27",
-                                        "2020-06-03",
-                                        "2020-06-10",
-                                        "2020-06-17",
-                                        "2020-06-24"),
+                            choices = WEEKLY_VALUES_ALL,
                             multiple = F)
                    ),
-                   column(4, align="center",
-                          
+                   column(4, align = "center",
                           selectInput("move_type_risk",
                                       label = h4("Movement Indicator"),
                                       choices = c("Movement Out of Districts",
@@ -369,18 +335,30 @@ ui_main <- fluidPage(
                                       multiple = F
                           )
                    )
+                   
                  ),
                  
-                 column(12, align="center",
-                        strong("Click on a district to change the origin/destination")
-                 ),
+                 fluidRow(
+                   column(3,
+                          HTML(risk_analysis_text[1]),
+                          br(), br(),
+                          HTML(risk_analysis_text[2]),
+                          br(), br(),
+                          HTML(risk_analysis_text[3])
+                   ),
+                   column(9,
+                          column(12, align="center",
+                                 strong("Click on a district to change the origin/destination")
+                          ),
+                          
+                          leafletOutput("riskmap",
+                                        height = 720)
+                   )
+                 )
                  
-                 leafletOutput("riskmap",
-                               height = 720)
+                 
           ),
-          
-          column(3,
-                 align = "center",
+          column(3, align = "center",
                  wellPanel(
                    h3("District Rankings"),
                    div(style = 'height:720px; overflow-y: scroll',
@@ -390,7 +368,9 @@ ui_main <- fluidPage(
           )
           
           
+          
         )
+        
       )
       
     ),
@@ -468,7 +448,7 @@ server = (function(input, output, session) {
           passwords_df <- tryCatch(
             {
               #readRDS_encrypted("passwords.Rds", data_key)
-          
+              
               unserialize(aes_cbc_decrypt(readRDS("passwords.Rds"), key = data_key))
               
             },
@@ -491,7 +471,7 @@ server = (function(input, output, session) {
               subs_total <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","subscribers_total.Rds"),
                                                data_key)
               covid_cases <<- readRDS_encrypted(file.path("data_inputs_for_dashboard","covid_cases_districts_centroids.Rds"),
-                                               data_key)
+                                                data_key)
               
             } else{
               password_warning <<- "incorrect"
@@ -540,7 +520,7 @@ server = (function(input, output, session) {
       })
     }
     
-    # If not logged in, go to main ui
+    # If logged in, go to main ui
     if (USER$Logged == TRUE)
     {
       output$page <- renderUI({
@@ -664,7 +644,7 @@ server = (function(input, output, session) {
         # a week format.
         
         # Make sure is valid week day
-        if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES)){
+        if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES_ALL)){
           date_i <- "2020-03-04"
         }
         
@@ -963,7 +943,7 @@ server = (function(input, output, session) {
         map_sp <- ward_sp_filter()
         map_extent <- map_sp %>% extent()
         
-        leaflet() %>%
+        l <- leaflet() %>%
           addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
           fitBounds(
             lng1 = map_extent@xmin,
@@ -971,6 +951,9 @@ server = (function(input, output, session) {
             lng2 = map_extent@xmax,
             lat2 = map_extent@ymax
           ) 
+        
+        
+        l
         
       })
       
@@ -1175,10 +1158,41 @@ server = (function(input, output, session) {
         covid_cases$N_weight <- covid_cases$N^(1/1.7)*3
         #covid_cases$N_weight <- log(covid_cases$N + 1, base=2) * 7
         
+        #### Load sparkline
+        #if(!is.null(input$select_unit) & !is.null(input$select_variable) &
+        #   !is.null(input$select_timeunit)){
+        #  
+        #  data_spark <- readRDS(file.path("data_inputs_for_dashboard",
+        #                                  paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
+        #  spark <- data_spark$l_spark
+        #  
+        #  map_labels <- paste0(map_labels, "<br>", spark)
+        
+        #map_labelsa <<- paste0(map_labels, "<br>", spark)
+        #map_dataa <<- map_data
+        
+        # map_dataa$l <- map_labelsa
+        # leaflet() %>%
+        #   addPolygons(data=map_dataa,
+        #               label = lapply(map_labelsa, htmltools::HTML),
+        #               popupOptions = popupOptions(minWidth = 200,
+        #                                           maxHeight = 150)) %>%
+        #   onRender("function(el,x) {
+        #     this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+        #   }") %>%
+        #   add_deps("sparkline") %>%
+        # browsable()
+        
+        #}
+        
+        
         #### Main Leaflet Map 
         l <- leafletProxy("mapward", data = map_data) %>%
           addPolygons(
             label = ~ lapply(map_labels, htmltools::HTML),
+            #popupOptions = popupOptions(minWidth = 200,
+            #                            maxHeight = 150),
+            
             color = ~ pal_ward(map_values),
             
             layerId = ~ name,
@@ -1220,6 +1234,9 @@ server = (function(input, output, session) {
                      ),
                      group = "District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
           clearControls() %>%
+          #         onRender("function(el,x) {
+          #      this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+          #   }") %>%
           addLegend(
             values = c(map_values), # c(0, map_values)
             colors = legend_colors,
@@ -1233,7 +1250,7 @@ server = (function(input, output, session) {
             overlayGroups = c("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>"),
             position = 'topright',
             options = layersControlOptions(collapsed = FALSE)
-          ) %>% 
+          ) %>%
           hideGroup("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>")
         
         #### Add Origin/Desintation Polygon in Red
@@ -1261,48 +1278,29 @@ server = (function(input, output, session) {
           }
         }
         
-        #### Further Zoom to Region
-        # Only change if choose something different than what is previously
-        # selected.
-        # if(!is.null(input$select_region_zoom)){
-        #   if(previous_zoom_selection != input$select_region_zoom){
-        #     if(input$select_region_zoom %in% map_data$name){
-        #       
-        #       loc_i <- which(map_data$name %in% input$select_region_zoom)
-        #       
-        #       map_data_zoom <- map_data[loc_i,] 
-        #       
-        #       map_data_zoom_extent <- map_data_zoom %>% extent()
-        #       
-        #       l <- l %>%
-        #         fitBounds(
-        #           lng1 = map_data_zoom_extent@xmin,
-        #           lat1 = map_data_zoom_extent@ymin,
-        #           lng2 = map_data_zoom_extent@xmax,
-        #           lat2 = map_data_zoom_extent@ymax
-        #         ) 
-        #       
-        #       # Tried to highlight the zoomed region, but encountered issues
-        #       # Keeping here in case useful when fixing.
-        #       #%>%
-        #       #addPolygons(data=map_data_zoom,
-        #       #            #label = ~ lapply(map_labels, htmltools::HTML),
-        #       #            #layerId = ~ name_id,
-        #       #            color="yellow",
-        #       #            opacity = 1.0, fillOpacity = 0)
-        #       
-        #       # Create a global of the previous zoom selected. Without this,
-        #       # the map would always zoom to the region if the user changes
-        #       # any other input - which is annoying. By grabing the selected
-        #       # region and only zooming when this value changes, we avoid
-        #       # that annoying, unwanted zooming.
-        #       previous_zoom_selection <<- input$select_region_zoom
-        #       
-        #     }
-        #   }
-        # }
         
-        l
+        
+        as.character.htmlwidget <- function(x, ...) {
+          htmltools::HTML(
+            htmltools:::as.character.shiny.tag.list(
+              htmlwidgets:::as.tags.htmlwidget(
+                x
+              ),
+              ...
+            )
+          )
+        }
+        
+        add_deps <- function(dtbl, name, pkg = name) {
+          tagList(
+            dtbl,
+            htmlwidgets::getDependency(name, pkg)
+          )
+        }
+        
+        l #%>%
+        #add_deps("sparkline") %>%
+        #browsable()
         
       })
       
@@ -1438,35 +1436,15 @@ server = (function(input, output, session) {
               dplyr::mutate(group = i) 
             
             if(input$select_timeunit %in% "Daily"){
-              df_out <- df_out %>%
-                filter(date <= input$date_ward)
+              # UNCOMMENT TO ONLY SHOW TREND UNTIL DATE 
+              #df_out <- df_out %>%
+              #  filter(date <= input$date_ward)
             } else{
-              df_out$Date_short <- df_out$date %>%
-                as.character() %>%
-                substring(1,6) %>%
-                factor(levels = c("2020-01-29",
-                                  "2020-02-05",
-                                  "2020-02-12",
-                                  "2020-02-19",
-                                  "2020-02-26",
-                                  "2020-03-04",
-                                  "2020-03-11", 
-                                  "2020-03-18", 
-                                  "2020-03-25", 
-                                  "2020-04-01", 
-                                  "2020-04-08", 
-                                  "2020-04-15", 
-                                  "2020-04-22",
-                                  "2020-04-29", 
-                                  "2020-05-06", 
-                                  "2020-05-13", 
-                                  "2020-05-20", 
-                                  "2020-05-27",
-                                  "2020-06-03",
-                                  "2020-06-10",
-                                  "2020-06-17",
-                                  "2020-06-24"),
-                       ordered = T)
+              #df_out$Date_short <- df_out$date %>%
+              #  as.character() %>%
+              #  substring(1,6) %>%
+              #  factor(levels = WEEKLY_VALUES_ALL,
+              #         ordered = T)
               
               df_out <- df_out %>%
                 arrange(Date_short)
@@ -2164,28 +2142,7 @@ server = (function(input, output, session) {
             out <-   selectInput(
               "date_ward",
               label = NULL,
-              choices = c("2020-01-29",
-                          "2020-02-05",
-                          "2020-02-12",
-                          "2020-02-19",
-                          "2020-02-26",
-                          "2020-03-04",
-                          "2020-03-11", 
-                          "2020-03-18", 
-                          "2020-03-25", 
-                          "2020-04-01", 
-                          "2020-04-08", 
-                          "2020-04-15", 
-                          "2020-04-22",
-                          "2020-04-29", 
-                          "2020-05-06", 
-                          "2020-05-13", 
-                          "2020-05-20", 
-                          "2020-05-27",
-                          "2020-06-03",
-                          "2020-06-10",
-                          "2020-06-17",
-                          "2020-06-24"),
+              choices = WEEKLY_VALUES_ALL,
               
               multiple = F
             )
@@ -2197,23 +2154,7 @@ server = (function(input, output, session) {
             out <-   selectInput(
               "date_ward",
               label = NULL,
-              choices = c("2020-03-04",
-                          "2020-03-11", 
-                          "2020-03-18", 
-                          "2020-03-25", 
-                          "2020-04-01", 
-                          "2020-04-08", 
-                          "2020-04-15", 
-                          "2020-04-22",
-                          "2020-04-29", 
-                          "2020-05-06", 
-                          "2020-05-13", 
-                          "2020-05-20", 
-                          "2020-05-27",
-                          "2020-06-03",
-                          "2020-06-10",
-                          "2020-06-17",
-                          "2020-06-24"),
+              choices = WEEKLY_VALUES_POST_BASELINE,
               
               multiple = F
             )

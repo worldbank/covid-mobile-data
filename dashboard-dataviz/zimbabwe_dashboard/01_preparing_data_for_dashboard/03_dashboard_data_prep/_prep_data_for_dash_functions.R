@@ -6,6 +6,37 @@ check_inputs <- function(unit, timeunit){
   #try(if(!(timeunit %in% c("Daily", "Weekly"))) stop("unit must be Daily or Weekly"))
 }
 
+##### Sparkline ##### ----------------------------------------------------------
+
+make_sparkline <- function(df,
+                           unit,
+                           timeunit,
+                           varname){
+  
+  df_spark <- df %>%
+    arrange(date) %>%
+    split(.$name) %>% 
+    map_df(~{
+      l_spark <- sparkline(.x$value %>% round(2),
+                           type="line",
+                           lineColor = 'orange', 
+                           fillColor = NULL,
+                           chartRangeMin = 0,
+                           chartRangeMax = 8,
+                           width = 120,
+                           height = 70,
+                           highlightLineColor = 'orange', 
+                           highlightSpotColor = 'orange') 
+      data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
+    }, .id = 'name') %>%
+    arrange(name)
+  
+  saveRDS(df_spark, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
+                        paste0("spark_", unit, "_",varname,"_",timeunit, ".Rds")))
+  
+  return(NULL)
+}
+
 ##### Density ##### ------------------------------------------------------------
 prep_nonod_date_i <- function(date_i, 
                               df, 
