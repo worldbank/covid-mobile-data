@@ -105,6 +105,7 @@ data_source_description_text <- read.table("text_inputs/data_source_description.
 risk_analysis_text <- read.table("text_inputs/risk_analysis.txt", sep="{")[[1]] %>% 
   as.character()
 
+#### Weekly Dates: Start of Week
 WEEKLY_VALUES_ALL <- c("2020-01-29",
                        "2020-02-05",
                        "2020-02-12",
@@ -129,6 +130,9 @@ WEEKLY_VALUES_ALL <- c("2020-01-29",
                        "2020-06-24")
 
 WEEKLY_VALUES_POST_BASELINE <- WEEKLY_VALUES_ALL[WEEKLY_VALUES_ALL > "2020-03-04"]
+
+#### Dummy Initial Parameters
+last_selected_adm <- ""
 
 ##### ******************************************************************** #####
 # 3. UIs =======================================================================
@@ -233,10 +237,10 @@ ui_main <- fluidPage(
             strong(textOutput("map_instructions"),
                    align = "center"),
             
+            column(12, align = "center", htmlOutput("var_definitions")),
             leafletOutput("mapward",
                           height = 720),
-            #uiOutput("mapward"),
-            
+
             absolutePanel(
               id = "controls",
               class = "panel panel-default",
@@ -385,7 +389,7 @@ ui_main <- fluidPage(
                         fluidRow(
                           h1("Data Description", align = "center"),
                           
-                          h4("Data Sources"),
+                          h4("Data Sources and Privacy"),
                           data_source_description_text,
                           
                           h4("Methods"),
@@ -2021,7 +2025,57 @@ server = (function(input, output, session) {
         
       })
       
-      
+      # **** 4.4.9 Variable Definitions ----------------------------------------
+      output$var_definitions <- renderText({
+        
+        # Cleanup unit name
+        unit <- ""
+        unit_upper <- ""
+        if(!is.null(input$select_unit)){
+          unit_upper <- input$select_unit
+          unit <- unit_upper %>% tolower() %>% str_replace_all("s$", "")
+        }
+        
+        # Definition
+        out <- ""
+        if(!is.null(input$select_variable)){
+          
+          if(input$select_variable %in% "Density"){
+            out <- paste0("<b>Density</b> is the number of subscribers in the ",
+            unit," divided by its area.")
+          }
+          
+          if(input$select_variable %in% "Net Movement"){
+            out <- paste0("<b>Net Movement</b> is the number of trips into
+                          the ",unit," made by subscribes subtracted by the
+                          number of trips out of the ", unit, ".")
+          }
+          
+          if(grepl("Movement Into", input$select_variable)){
+            out <- paste0("<b>Movement Into ",unit_upper,"</b> is the number of trips
+                           made by subscribers into the ", unit, ".")
+            
+          }
+          
+
+          if(grepl("Movement Out of", input$select_variable)){
+            out <- paste0("<b>Movement Out of ",unit_upper,"</b> is the number of trips
+                           made by subscribers out of the ", unit, ".")
+          }
+          
+          if(input$select_variable %in% "Mean Distance Traveled"){
+            out <- paste0("<b>Mean Distance Traveled</b> is the mean distance traveled
+                           by subscribers in a", unit, ".")
+          }
+          
+          ## Emphasize
+          out <- paste0("<em>",out,"</em>")
+          
+        } 
+        
+        out
+        
+      })
       
       
       # ** 4.5 Controls - - - - - - - - - - - - - - - - - - - - - - - - - -----
