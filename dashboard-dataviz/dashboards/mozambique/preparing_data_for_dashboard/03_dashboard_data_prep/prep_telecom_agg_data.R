@@ -15,12 +15,12 @@ N_CORES <- 1
 #### Select which datasets to process
 # Non-OD
 PROCESS_DENSITY_DATA       <- T
-PROCESS_MOVEMENT_NET_DATA  <- F
-PROCESS_DISTANCE_MEAN_DATA <- F
-PROCESS_DISTANCE_STD_DATA  <- F
+PROCESS_MOVEMENT_NET_DATA  <- T
+PROCESS_DISTANCE_MEAN_DATA <- T
+PROCESS_DISTANCE_STD_DATA  <- T
 
 # OD
-PROCESS_MOVEMENT_DATA      <- F
+PROCESS_MOVEMENT_DATA      <- T
 
 #### Delete previous files before running? Useful if change naming conventions
 # of files, so need to get rid of old files. Otherwise will just add or overwrite.

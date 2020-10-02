@@ -8,7 +8,7 @@ options(rsconnect.max.bundle.files = 400000)
 
 #### Setting directory so will work locally
 if (Sys.info()[["user"]] == "WB521633") {
-  setwd("C:/Users/wb521633/Documents/Github/covid-mobile-data/dashboard-dataviz/mozambique_dashboard"
+  setwd("C:/Users/wb521633/Documents/Github/covid-mobile-data/dashboard-dataviz/dashboards/mozambique"
   )
 }
 
@@ -56,7 +56,7 @@ library(lubridate)
 library(geosphere)
 
 #### Logged; make false to enable password
-Logged = F
+Logged = T
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -82,25 +82,44 @@ data_source_description_text <- read.table("text_inputs/data_source_description.
   as.character()
 
 #### Dummy default parameters on load
-# These defaults aren't the first things to display. They are needed as the app
-# initially loads, before the capture the detauls defined later.
-unit_i <- "Postos"
-variable_i <- "Density"
-timeunit_i <- "Daily" 
-date_i <- "2020-03-04"
-previous_zoom_selection <- ""
 last_selected_adm <- ""
-metric_i <- "Count"
 
-WEEKLY_VALUES <- c("2020-03-04",
-                   "2020-03-11", 
-                   "2020-03-18", 
-                   "2020-03-25", 
-                   "2020-04-01", 
-                   "2020-04-08", 
-                   "2020-04-15", 
-                   "2020-04-22",
-                   "2020-04-29")
+#### Weekly Dates: Start of Week
+WEEKLY_VALUES_ALL <- c("2020-03-04",
+                       "2020-03-11", 
+                       "2020-03-18", 
+                       "2020-03-25", 
+                       "2020-04-01", 
+                       "2020-04-08", 
+                       "2020-04-15", 
+                       "2020-04-22",
+                       "2020-04-29")
+
+# WEEKLY_VALUES_ALL <- c("2020-01-29",
+#                        "2020-02-05",
+#                        "2020-02-12",
+#                        "2020-02-19",
+#                        "2020-02-26",
+#                        "2020-03-04",
+#                        "2020-03-11", 
+#                        "2020-03-18", 
+#                        "2020-03-25", 
+#                        "2020-04-01", 
+#                        "2020-04-08", 
+#                        "2020-04-15", 
+#                        "2020-04-22",
+#                        "2020-04-29", 
+#                        "2020-05-06", 
+#                        "2020-05-13", 
+#                        "2020-05-20", 
+#                        "2020-05-27",
+#                        "2020-06-03",
+#                        "2020-06-10",
+#                        "2020-06-17",
+#                        "2020-06-24")
+
+WEEKLY_VALUES_POST_BASELINE <- WEEKLY_VALUES_ALL[WEEKLY_VALUES_ALL > "2020-03-31"]
+
 
 ##### ******************************************************************** #####
 # 3. UIs =======================================================================
@@ -158,7 +177,7 @@ ui_main <- fluidPage(
         fluidRow(
           
           column(2,
-                 strong(textOutput("metric_description"))),
+                 strong(htmlOutput("metric_description"))),
           
           column(2,
                  align = "center",
@@ -204,6 +223,7 @@ ui_main <- fluidPage(
             strong(textOutput("map_instructions"),
                    align = "center"),
             
+            column(12, align = "center", htmlOutput("var_definitions")),
             leafletOutput("mapward",
                           height = 720),
             
@@ -431,11 +451,11 @@ server = (function(input, output, session) {
         
         ## Only update ward_i if user has clicked; otherwise, use default
         ward_i <- "Cidade De Matola"
-
+        
         if(!is.null(input$select_region_zoom)){
           ward_i <- input$select_region_zoom
         }
-
+        
         #if (!is.null(input$mapward_shape_click$id)){
         #  ward_i <- input$mapward_shape_click$id
         #}
@@ -490,7 +510,7 @@ server = (function(input, output, session) {
         # a week format.
         
         # Make sure is valid week day
-        if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES)){
+        if( (timeunit_i %in% "Weekly") & !(date_i %in% WEEKLY_VALUES_ALL)){
           date_i <- "2020-03-04"
         }
         
@@ -1140,74 +1160,23 @@ server = (function(input, output, session) {
           
           #### If % change or baseline, add dots showing baseline values and
           # a line for mean
-          if(!(input$select_metric %in% "Count")){
-            
-            dow_i <- input$date_ward %>% as.Date() %>% wday()
-            data_dow_i <- data_line[data_line$dow %in% dow_i,] 
-            
-            data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 3,]
-            
-            p <- p + 
-              geom_point(data=data_dow_i, aes(x = Date,
-                                              y = N), color="orange4") +
-              geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
-            
+          if(!is.null(input$select_metric)){
+            if(!(input$select_metric %in% "Count")){
+              
+              dow_i <- input$date_ward %>% as.Date() %>% wday()
+              data_dow_i <- data_line[data_line$dow %in% dow_i,] 
+              
+              data_dow_i <- data_dow_i[month(data_dow_i$Date) %in% 3,]
+              
+              # p <- p + 
+              #   geom_point(data=data_dow_i, aes(x = Date,
+              #                                   y = N), color="orange4") +
+              #   geom_hline(yintercept = mean(data_dow_i$N), color="black", size=.2)
+              
+            }
           }
           
         }
-        
-        # Weekly - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # if (input$select_timeunit %in% "Weekly") {
-        #   
-        #   #### Main Line Graph Element
-        #   #data_line <- data_line[!grepl("Mar 28", data_line$Date),]
-        # 
-        #   
-        #   data_line$Date_short <- data_line$Date %>%
-        #     as.character() %>%
-        #     substring(1,6) %>%
-        #     factor(levels = c("Feb 01",
-        #                       "Feb 08",
-        #                       "Feb 15",
-        #                       "Feb 22",
-        #                       "Feb 29",
-        #                       "Mar 07",
-        #                       "Mar 14",
-        #                       "Mar 21",
-        #                       "Mar 28",
-        #                       "Apr 04",
-        #                       "Apr 11",
-        #                       "Apr 18"),
-        #            ordered = T)
-        #   
-        # 
-        #   
-        #   p <- ggplot(data_line,
-        #               aes(
-        #                 x = Date_short,
-        #                 y = N,
-        #                 group = 1
-        #               )) +
-        #     geom_line(size = 1, color = "orange") +
-        #     geom_point(size = 1, color = "orange") +
-        #     geom_point(data=data_line[as.character(data_line$Date) %in% as.character(input$date_ward),],
-        #                aes(x = Date_short,
-        #                    y = N),
-        #                size = 2.5, pch = 1, color = "forestgreen") +
-        #     labs(
-        #       x = "",
-        #       y = "",
-        #       title = "",
-        #       color = ""
-        #     ) +
-        #     scale_y_continuous(labels = scales::comma, 
-        #                        limits = c(min(data_line$N, na.rm=T), 
-        #                                   max(data_line$N, na.rm =
-        #                                         T))) +
-        #     theme_minimal() +
-        #     theme(plot.title = element_text(hjust = 0.5),
-        #           axis.text.x = element_text(angle = 45))
-        # }
         
         # Define Plotly - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         ggplotly(p, tooltip = c("Date", "N")) %>%
@@ -1261,7 +1230,10 @@ server = (function(input, output, session) {
         data_for_table <- data_for_table[!is.na(data_for_table$name),]
         table_max <- nrow(data_for_table)
         
-        if(nrow(data_for_table) > 0){
+        if((nrow(data_for_table) > 0) & 
+           !is.null(input$select_unit) &
+           !is.null(input$select_variable) &
+           !is.null(input$select_timeunit)){
           
           #### Add Sparkline
           # https://bl.ocks.org/timelyportfolio/65ba35cec3d61106ef12865326e723e8
@@ -1274,34 +1246,13 @@ server = (function(input, output, session) {
               dplyr::mutate(group = i) 
             
             if(input$select_timeunit %in% "Daily"){
-              df_out <- df_out %>%
-                filter(date <= input$date_ward)
+              # df_out <- df_out %>%
+              #    filter(date <= input$date_ward)
             } else{
               df_out$Date_short <- df_out$date %>%
                 as.character() %>%
                 substring(1,6) %>%
-                factor(levels = c("2020-01-29",
-                                  "2020-02-05",
-                                  "2020-02-12",
-                                  "2020-02-19",
-                                  "2020-02-26",
-                                  "2020-03-04",
-                                  "2020-03-11", 
-                                  "2020-03-18", 
-                                  "2020-03-25", 
-                                  "2020-04-01", 
-                                  "2020-04-08", 
-                                  "2020-04-15", 
-                                  "2020-04-22",
-                                  "2020-04-29", 
-                                  "2020-05-06", 
-                                  "2020-05-13", 
-                                  "2020-05-20", 
-                                  "2020-05-27",
-                                  "2020-06-03",
-                                  "2020-06-10",
-                                  "2020-06-17",
-                                  "2020-06-24"),
+                factor(levels = WEEKLY_VALUES_ALL,
                        ordered = T)
               
               df_out <- df_out %>%
@@ -1349,8 +1300,10 @@ server = (function(input, output, session) {
         }
         
         ## Add metric if not count
-        if(input$select_metric %in% c("% Change", "Z-Score")){
-          var_name <- paste0(var_name, ": ", input$select_metric)
+        if(!is.null(input$select_metric)){
+          if(input$select_metric %in% c("% Change", "Z-Score")){
+            var_name <- paste0(var_name, ": ", input$select_metric)
+          }
         }
         
         #### Make Table
@@ -1469,12 +1422,30 @@ server = (function(input, output, session) {
         
         if(!is.null(input$select_metric)){
           if(input$select_metric %in% "% Change"){
-            out <- "% Change calculated relevant to baseline values"
+            out <- '<span style="color:red">% Change</span> calculated relevant to baseline values.'
+            
           }
           
           if(input$select_metric %in% "Z-Score"){
-            out <- "Z-Score is the change in value relevant to average baseline values scaled by the typical deviation in baseline values."
+            out <- '<span style="color:red">Z-Score</span> is the change in value relative to average baseline values scaled by the typical deviation in baseline values.'
           }
+        }
+        
+        
+        if(!is.null(input$select_timeunit)){
+          
+          if(out != ""){
+            
+            
+            if(input$select_timeunit %in% "Daily"){
+              out <- paste(out, 'Baseline values are same types of days (weekdays or weekends) in March.')
+            }
+            
+            if(input$select_timeunit %in% "Weekly"){
+              out <- paste(out, 'Baseline values are weeks in March.')
+            }
+          }
+          
         }
         
         out
@@ -1590,7 +1561,57 @@ server = (function(input, output, session) {
         
       })
       
-      
+      # **** 4.4.9 Variable Definitions ----------------------------------------
+      output$var_definitions <- renderText({
+        
+        # Cleanup unit name
+        unit <- ""
+        unit_upper <- ""
+        if(!is.null(input$select_unit)){
+          unit_upper <- input$select_unit
+          unit <- unit_upper %>% tolower() %>% str_replace_all("s$", "")
+        }
+        
+        # Definition
+        out <- ""
+        if(!is.null(input$select_variable)){
+          
+          if(input$select_variable %in% "Density"){
+            out <- paste0("<b>Density</b> is the number of subscribers in the ",
+                          unit," divided by its area.")
+          }
+          
+          if(input$select_variable %in% "Net Movement"){
+            out <- paste0("<b>Net Movement</b> is the number of trips into
+                          the ",unit," made by subscribes subtracted by the
+                          number of trips out of the ", unit, ".")
+          }
+          
+          if(grepl("Movement Into", input$select_variable)){
+            out <- paste0("<b>Movement Into ",unit_upper,"</b> is the number of trips
+                          made by subscribers into the ", unit, ".")
+            
+          }
+          
+          
+          if(grepl("Movement Out of", input$select_variable)){
+            out <- paste0("<b>Movement Out of ",unit_upper,"</b> is the number of trips
+                          made by subscribers out of the ", unit, ".")
+          }
+          
+          if(input$select_variable %in% "Mean Distance Traveled"){
+            out <- paste0("<b>Mean Distance Traveled</b> is the mean distance traveled
+                          by subscribers in a", unit, ".")
+          }
+          
+          ## Emphasize
+          out <- paste0("<em>",out,"</em>")
+          
+        } 
+        
+        out
+        
+      })
       
       
       # ** 4.5 Controls - - - - - - - - - - - - - - - - - - - - - - - - - -----
@@ -1713,15 +1734,7 @@ server = (function(input, output, session) {
             out <-   selectInput(
               "date_ward",
               label = NULL,
-              choices = c("2020-03-04",
-                          "2020-03-11", 
-                          "2020-03-18", 
-                          "2020-03-25", 
-                          "2020-04-01", 
-                          "2020-04-08", 
-                          "2020-04-15", 
-                          "2020-04-22",
-                          "2020-04-29"),
+              choices = WEEKLY_VALUES_ALL,
               
               multiple = F
             )
@@ -1733,11 +1746,7 @@ server = (function(input, output, session) {
             out <-   selectInput(
               "date_ward",
               label = NULL,
-              choices = c("2020-04-01", 
-                          "2020-04-08", 
-                          "2020-04-15", 
-                          "2020-04-22",
-                          "2020-04-29"),
+              choices = WEEKLY_VALUES_POST_BASELINE,
               
               multiple = F
             )

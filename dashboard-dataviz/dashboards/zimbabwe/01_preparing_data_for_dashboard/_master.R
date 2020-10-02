@@ -65,10 +65,10 @@ DASHBOARD_CLEAN_TELECOM_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for
 DASHBOARD_PREP_DASHBOARD_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "03_dashboard_data_prep")
 
 #### Functions #### ============================================================
-source(file.path(DASHBOARD_CLEAN_TELECOM_PATH,
+source(file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards",
                  "_tp_functions.R"))
 
-source(file.path(DASHBOARD_PREP_DASHBOARD_PATH,
+source(file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards",
                  "_prep_data_for_dash_functions.R"))
 
 #### Scripts #### ==============================================================

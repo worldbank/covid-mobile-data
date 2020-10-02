@@ -5,8 +5,8 @@
 options(rsconnect.max.bundle.files = 400000)
 
 CLEAN_SPATIAL_DATA <- F
-CLEAN_TELECOM_DATA <- F
-PREP_DATA_FOR_DASH <- F
+CLEAN_TELECOM_DATA <- T
+PREP_DATA_FOR_DASH <- T
 
 BASELINE_DATE <- "2020-03-31"
 
@@ -55,20 +55,17 @@ GEO_PATH        <- file.path(PROJECT_PATH, "Mozambique", "geo_files")
 CLEAN_DATA_ADM2_PATH <- file.path(PROJECT_PATH, "Mozambique", "files_for_dashboard", "files_clean", "adm2")
 CLEAN_DATA_ADM3_PATH <- file.path(PROJECT_PATH, "Mozambique", "files_for_dashboard", "files_clean", "adm3")
 
-CLEAN_TELE_FUN_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard", "01_preparing_data_for_dashboard", "02_clean_telecom_data")
-PREP_DASH_FUN_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard", "01_preparing_data_for_dashboard", "03_dashboard_data_prep")
-
 DASHBOARD_DATA_ONEDRIVE_PATH <- file.path(PROJECT_PATH, "Mozambique", "files_for_dashboard", "files_dashboard")
-DASHBOARD_DATA_GITHUB_PATH     <- file.path(GITHUB_PATH, "dashboard-dataviz", "mozambique_dashboard",
+DASHBOARD_DATA_GITHUB_PATH     <- file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards", "mozambique",
                                             "data_inputs_for_dashboard")
 
-PREP_DATA_CODE_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "mozambique_dashboard", "preparing_data_for_dashboard")
+PREP_DATA_CODE_PATH <- file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards", "mozambique", "preparing_data_for_dashboard")
 
 #### Functions #### ============================================================
-source(file.path(CLEAN_TELE_FUN_PATH,
+source(file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards",
                  "_tp_functions.R"))
 
-source(file.path(PREP_DASH_FUN_PATH,
+source(file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards",
                  "_prep_data_for_dash_functions.R"))
 
 #### FUNCTIONS #### ============================================================
@@ -136,9 +133,10 @@ if(CLEAN_TELECOM_DATA){
 
 # 3. Prep Data for Dashboard ---------------------------------------------------
 if(PREP_DATA_FOR_DASH){
- # source(file.path(DASHBOARD_PREP_DASHBOARD_PATH, "prep_subs_obs_totals_data.R"))
-#  source(file.path(DASHBOARD_PREP_DASHBOARD_PATH, "prep_telecom_agg_data.R"))
+ source(file.path(PREP_DATA_CODE_PATH, "03_dashboard_data_prep", "prep_subs_obs_totals_data.R"))
+ source(file.path(PREP_DATA_CODE_PATH, "03_dashboard_data_prep", "prep_telecom_agg_data.R"))
 }
+
 
 
 

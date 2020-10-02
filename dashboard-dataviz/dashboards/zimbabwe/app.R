@@ -8,17 +8,13 @@ options(rsconnect.max.bundle.files = 400000)
 #options(rsconnect.max.bundle.size = 99999999999)
 
 #### Setting directory so will work locally
-if (Sys.info()[["user"]] == "robmarty") {
-  setwd("~/Documents/Github/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard")
-}
-
 if (Sys.info()[["user"]] == "WB521633") {
-  setwd("C:/Users/wb521633/Documents/Github/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
+  setwd("C:/Users/wb521633/Documents/Github/covid-mobile-data/dashboard-dataviz/dashboards/zimbabwe"
   )
 }
 
 if (Sys.info()[["user"]] == "wb519128") {
-  setwd("C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/zimbabwe_dashboard"
+  setwd("C:/Users/wb519128/GitHub/covid-mobile-data/dashboard-dataviz/dashboard/zimbabwe"
   )
 }
 
