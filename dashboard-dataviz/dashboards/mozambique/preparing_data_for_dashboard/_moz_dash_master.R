@@ -135,6 +135,7 @@ if(CLEAN_TELECOM_DATA){
 if(PREP_DATA_FOR_DASH){
  source(file.path(PREP_DATA_CODE_PATH, "03_dashboard_data_prep", "prep_subs_obs_totals_data.R"))
  source(file.path(PREP_DATA_CODE_PATH, "03_dashboard_data_prep", "prep_telecom_agg_data.R"))
+ source(file.path(PREP_DATA_CODE_PATH, "03_dashboard_data_prep", "data_to_github.R"))
 }
 
 

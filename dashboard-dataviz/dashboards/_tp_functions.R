@@ -397,8 +397,10 @@ tp_add_label_baseline <- function(data,
     label_name <- data[[name_var]]
   }
   
+  label_name <- paste0("<b>", label_name, "</b>")
+  
   #### Current Value
-  label_value <- paste0("This ", timeunit, "'s value: ",
+  label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",
                         data[[value_var]] %>% round(2), ".")
   
   label_value <- ifelse(is.na(data[[value_var]]),
