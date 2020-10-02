@@ -11,7 +11,9 @@ check_inputs <- function(unit, timeunit){
 make_sparkline <- function(df,
                            unit,
                            timeunit,
-                           varname){
+                           varname,
+                           width = 200,
+                           height = 150){
   
   df_spark <- df %>%
     arrange(date) %>%
@@ -23,8 +25,8 @@ make_sparkline <- function(df,
                            fillColor = NULL,
                            chartRangeMin = 0,
                            chartRangeMax = 8,
-                           width = 120,
-                           height = 70,
+                           width = width,
+                           height = height,
                            highlightLineColor = 'orange', 
                            highlightSpotColor = 'orange') 
       data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
