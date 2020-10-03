@@ -144,7 +144,8 @@ ui_password <- function() {
         passwordInput("passwd", "Password"),
         br(),
         actionButton("Login", "Log in")
-      )
+      ),
+      htmlOutput("password_warning")
     ),
     tags$style(
       type = "text/css",
@@ -363,8 +364,28 @@ server = (function(input, output, session) {
             passwords_df_i <- passwords_df[passwords_df$username %in% Username,]
             
             if(checkpw(Password, passwords_df_i$hashed_password) %in% TRUE){
+              password_warning <<- "correct"
               USER$Logged <- TRUE
+            } else{
+              password_warning <<- "incorrect"
             }
+            
+            output$password_warning <- renderText({
+              
+              out <- ""
+              
+              if(!is.null(password_warning)){
+                
+                if(password_warning %in% "incorrect"){
+                  out <- '<center><h4 style="color:red"><b>Wrong username or password</b></h4></center>'
+                } 
+                
+              }
+              
+              out
+              
+            })
+            
             
           }
         }
@@ -1017,8 +1038,7 @@ server = (function(input, output, session) {
             l <- leafletProxy("mapward", data = map_data) %>%
               #l <- leaflet(height = "720px") %>%
               #  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-              addPolygons(data = map_data,
-                          label = ~ lapply(map_labels, htmltools::HTML),
+              addPolygons(label = ~ lapply(map_labels, htmltools::HTML),
                           color = ~ pal_ward(map_values),
                           
                           layerId = ~ name,

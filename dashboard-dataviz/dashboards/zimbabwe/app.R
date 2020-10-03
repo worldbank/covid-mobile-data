@@ -234,9 +234,10 @@ ui_main <- fluidPage(
                    align = "center"),
             
             column(12, align = "center", htmlOutput("var_definitions")),
+            uiOutput("map_spark"),
             leafletOutput("mapward",
                           height = 720),
-
+            
             absolutePanel(
               id = "controls",
               class = "panel panel-default",
@@ -245,20 +246,20 @@ ui_main <- fluidPage(
               width = 220,
               fixed = TRUE,
               draggable = T,
-              height = 400,
+              height = 200,
               align = "center",
               
               h5("Select Date"),
               uiOutput("ui_select_timeunit"),
               
-              uiOutput("ui_select_region_zoom"),
+              #uiOutput("ui_select_region_zoom"),
               
-              selectInput(
-                "select_province",
-                label = h5(textOutput("select_province_title")),
-                choices = provinces,
-                multiple = F
-              ),
+              # selectInput(
+              #   "select_province",
+              #   label = h5(textOutput("select_province_title")),
+              #   choices = provinces,
+              #   multiple = F
+              # ),
               
               column(12, align = "left",
                      textOutput("legend_note_title")
@@ -273,7 +274,9 @@ ui_main <- fluidPage(
             wellPanel(
               
               strong(textOutput("line_title"), align = "center"),
-              h6(textOutput("line_instructions"), align = "center"),
+              br(),
+              fluidRow(column(6, align = "center", offset = 3, uiOutput("ui_select_region_zoom"))),
+              #h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
               
@@ -937,28 +940,10 @@ server = (function(input, output, session) {
       
       # **** 4.3.1 Indicator Map -----------------------------------------------
       
-      #### Basemap
-      output$mapward <- renderLeaflet({
+      # ****** 4.3.1.1 Map Data ------------------------------------------------
+      map_data_list <- reactive({
         
-        map_sp <- ward_sp_filter()
-        map_extent <- map_sp %>% extent()
-        
-        l <- leaflet() %>%
-          addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-          fitBounds(
-            lng1 = map_extent@xmin,
-            lat1 = map_extent@ymin,
-            lng2 = map_extent@xmax,
-            lat2 = map_extent@ymax
-          ) 
-        
-        
-        l
-        
-      })
-      
-      #### Add polygons to map reactively
-      observe({
+        od_index <- 1
         
         #### Grab polygon
         map_data <- ward_sp_filter()
@@ -1034,24 +1019,7 @@ server = (function(input, output, session) {
         }
         
         
-        #### Log values with negatives
-        # Define function to take the log of values that can deal with negative
-        # values. Just takes the absoltue value, logs, then reapplies negative
-        log_neg <- function(values){
-          # Log that takes into account zero. Only for logging values for
-          # displaying!
-          
-          values_pos_index <- (values > 0)  %in% T # %in% T to account for NAs 
-          values_neg_index <- (values <= 0) %in% T
-          
-          values_pos_log <- log(values[values_pos_index]+1)
-          values_neg_log <- -log(-(values[values_neg_index])+1)
-          
-          values[values_pos_index] <- values_pos_log
-          values[values_neg_index] <- values_neg_log
-          
-          return(values)
-        }
+        
         
         #### Make outliers less extreme
         # Chop off at percentile
@@ -1185,122 +1153,303 @@ server = (function(input, output, session) {
         
         #}
         
+        return(list(map_data = map_data,
+                    map_labels = map_labels,
+                    map_values = map_values,
+                    pal_ward = pal_ward,
+                    legend_colors = legend_colors,
+                    legend_labels = legend_labels,
+                    od_index = od_index,
+                    alpha = alpha,
+                    covid_cases = covid_cases))
         
-        #### Main Leaflet Map 
-        l <- leafletProxy("mapward", data = map_data) %>%
-          addPolygons(
-            label = ~ lapply(map_labels, htmltools::HTML),
-            #popupOptions = popupOptions(minWidth = 200,
-            #                            maxHeight = 150),
-            
-            color = ~ pal_ward(map_values),
-            
-            layerId = ~ name,
-            
-            stroke = TRUE,
-            weight = 1,
-            smoothFactor = 0.2,
-            fillOpacity = alpha,
-            dashArray = "3",
-            
-            highlight =
-              highlightOptions(
-                weight = 5,
-                color = "#666",
-                dashArray = "",
-                fillOpacity = 1,
-                bringToFront = FALSE
-              ),
-            
-            labelOptions = labelOptions(
-              style = list("font-weight" = "normal",
-                           padding = "3px 8px"),
-              textsize = "15px",
-              direction = "auto"
-            )
-          ) %>%
-          addCircles(data = covid_cases,
-                     lng = ~longitude,
-                     lat = ~latitude,
-                     label = ~lapply(label, htmltools::HTML),
-                     color = "red",
-                     opacity = 1,
-                     weight = ~N_weight,
-                     labelOptions = labelOptions(
-                       style = list("font-weight" = "normal",
-                                    padding = "3px 8px"),
-                       textsize = "15px",
-                       direction = "auto"
-                     ),
-                     group = "District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
-          clearControls() %>%
-          #         onRender("function(el,x) {
-          #      this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
-          #   }") %>%
-          addLegend(
-            values = c(map_values), # c(0, map_values)
-            colors = legend_colors,
-            labels = legend_labels,
-            opacity = 0.7,
-            title = "Legend",
-            position = "topright",
-            na.label = "Origin"
-          ) %>%
-          addLayersControl(
-            overlayGroups = c("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>"),
-            position = 'topright',
-            options = layersControlOptions(collapsed = FALSE)
-          ) %>%
-          hideGroup("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>")
+      })
+      
+      # ****** 4.3.1.2 Map Without Sparkline -----------------------------------
+      
+      #### Basemap
+      output$mapward <- renderLeaflet({
         
-        #### Add Origin/Desintation Polygon in Red
+        l <- NULL
+        
         if(!is.null(input$select_variable)){
-          if(input$select_variable %in% c("Movement Into Wards",
-                                          "Movement Out of Wards",
-                                          "Movement Into Districts",
-                                          "Movement Out of Districts")){
+          if(grepl("^Movement", input$select_variable)){
             
-            l <- l %>% 
-              addPolygons(data=map_data[od_index,],
-                          label = ~ lapply(map_labels[od_index], htmltools::HTML),
-                          labelOptions = labelOptions(
-                            style = list("font-weight" = "normal",
-                                         padding = "3px 8px"),
-                            textsize = "15px",
-                            direction = "auto"
-                          ),
-                          color="red",
-                          fillOpacity=1,
-                          stroke = TRUE,
-                          weight = 1,
-                          smoothFactor = 0.2)
+            map_sp <- ward_sp_filter()
+            map_extent <- map_sp %>% extent()
+            
+            l <- leaflet() %>%
+              addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+              fitBounds(
+                lng1 = map_extent@xmin,
+                lat1 = map_extent@ymin,
+                lng2 = map_extent@xmax,
+                lat2 = map_extent@ymax
+              ) 
+            
+          }
+        }
+        
+        l
+        
+      })
+      
+      #### Add polygons to map reactively
+      observe({
+        
+        l <- NULL
+        
+        if(!is.null(input$select_variable)){
+          if(grepl("^Movement", input$select_variable)){
+            
+            map_data_l <- map_data_list()
+            
+            map_data = map_data_l$map_data
+            map_labels = map_data_l$map_labels
+            map_values = map_data_l$map_values
+            pal_ward = map_data_l$pal_ward
+            legend_colors = map_data_l$legend_colors
+            legend_labels = map_data_l$legend_labels
+            covid_cases = map_data_l$covid_cases
+            od_index = map_data_l$od_index
+            alpha = map_data_l$alpha
+            
+            #### Main Leaflet Map 
+            l <- leafletProxy("mapward", data = map_data) %>%
+              addPolygons(
+                label = ~ lapply(map_labels, htmltools::HTML),
+                #popupOptions = popupOptions(minWidth = 200,
+                #                            maxHeight = 150),
+                
+                color = ~ pal_ward(map_values),
+                
+                layerId = ~ name,
+                
+                stroke = TRUE,
+                weight = 1,
+                smoothFactor = 0.2,
+                fillOpacity = alpha,
+                dashArray = "3",
+                
+                highlight =
+                  highlightOptions(
+                    weight = 5,
+                    color = "#666",
+                    dashArray = "",
+                    fillOpacity = 1,
+                    bringToFront = FALSE
+                  ),
+                
+                labelOptions = labelOptions(
+                  style = list("font-weight" = "normal",
+                               padding = "3px 8px"),
+                  textsize = "15px",
+                  direction = "auto"
+                )
+              ) %>%
+              addCircles(data = covid_cases,
+                         lng = ~longitude,
+                         lat = ~latitude,
+                         label = ~lapply(label, htmltools::HTML),
+                         color = "red",
+                         opacity = 1,
+                         weight = ~N_weight,
+                         labelOptions = labelOptions(
+                           style = list("font-weight" = "normal",
+                                        padding = "3px 8px"),
+                           textsize = "15px",
+                           direction = "auto"
+                         ),
+                         group = "District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
+              clearControls() %>%
+              #         onRender("function(el,x) {
+              #      this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+              #   }") %>%
+              addLegend(
+                values = c(map_values), # c(0, map_values)
+                colors = legend_colors,
+                labels = legend_labels,
+                opacity = 0.7,
+                title = "Legend",
+                position = "topright",
+                na.label = "Origin"
+              ) %>%
+              addLayersControl(
+                overlayGroups = c("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>"),
+                position = 'topright',
+                options = layersControlOptions(collapsed = FALSE)
+              ) %>%
+              hideGroup("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>")
+            
+            #### Add Origin/Desintation Polygon in Red
+            if(!is.null(input$select_variable)){
+              if(input$select_variable %in% c("Movement Into Wards",
+                                              "Movement Out of Wards",
+                                              "Movement Into Districts",
+                                              "Movement Out of Districts")){
+                
+                l <- l %>% 
+                  addPolygons(data=map_data[od_index,],
+                              label = ~ lapply(map_labels[od_index], htmltools::HTML),
+                              labelOptions = labelOptions(
+                                style = list("font-weight" = "normal",
+                                             padding = "3px 8px"),
+                                textsize = "15px",
+                                direction = "auto"
+                              ),
+                              color="red",
+                              fillOpacity=1,
+                              stroke = TRUE,
+                              weight = 1,
+                              smoothFactor = 0.2)
+                
+              }
+            }
             
           }
         }
         
         
         
-        as.character.htmlwidget <- function(x, ...) {
-          htmltools::HTML(
-            htmltools:::as.character.shiny.tag.list(
-              htmlwidgets:::as.tags.htmlwidget(
-                x
-              ),
-              ...
-            )
-          )
-        }
-        
-        add_deps <- function(dtbl, name, pkg = name) {
-          tagList(
-            dtbl,
-            htmlwidgets::getDependency(name, pkg)
-          )
-        }
         
         l #%>%
         #add_deps("sparkline") %>%
         #browsable()
+        
+      })
+      
+      # ****** 4.3.1.3 Map With Sparkline --------------------------------------
+      output$map_spark <- renderUI({
+        
+        l <- NULL
+        
+        if(!is.null(input$select_variable)){
+          if(!grepl("^Movement", input$select_variable)){
+            
+            map_data_l <- map_data_list()
+            
+            map_data = map_data_l$map_data
+            map_labels = map_data_l$map_labels
+            map_values = map_data_l$map_values
+            pal_ward = map_data_l$pal_ward
+            legend_colors = map_data_l$legend_colors
+            legend_labels = map_data_l$legend_labels
+            covid_cases = map_data_l$covid_cases
+            od_index = map_data_l$od_index
+            alpha = map_data_l$alpha
+            
+            #### Load Sparkline
+            if(!is.null(input$select_unit) & !is.null(input$select_variable) &
+               !is.null(input$select_timeunit)){
+              
+              data_spark <- readRDS(file.path("data_inputs_for_dashboard",
+                                              paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
+              
+              map_labels <- paste0(map_labels, "<br><br>", data_spark$l_spark)
+              
+            }
+            
+            #### Main Leaflet Map 
+            l <- leaflet(height = "700px") %>%
+              addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+              addPolygons(data = map_data,
+                          label = ~ lapply(map_labels, htmltools::HTML),
+                          #popupOptions = popupOptions(minWidth = 200,
+                          #                            maxHeight = 150),
+                          
+                          color = ~ pal_ward(map_values),
+                          
+                          layerId = ~ name,
+                          
+                          stroke = TRUE,
+                          weight = 1,
+                          smoothFactor = 0.2,
+                          fillOpacity = alpha,
+                          dashArray = "3",
+                          
+                          highlight =
+                            highlightOptions(
+                              weight = 5,
+                              color = "#666",
+                              dashArray = "",
+                              fillOpacity = 1,
+                              bringToFront = FALSE
+                            ),
+                          
+                          labelOptions = labelOptions(
+                            style = list("font-weight" = "normal",
+                                         padding = "3px 8px"),
+                            textsize = "15px",
+                            direction = "auto"
+                          )
+              ) %>%
+              addCircles(data = covid_cases,
+                         lng = ~longitude,
+                         lat = ~latitude,
+                         label = ~lapply(label, htmltools::HTML),
+                         color = "red",
+                         opacity = 1,
+                         weight = ~N_weight,
+                         labelOptions = labelOptions(
+                           style = list("font-weight" = "normal",
+                                        padding = "3px 8px"),
+                           textsize = "15px",
+                           direction = "auto"
+                         ),
+                         group = "District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
+              clearControls() %>%
+              onRender("function(el,x) {
+                this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+             }") %>%
+              addLegend(
+                values = c(map_values), # c(0, map_values)
+                colors = legend_colors,
+                labels = legend_labels,
+                opacity = 0.7,
+                title = "Legend",
+                position = "topright",
+                na.label = "Origin"
+              ) %>%
+              addLayersControl(
+                overlayGroups = c("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>"),
+                position = 'topright',
+                options = layersControlOptions(collapsed = FALSE)
+              ) %>%
+              hideGroup("District Level<br>COVID-19 Cases<br><em>As of June 25th</em>") %>%
+              add_deps("sparkline") %>%
+              browsable()
+            
+            #### Add Origin/Desintation Polygon in Red
+            if(!is.null(input$select_variable)){
+              if(input$select_variable %in% c("Movement Into Wards",
+                                              "Movement Out of Wards",
+                                              "Movement Into Districts",
+                                              "Movement Out of Districts")){
+                
+                l <- l %>% 
+                  addPolygons(data=map_data[od_index,],
+                              label = ~ lapply(map_labels[od_index], htmltools::HTML),
+                              labelOptions = labelOptions(
+                                style = list("font-weight" = "normal",
+                                             padding = "3px 8px"),
+                                textsize = "15px",
+                                direction = "auto"
+                              ),
+                              color="red",
+                              fillOpacity=1,
+                              stroke = TRUE,
+                              weight = 1,
+                              smoothFactor = 0.2)
+                
+              }
+            }
+            
+          }
+        }
+        
+        
+        l 
+        
         
       })
       
@@ -1818,18 +1967,6 @@ server = (function(input, output, session) {
         }
         
         #### Make Table
-        # https://stackoverflow.com/questions/49885176/is-it-possible-to-use-more-than-2-colors-in-the-color-tile-function
-        color_tile2 <- function (...) {
-          formatter("span", style = function(x) {
-            style(display = "block",
-                  padding = "0 4px", 
-                  font.weight = "bold",
-                  `border-radius` = "4px", 
-                  `background-color` = csscolor(matrix(as.integer(colorRamp(...)(normalize(as.numeric(x)))), 
-                                                       byrow=TRUE, dimnames=list(c("red","green","blue"), NULL), nrow=3)))
-          })}
-        
-        
         f_list <- list(
           `name` = formatter("span", style = ~ style(color = "black")),
           `value` = color_tile2(c("#95C6D3", "#ECDC87", "#EA7E71"))
@@ -2038,7 +2175,7 @@ server = (function(input, output, session) {
           
           if(input$select_variable %in% "Density"){
             out <- paste0("<b>Density</b> is the number of subscribers in the ",
-            unit," divided by its area.")
+                          unit," divided by its area.")
           }
           
           if(input$select_variable %in% "Net Movement"){
@@ -2053,7 +2190,7 @@ server = (function(input, output, session) {
             
           }
           
-
+          
           if(grepl("Movement Out of", input$select_variable)){
             out <- paste0("<b>Movement Out of ",unit_upper,"</b> is the number of trips
                            made by subscribers out of the ", unit, ".")
@@ -2082,7 +2219,8 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Wards"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Select Ward"), 
+                                #h5("Select Ward"), 
+                                NULL,
                                 choices = sort(ward_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -2095,7 +2233,8 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Districts"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Select District"), 
+                                #h5("Select District"), 
+                                NULL,
                                 choices = sort(district_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
