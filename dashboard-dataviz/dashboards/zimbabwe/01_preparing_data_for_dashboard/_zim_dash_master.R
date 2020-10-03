@@ -31,6 +31,7 @@ library(lubridate)
 library(data.table)
 library(mapview)
 library(readxl)
+library(sparkline)
 
 #### File paths #### ===========================================================
 

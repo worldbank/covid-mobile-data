@@ -14,13 +14,13 @@ N_CORES <- 1
 
 #### Select which datasets to process
 # Non-OD
-PROCESS_DENSITY_DATA       <- T
+PROCESS_DENSITY_DATA       <- F
 PROCESS_MOVEMENT_NET_DATA  <- F
 PROCESS_DISTANCE_MEAN_DATA <- F
 PROCESS_DISTANCE_STD_DATA  <- F
 
 # OD
-PROCESS_MOVEMENT_DATA      <- F
+PROCESS_MOVEMENT_DATA      <- T
 
 #### Delete previous files before running? Useful if change naming conventions
 # of files, so need to get rid of old files. Otherwise will just add or overwrite.
@@ -234,7 +234,7 @@ for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
       df_movement$province <- NA
       
       ### prep_movement_date_i
-      if(F){
+      if(T){
       temp <- lapply(unique(df_movement$date),  
                      prep_od_date_i, 
                      df_movement,  
@@ -259,7 +259,7 @@ for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
       # Loop through units and dates; apply function separately for moving in 
       # and out
     
-      if(F){
+      if(T){
       i <- 1
       t <- Sys.time()
       for(name_i in unique(unique(df_movement$name_dest),
