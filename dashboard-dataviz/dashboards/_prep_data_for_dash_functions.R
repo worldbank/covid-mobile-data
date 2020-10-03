@@ -7,44 +7,49 @@ check_inputs <- function(unit, timeunit){
 }
 
 ##### Sparkline ##### ----------------------------------------------------------
-make_sparkline <- function(df,
+make_sparkline <- function(date,
+                           df,
                            unit,
                            timeunit,
                            varname,
                            width = 270,
                            height = 120){
   
-  # df_spark <- df %>%
-  #   arrange(date) %>%
-  #   split(.$name) %>% 
-  #   map_df(~{
-  #     l_spark <- sparkline(.x$value %>% round(2),
-  #                          type="line",
-  #                          lineColor = 'black', 
-  #                          fillColor = 'orange',
-  #                          chartRangeMin = 0,
-  #                          chartRangeMax = 8,
-  #                          width = width,
-  #                          height = height) 
-  #     data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
-  #   }, .id = 'name') %>%
-  #   arrange(name)
+  print(date)
+  
+  df$bar <- 0
+  df$bar[df$date %in% date] <- 100
   
   df_spark <- df %>%
     arrange(date) %>%
-    group_by(name) %>%
-    summarize(l_spark = spk_chr(value %>% round(2),
-                                type ="line",
-                                lineColor = 'black', 
-                                fillColor = 'orange',
+    split(.$name) %>%
+    map_df(~{
+      l_spark_line <- sparkline(.x$value %>% round(2),
+                           type="line",
+                           lineColor = 'black',
+                           fillColor = 'orange',
+                           chartRangeMin = 0,
+                           chartRangeMax = 8,
+                           width = width,
+                           height = height)
+      l_spark_bar <- sparkline(.x$bar,
+                                type="bar",
+                                barColor = 'black',
                                 chartRangeMin = 0,
                                 chartRangeMax = 8,
                                 width = width,
-                                height = height)) %>%
-    arrange(name)
+                                height = height)
+      l_spark <- spk_composite(l_spark_line,
+                               l_spark_bar)
+      data.frame(l_spark_line = as.character(htmltools::as.tags(l_spark_line)),
+                 l_spark_bar = as.character(htmltools::as.tags(l_spark_bar)),
+                 l_spark = as.character(htmltools::as.tags(l_spark)))
+    }, .id = 'name') %>%
+    arrange(name) %>%
+    dplyr::select(name, l_spark)
   
   saveRDS(df_spark, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
-                              paste0("spark_", unit, "_",varname,"_",timeunit, ".Rds")))
+                              paste0("spark_", unit, "_",varname,"_",timeunit,"_date",date,".Rds")))
   
   return(NULL)
 }

@@ -18,7 +18,7 @@ i <- 1
 
 telecom_files <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, pattern = "*.Rds")
 
-#telecom_files <- telecom_files[grepl("spark", telecom_files)]
+telecom_files <- telecom_files[grepl("spark", telecom_files)]
 
 temp <- telecom_files %>%
   lapply(function(file_i){

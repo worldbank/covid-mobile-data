@@ -1136,7 +1136,7 @@ server = (function(input, output, session) {
                !is.null(input$select_timeunit)){
               
               data_spark <- readRDS(file.path("data_inputs_for_dashboard",
-                                              paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
+                                              paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, "_date",input$date_ward, ".Rds")))
               
               
               

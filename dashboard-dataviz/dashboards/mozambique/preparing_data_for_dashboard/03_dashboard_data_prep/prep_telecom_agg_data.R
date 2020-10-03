@@ -20,7 +20,7 @@ PROCESS_DISTANCE_MEAN_DATA <- F
 PROCESS_DISTANCE_STD_DATA  <- F
 
 # OD
-PROCESS_MOVEMENT_DATA      <- T
+PROCESS_MOVEMENT_DATA      <- F
 
 #### Delete previous files before running? Useful if change naming conventions
 # of files, so need to get rid of old files. Otherwise will just add or overwrite.
@@ -85,11 +85,13 @@ for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
       df_density$province <- NA
       
       ### make_sparkline
-      temp <- make_sparkline(df_density,
-                             unit = unit,
-                             timeunit = timeunit,
-                             varname = "Density")
-      
+      temp <- lapply(unique(df_density$date),
+             make_sparkline,
+             df = df_density,
+             unit = unit,
+             timeunit = timeunit,
+             varname = "Density")
+
       ### prep_density_date_i
       temp <- lapply(unique(df_density$date),
                      prep_nonod_date_i,
@@ -122,10 +124,12 @@ for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
       df_distance_mean$province <- NA
       
       ### make_sparkline
-      temp <- make_sparkline(df_distance_mean,
-                             unit = unit,
-                             timeunit = timeunit,
-                             varname = "Mean Distance Traveled")
+      temp <- lapply(unique(df_distance_mean$date),
+                     make_sparkline,
+                     df = df_distance_mean,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Mean Distance Traveled")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_mean$date),
@@ -156,10 +160,12 @@ for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
       df_distance_stdev$province <- NA
       
       ### make_sparkline
-      temp <- make_sparkline(df_distance_stdev,
-                             unit = unit,
-                             timeunit = timeunit,
-                             varname = "Std Dev Distance Traveled")
+      temp <- lapply(unique(df_distance_stdev$date),
+                     make_sparkline,
+                     df = df_distance_stdev,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Std Dev Distance Traveled")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_stdev$date),
@@ -190,10 +196,12 @@ for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
       
       
       ### make_sparkline
-      temp <- make_sparkline(df_movement_net,
-                             unit = unit,
-                             timeunit = timeunit,
-                             varname = "Net Movement")
+      temp <- lapply(unique(df_movement_net$date),
+                     make_sparkline,
+                     df = df_movement_net,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Net Movement")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_movement_net$date),

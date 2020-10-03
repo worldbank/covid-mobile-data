@@ -12,6 +12,7 @@ BASELINE_DATE <- "2020-03-31"
 
 #### Packages #### =============================================================
 library(tidyverse)
+library(sparkline)
 library(sf)
 library(sp)
 library(plotly)
