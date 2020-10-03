@@ -11,27 +11,35 @@ make_sparkline <- function(df,
                            unit,
                            timeunit,
                            varname,
-                           width = 200,
+                           width = 250,
                            height = 150){
+  
+  # df_spark <- df %>%
+  #   arrange(date) %>%
+  #   split(.$name) %>% 
+  #   map_df(~{
+  #     l_spark <- sparkline(.x$value %>% round(2),
+  #                          type="line",
+  #                          lineColor = 'black', 
+  #                          fillColor = 'orange',
+  #                          chartRangeMin = 0,
+  #                          chartRangeMax = 8,
+  #                          width = width,
+  #                          height = height) 
+  #     data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
+  #   }, .id = 'name') %>%
+  #   arrange(name)
   
   df_spark <- df %>%
     arrange(date) %>%
-    split(.$name) %>% 
-    map_df(~{
-      l_spark <- sparkline(.x$value %>% round(2),
-                           type="line",
-                           lineColor = 'orange', 
-                           fillColor = NULL,
+    group_by(name) %>%
+    summarize(l_spark = spk_chr(value %>% round(2),
+                           lineColor = 'black', 
+                           fillColor = 'orange',
                            chartRangeMin = 0,
                            chartRangeMax = 8,
-                           yaxis = T,
-                           xaxis = "interior",
                            width = width,
-                           height = height,
-                           highlightLineColor = 'orange', 
-                           highlightSpotColor = 'orange') 
-      data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
-    }, .id = 'name') %>%
+                           height = height)) %>%
     arrange(name)
   
   saveRDS(df_spark, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,

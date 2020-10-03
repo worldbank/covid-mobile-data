@@ -62,7 +62,7 @@ library(geosphere)
 source("functions.R")
 
 #### Logged; make false to enable password
-Logged = T
+Logged = F
 
 ##### ******************************************************************** #####
 # 2. LOAD/PREP DATA ============================================================
@@ -1118,7 +1118,7 @@ server = (function(input, output, session) {
               data_spark <- readRDS(file.path("data_inputs_for_dashboard",
                                               paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
               
-              map_labels <- paste0(map_labels, "<br>", data_spark$l_spark)
+              map_labels <- paste0(map_labels, "<br><br>", data_spark$l_spark)
               
             }
             
