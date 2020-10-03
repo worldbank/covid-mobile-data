@@ -397,7 +397,7 @@ tp_add_label_baseline <- function(data,
     label_name <- data[[name_var]]
   }
   
-  label_name <- paste0("<h3>", label_name, "</h3>")
+  label_name <- paste0("<h4>", label_name, "</h4>")
   
   #### Current Value
   label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",
@@ -434,13 +434,7 @@ tp_add_label_baseline <- function(data,
                        label_base)
   
   # Construct final label
-  label <- 
-    paste(label_name,
-          label_value,
-          label_base,
-          sep = "<br>") %>%
-    str_replace_all("<br><br>", "<br>")%>%
-    str_replace_all("<br>$", "")
+  label <- paste0(label_name, label_value, "<br>", label_base)
   
   data[[newvar_name]] <- label
   
@@ -484,7 +478,7 @@ tp_add_label_level <- function(data,
   } else{
     label_name <- data$name
   }
-  label_name <- paste0("<h3>", label_name, "</h3>")
+  label_name <- paste0("<h4>", label_name, "</h4>")
   
   #### Value
   label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",data$value  %>% round(2), ".")
@@ -524,14 +518,8 @@ tp_add_label_level <- function(data,
                          label_change)
   
   # Construct final label
-  label <- 
-    paste(label_name,
-          label_value,
-          label_change,
-          sep = "<br>") %>%
-    str_replace_all("<br><br>", "<br>")%>%
-    str_replace_all("<br>$", "")
-  
+  label <- paste0(label_name, label_value, "<br>", label_change)
+
   data_orig[[newvar_name]] <- label
   
   print("Done: tp_add_label_level")

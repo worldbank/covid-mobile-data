@@ -7,32 +7,44 @@ check_inputs <- function(unit, timeunit){
 }
 
 ##### Sparkline ##### ----------------------------------------------------------
-
 make_sparkline <- function(df,
                            unit,
                            timeunit,
-                           varname){
+                           varname,
+                           width = 270,
+                           height = 120){
+  
+  # df_spark <- df %>%
+  #   arrange(date) %>%
+  #   split(.$name) %>% 
+  #   map_df(~{
+  #     l_spark <- sparkline(.x$value %>% round(2),
+  #                          type="line",
+  #                          lineColor = 'black', 
+  #                          fillColor = 'orange',
+  #                          chartRangeMin = 0,
+  #                          chartRangeMax = 8,
+  #                          width = width,
+  #                          height = height) 
+  #     data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
+  #   }, .id = 'name') %>%
+  #   arrange(name)
   
   df_spark <- df %>%
     arrange(date) %>%
-    split(.$name) %>% 
-    map_df(~{
-      l_spark <- sparkline(.x$value %>% round(2),
-                           type="line",
-                           lineColor = 'orange', 
-                           fillColor = NULL,
-                           chartRangeMin = 0,
-                           chartRangeMax = 8,
-                           width = 120,
-                           height = 70,
-                           highlightLineColor = 'orange', 
-                           highlightSpotColor = 'orange') 
-      data.frame(l_spark = as.character(htmltools::as.tags(l_spark)))
-    }, .id = 'name') %>%
+    group_by(name) %>%
+    summarize(l_spark = spk_chr(value %>% round(2),
+                                type ="line",
+                                lineColor = 'black', 
+                                fillColor = 'orange',
+                                chartRangeMin = 0,
+                                chartRangeMax = 8,
+                                width = width,
+                                height = height)) %>%
     arrange(name)
   
   saveRDS(df_spark, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
-                        paste0("spark_", unit, "_",varname,"_",timeunit, ".Rds")))
+                              paste0("spark_", unit, "_",varname,"_",timeunit, ".Rds")))
   
   return(NULL)
 }
