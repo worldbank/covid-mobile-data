@@ -397,7 +397,7 @@ tp_add_label_baseline <- function(data,
     label_name <- data[[name_var]]
   }
   
-  label_name <- paste0("<b>", label_name, "</b>")
+  label_name <- paste0("<h3>", label_name, "</h3>")
   
   #### Current Value
   label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",
@@ -484,7 +484,7 @@ tp_add_label_level <- function(data,
   } else{
     label_name <- data$name
   }
-  label_name <- paste0("<b>", label_name, "</b>")
+  label_name <- paste0("<h3>", label_name, "</h3>")
   
   #### Value
   label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",data$value  %>% round(2), ".")

@@ -7,7 +7,6 @@ check_inputs <- function(unit, timeunit){
 }
 
 ##### Sparkline ##### ----------------------------------------------------------
-
 make_sparkline <- function(df,
                            unit,
                            timeunit,
@@ -25,6 +24,8 @@ make_sparkline <- function(df,
                            fillColor = NULL,
                            chartRangeMin = 0,
                            chartRangeMax = 8,
+                           yaxis = T,
+                           xaxis = "interior",
                            width = width,
                            height = height,
                            highlightLineColor = 'orange', 

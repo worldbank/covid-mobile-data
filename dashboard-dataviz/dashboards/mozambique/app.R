@@ -59,6 +59,8 @@ library(scales)
 library(lubridate)
 library(geosphere)
 
+source("functions.R")
+
 #### Logged; make false to enable password
 Logged = T
 
@@ -228,9 +230,11 @@ ui_main <- fluidPage(
                    align = "center"),
             
             column(12, align = "center", htmlOutput("var_definitions")),
-            #leafletOutput("mapward",
-            #              height = 720),
-            uiOutput("mapward"),
+            uiOutput("map_spark"),
+            leafletOutput("mapward",
+                          height = "700px"),
+            
+            
             
             absolutePanel(
               id = "controls",
@@ -240,13 +244,11 @@ ui_main <- fluidPage(
               width = 220,
               fixed = TRUE,
               draggable = F,
-              height = 300,
+              height = 200,
               align = "center",
               
               h5("Select Date"),
               uiOutput("ui_select_timeunit"),
-              
-              uiOutput("ui_select_region_zoom"),
               
               # selectInput(
               #   "select_province",
@@ -268,7 +270,9 @@ ui_main <- fluidPage(
             wellPanel(
               
               strong(textOutput("line_title"), align = "center"),
-              h6(textOutput("line_instructions"), align = "center"),
+              br(),
+              fluidRow(column(6, align = "center", offset = 3, uiOutput("ui_select_region_zoom"))),
+              #h6(textOutput("line_instructions"), align = "center"),
               plotlyOutput("ward_line_time", height =
                              200),
               
@@ -424,16 +428,22 @@ server = (function(input, output, session) {
       ward_data_sp_filtered <- reactive({
         
         # Update region based on clicking
-        if(!is.null(input$mapward_shape_click$id)){
-          if(last_selected_adm != input$mapward_shape_click$id){
+        # Clicking only applies to movement
+        #if(!is.null(input$select_variable)){
+        #  if(grepl("^Movement", input$select_variable)){
             
-            updateSelectInput(session, "select_region_zoom",
-                              selected = input$mapward_shape_click$id
-            )
-            last_selected_adm <<- input$mapward_shape_click$id
-            
-          }
-        }
+            if(!is.null(input$mapward_shape_click$id)){
+              if(last_selected_adm != input$mapward_shape_click$id){
+                
+                updateSelectInput(session, "select_region_zoom",
+                                  selected = input$mapward_shape_click$id
+                )
+                last_selected_adm <<- input$mapward_shape_click$id
+                
+              }
+            }
+        #  }
+        #}
         
         # ****** 4.2.2.1 Grab inputs and define defaults -----------------------
         
@@ -790,39 +800,19 @@ server = (function(input, output, session) {
           
         }
         
-        
-        
         out
         
       })
-      
-      
       
       
       # ** 4.3 Figures - - - - - - - - - - - - - - - - - - - - - - - - - - -----
       
       # **** 4.3.1 Indicator Map -----------------------------------------------
       
-      #### Basemap
-      # output$mapward <- renderLeaflet({
-      #   
-      #   map_sp <- ward_sp_filter()
-      #   map_extent <- map_sp %>% extent()
-      #   
-      #   leaflet() %>%
-      #     addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-      #     fitBounds(
-      #       lng1 = map_extent@xmin,
-      #       lat1 = map_extent@ymin,
-      #       lng2 = map_extent@xmax,
-      #       lat2 = map_extent@ymax
-      #     ) 
-      #   
-      # })
-      
-      #### Add polygons to map reactively
-      output$mapward <- renderUI({
-        #observe({
+      # ******* 4.3.1.1 Map Data -----------------------------------------------
+      map_data_list <- reactive({
+        
+        od_index = 1
         
         #### Grab polygon
         map_data <- ward_sp_filter()
@@ -831,25 +821,6 @@ server = (function(input, output, session) {
         ward_data_sp_react <- ward_data_sp_filtered()
         map_values <- ward_data_sp_react$map_data$value
         map_labels <- ward_data_sp_react$map_data$html_label
-        
-        #### If limit to province
-        # If user selected a province, limited the values and labels to that 
-        # province
-        # if(!is.null(input$select_province)){
-        #   if(!(input$select_province %in% "All")){
-        #     
-        #     if(input$select_unit %in% "Postos"){
-        #       map_values <- map_values[ward_sp$province %in% input$select_province]
-        #       map_labels <- map_labels[ward_sp$province %in% input$select_province]
-        #     } 
-        #     
-        #     if(input$select_unit %in% "Districts"){
-        #       map_values <- map_values[district_sp$province %in% input$select_province]
-        #       map_labels <- map_labels[district_sp$province %in% input$select_province]
-        #     }
-        #     
-        #   }
-        # }
         
         #### Grab Origin/Destination Index
         # For Movement In/Out, grab the index of the origin/destional region.
@@ -897,26 +868,6 @@ server = (function(input, output, session) {
           }
         }
         
-        
-        #### Log values with negatives
-        # Define function to take the log of values that can deal with negative
-        # values. Just takes the absoltue value, logs, then reapplies negative
-        log_neg <- function(values){
-          # Log that takes into account zero. Only for logging values for
-          # displaying!
-          
-          values_pos_index <- (values > 0)  %in% T # %in% T to account for NAs 
-          values_neg_index <- (values <= 0) %in% T
-          
-          values_pos_log <- log(values[values_pos_index]+1)
-          values_neg_log <- -log(-(values[values_neg_index])+1)
-          
-          values[values_pos_index] <- values_pos_log
-          values[values_neg_index] <- values_neg_log
-          
-          return(values)
-        }
-        
         #### Make outliers less extreme
         # Chop off at percentile
         # TODO: Doesn't work with lots of zeros, so commenting out for now.
@@ -927,7 +878,6 @@ server = (function(input, output, session) {
           map_values[map_values < q_vals[1]] <- q_vals[1]
           map_values[map_values > q_vals[2]] <- q_vals[2]
         }
-        
         
         #### Log Values
         if(!is.null(input$select_metric)){
@@ -985,7 +935,6 @@ server = (function(input, output, session) {
           }
         }
         
-        
         # If all non-NA values are NA, make purple
         if(sum(!is.na(map_values)) == sum(map_values %in% 0)){
           
@@ -1003,175 +952,230 @@ server = (function(input, output, session) {
         # Alpha value. Originally had if map is zoomed in (few units), we made 
         # more transparent. As of now not doing that, but including here in 
         # case want to change.
-        if (nrow(map_data) > 700) {
-          alpha = 1
-        } else{
-          alpha = 1 # 0.75 fix clear shapes before do this.
-        }
+        alpha = 1
         
+        # Return
+        return(list(map_data = map_data,
+                    map_labels = map_labels,
+                    map_values = map_values,
+                    pal_ward = pal_ward,
+                    legend_colors = legend_colors,
+                    legend_labels = legend_labels,
+                    od_index = od_index,
+                    alpha = alpha))
         
-        #### Load sparkline
-        if(!is.null(input$select_unit) & !is.null(input$select_variable) &
-           !is.null(input$select_timeunit)){
-          #  
-          data_spark <- readRDS(file.path("data_inputs_for_dashboard",
-                                          paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
-          spark <- data_spark$l_spark
-          
-          map_labels <- paste0(map_labels, "<br>", spark)
-          
-          #map_labelsa <<- paste0(map_labels, "<br>", spark)
-          #map_dataa <<- map_data
-          
-          # map_dataa$l <- map_labelsa
-          # leaflet() %>%
-          #   addPolygons(data=map_dataa,
-          #               label = lapply(map_labelsa, htmltools::HTML),
-          #               popupOptions = popupOptions(minWidth = 200,
-          #                                           maxHeight = 150)) %>%
-          #   onRender("function(el,x) {
-          #     this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
-          #   }") %>%
-          #   add_deps("sparkline") %>%
-          # browsable()
-          
-        }
+      })
+      
+      # ******* 4.3.1.2 Leaflet Without Sparkline ------------------------------
+      #### Basemap
+      output$mapward <- renderLeaflet({
         
-        #### Main Leaflet Map 
-        #l <- leafletProxy("mapward", data = map_data) %>%
-        l <- leaflet(height = "720px") %>%
-          addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
-          addPolygons(data = map_data,
-                      label = ~ lapply(map_labels, htmltools::HTML),
-                      color = ~ pal_ward(map_values),
-                      
-                      layerId = ~ name,
-                      
-                      stroke = TRUE,
-                      weight = 1,
-                      smoothFactor = 0.2,
-                      fillOpacity = alpha,
-                      dashArray = "3",
-                      
-                      highlight =
-                        highlightOptions(
-                          weight = 5,
-                          color = "#666",
-                          dashArray = "",
-                          fillOpacity = 1,
-                          bringToFront = TRUE
-                        ),
-                      
-                      labelOptions = labelOptions(
-                        style = list("font-weight" = "normal",
-                                     padding = "3px 8px"),
-                        textsize = "15px",
-                        direction = "auto"
-                      )
-          ) %>%
-          onRender("function(el,x) {
-                this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
-             }") %>%
-          clearControls() %>%
-          addLegend(
-            values = c(map_values), # c(0, map_values)
-            colors = legend_colors,
-            labels = legend_labels,
-            opacity = 0.7,
-            title = "Legend",
-            position = "topright",
-            na.label = "Origin"
-          )
+        l <- NULL
         
-        #### Add Origin/Desintation Polygon in Red
         if(!is.null(input$select_variable)){
-          if(input$select_variable %in% c("Movement Into Postos",
-                                          "Movement Out of Postos",
-                                          "Movement Into Districts",
-                                          "Movement Out of Districts")){
+          if(grepl("^Movement", input$select_variable)){
             
-            l <- l %>% 
-              addPolygons(data=map_data[od_index,],
-                          label = ~ lapply(map_labels[od_index], htmltools::HTML),
+            map_sp <- ward_sp_filter()
+            map_extent <- map_sp %>% extent()
+            
+            l <- leaflet(height = "1000px") %>%
+              addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+              fitBounds(
+                lng1 = map_extent@xmin,
+                lat1 = map_extent@ymin,
+                lng2 = map_extent@xmax,
+                lat2 = map_extent@ymax
+              )
+            
+          } 
+        }
+        
+        l
+        
+      })
+      
+      #### Add polygons to map reactively
+      observe({
+        
+        l <- NULL
+        
+        if(!is.null(input$select_variable)){
+          if(grepl("^Movement", input$select_variable)){
+            
+            map_data_l <- map_data_list()
+            
+            map_data = map_data_l$map_data
+            map_labels = map_data_l$map_labels
+            map_values = map_data_l$map_values
+            pal_ward = map_data_l$pal_ward
+            legend_colors = map_data_l$legend_colors
+            legend_labels = map_data_l$legend_labels
+            od_index = map_data_l$od_index
+            alpha = map_data_l$alpha
+            
+            #### Main Leaflet Map 
+            l <- leafletProxy("mapward", data = map_data) %>%
+              #l <- leaflet(height = "720px") %>%
+              #  addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+              addPolygons(data = map_data,
+                          label = ~ lapply(map_labels, htmltools::HTML),
+                          color = ~ pal_ward(map_values),
+                          
+                          layerId = ~ name,
+                          
+                          stroke = TRUE,
+                          weight = 1,
+                          smoothFactor = 0.2,
+                          fillOpacity = alpha,
+                          dashArray = "3",
+                          
+                          highlight =
+                            highlightOptions(
+                              weight = 5,
+                              color = "#666",
+                              dashArray = "",
+                              fillOpacity = 1,
+                              bringToFront = TRUE
+                            ),
+                          
                           labelOptions = labelOptions(
                             style = list("font-weight" = "normal",
                                          padding = "3px 8px"),
                             textsize = "15px",
                             direction = "auto"
-                          ),
-                          color="red",
-                          fillOpacity=1,
-                          stroke = TRUE,
-                          weight = 1,
-                          smoothFactor = 0.2)
+                          )
+              ) %>%
+              # onRender("function(el,x) {
+              #       this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+              #    }") %>%
+              clearControls() %>%
+              addLegend(
+                values = c(map_values), # c(0, map_values)
+                colors = legend_colors,
+                labels = legend_labels,
+                opacity = 0.7,
+                title = "Legend",
+                position = "topright",
+                na.label = "Origin"
+              )
             
-          }
+            #### Add Origin/Desintation Polygon in Red
+            if(!is.null(input$select_variable)){
+              if(input$select_variable %in% c("Movement Into Postos",
+                                              "Movement Out of Postos",
+                                              "Movement Into Districts",
+                                              "Movement Out of Districts")){
+                
+                l <- l %>% 
+                  addPolygons(data=map_data[od_index,],
+                              label = ~ lapply(map_labels[od_index], htmltools::HTML),
+                              labelOptions = labelOptions(
+                                style = list("font-weight" = "normal",
+                                             padding = "3px 8px"),
+                                textsize = "15px",
+                                direction = "auto"
+                              ),
+                              color="red",
+                              fillOpacity=1,
+                              stroke = TRUE,
+                              weight = 1,
+                              smoothFactor = 0.2)
+                
+              }
+            }
+            
+          } 
         }
         
-        #### Further Zoom to Region
-        # Only change if choose something different than what is previously
-        # selected.
-        # if(!is.null(input$select_region_zoom)){
-        #   if(previous_zoom_selection != input$select_region_zoom){
-        #     if(input$select_region_zoom %in% map_data$name){
-        #       
-        #       loc_i <- which(map_data$name %in% input$select_region_zoom)
-        #       
-        #       map_data_zoom <- map_data[loc_i,] 
-        #       
-        #       map_data_zoom_extent <- map_data_zoom %>% extent()
-        #       
-        #       l <- l %>%
-        #         fitBounds(
-        #           lng1 = map_data_zoom_extent@xmin,
-        #           lat1 = map_data_zoom_extent@ymin,
-        #           lng2 = map_data_zoom_extent@xmax,
-        #           lat2 = map_data_zoom_extent@ymax
-        #         ) 
-        #       
-        #       # Tried to highlight the zoomed region, but encountered issues
-        #       # Keeping here in case useful when fixing.
-        #       #%>%
-        #       #addPolygons(data=map_data_zoom,
-        #       #            #label = ~ lapply(map_labels, htmltools::HTML),
-        #       #            #layerId = ~ name_id,
-        #       #            color="yellow",
-        #       #            opacity = 1.0, fillOpacity = 0)
-        #       
-        #       # Create a global of the previous zoom selected. Without this,
-        #       # the map would always zoom to the region if the user changes
-        #       # any other input - which is annoying. By grabing the selected
-        #       # region and only zooming when this value changes, we avoid
-        #       # that annoying, unwanted zooming.
-        #       previous_zoom_selection <<- input$select_region_zoom
-        #       
-        #     }
-        #   }
-        # }
-        
-        as.character.htmlwidget <- function(x, ...) {
-          htmltools::HTML(
-            htmltools:::as.character.shiny.tag.list(
-              htmlwidgets:::as.tags.htmlwidget(
-                x
-              ),
-              ...
-            )
-          )
-        }
-        
-        add_deps <- function(dtbl, name, pkg = name) {
-          tagList(
-            dtbl,
-            htmlwidgets::getDependency(name, pkg)
-          )
-        }
-        
-        l %>%
-          add_deps("sparkline") %>%
-          browsable()
+        l 
         
       })
+      
+      # ******* 4.3.1.3 Leaflet With Sparkline ---------------------------------
+      output$map_spark <- renderUI({
+        
+        l <- NULL
+        
+        if(!is.null(input$select_variable)){
+          if(!grepl("^Movement", input$select_variable)){
+            
+            #### Load Data
+            map_data_l <- map_data_list()
+            
+            map_data = map_data_l$map_data
+            map_labels = map_data_l$map_labels
+            map_values = map_data_l$map_values
+            pal_ward = map_data_l$pal_ward
+            legend_colors = map_data_l$legend_colors
+            legend_labels = map_data_l$legend_labels
+            od_index = map_data_l$od_index
+            alpha = map_data_l$alpha
+            
+            #### Load Sparkline
+            if(!is.null(input$select_unit) & !is.null(input$select_variable) &
+               !is.null(input$select_timeunit)){
+              
+              data_spark <- readRDS(file.path("data_inputs_for_dashboard",
+                                              paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, ".Rds")))
+              
+              map_labels <- paste0(map_labels, "<br>", data_spark$l_spark)
+              
+            }
+            
+            l <- leaflet(height = "700px") %>%
+              addProviderTiles(providers$OpenStreetMap.Mapnik) %>%
+              addPolygons(data = map_data,
+                          label = ~ lapply(map_labels, htmltools::HTML),
+                          color = ~ pal_ward(map_values),
+                          
+                          layerId = ~ name,
+                          
+                          stroke = TRUE,
+                          weight = 1,
+                          smoothFactor = 0.2,
+                          fillOpacity = alpha,
+                          dashArray = "3",
+                          
+                          highlight =
+                            highlightOptions(
+                              weight = 5,
+                              color = "#666",
+                              dashArray = "",
+                              fillOpacity = 1,
+                              bringToFront = TRUE
+                            ),
+                          
+                          labelOptions = labelOptions(
+                            style = list("font-weight" = "normal",
+                                         padding = "3px 8px"),
+                            textsize = "15px",
+                            direction = "auto"
+                          )
+              ) %>%
+              onRender("function(el,x) {
+                 this.on('tooltipopen', function() {HTMLWidgets.staticRender();})
+              }") %>%
+              clearControls() %>%
+              addLegend(
+                values = c(map_values), # c(0, map_values)
+                colors = legend_colors,
+                labels = legend_labels,
+                opacity = 0.7,
+                title = "Legend",
+                position = "topright",
+                na.label = "Origin"
+              ) %>%
+              add_deps("sparkline") %>%
+              browsable()
+            
+          } 
+        }
+        
+        l
+        
+      })
+      
+      
       
       # **** 4.3.2 Line Graph --------------------------------------------------
       output$ward_line_time <- renderPlotly({
@@ -1680,7 +1684,8 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Postos"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Select Posto"), 
+                                #h5("Select Posto"), 
+                                NULL,
                                 choices = sort(ward_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
@@ -1693,7 +1698,8 @@ server = (function(input, output, session) {
         
         if(input$select_unit %in% "Districts"){
           out <- selectizeInput("select_region_zoom",
-                                h5("Select District"), 
+                                #h5("Select District"), 
+                                NULL,
                                 choices = sort(district_sp$name), 
                                 selected = NULL, 
                                 multiple = FALSE,
