@@ -4,8 +4,8 @@
 options(rsconnect.max.bundle.files = 400000)
 
 CLEAN_SPATIAL_DATA <- F
-CLEAN_TELECOM_DATA <- F
-PREP_DATA_FOR_DASH <- F
+CLEAN_TELECOM_DATA <- T
+PREP_DATA_FOR_DASH <- T
 
 #### Packages #### =============================================================
 library(tidyverse)
@@ -57,7 +57,7 @@ BASELINE_FILE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_das
 
 DASHBOARD_DATA_ONEDRIVE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_dashboard")
 
-DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard")
+DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "dashboards", "zimbabwe")
 DASHBOARD_DATA_GITHUB_PATH     <- file.path(DASHBOARD_PATH, "data_inputs_for_dashboard")
 
 DASHBOARD_CLEAN_SPATIAL_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "01_clean_spatial_data")
@@ -81,17 +81,20 @@ if(CLEAN_SPATIAL_DATA){
 
 # 2. Prepare Spatial Data ------------------------------------------------------
 if(CLEAN_TELECOM_DATA){
+
   # Clean Initial Datasets
-  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_subscribers_data.R"))
-  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_movement_inout_data.R"))
-  
+  source(file.path(DASHBOARD_CLEAN_TELECOM_PATH, "clean_i3_subscribers_data.R"))
+  source(file.path(DASHBOARD_CLEAN_TELECOM_PATH, "clean_i7_distance_traveled.R"))
+  source(file.path(DASHBOARD_CLEAN_TELECOM_PATH, "clean_i5_movement_inout_data.R"))
+
   # Clean datasets that depend on previous ones
-  source(file.path(DASHBOARD_CLEAN_SPATIAL_PATH, "clean_net_movement_data.R"))
+  source(file.path(DASHBOARD_CLEAN_TELECOM_PATH, "clean_i5_net_movement_data.R"))
 }
 
 # 3. Prep Data for Dashboard ---------------------------------------------------
 if(PREP_DATA_FOR_DASH){
   source(file.path(DASHBOARD_PREP_DASHBOARD_PATH, "prep_subs_obs_totals_data.R"))
   source(file.path(DASHBOARD_PREP_DASHBOARD_PATH, "prep_telecom_agg_data.R"))
+  source(file.path(DASHBOARD_PREP_DASHBOARD_PATH, "data_to_github.R"))
 }
 

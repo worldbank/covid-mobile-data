@@ -12,7 +12,7 @@ make_sparkline <- function(df,
                            timeunit,
                            varname,
                            width = 250,
-                           height = 150){
+                           height = 120){
   
   # df_spark <- df %>%
   #   arrange(date) %>%
