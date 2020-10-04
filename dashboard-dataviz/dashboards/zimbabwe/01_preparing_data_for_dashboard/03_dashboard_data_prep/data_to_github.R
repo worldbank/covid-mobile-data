@@ -25,12 +25,12 @@ if(REMOVE_PREVIOUS_FILES){
 telecom_files <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, pattern = "*.Rds")
 
 # Select subset if only need to move some
-telecom_files <- telecom_files[grepl("spark_", telecom_files)]
+telecom_files <- telecom_files[grepl("Density|spark_", telecom_files)]
 
 i <- 1
 temp <- telecom_files %>%
   lapply(function(file_i){
-    if((i %% 100) %in% 0) print(i)
+    if((i %% 100) %in% 0) print(paste(i, "/", length(telecom_files)))
     i <<- i + 1
     
     df <- readRDS(file.path(DASHBOARD_DATA_ONEDRIVE_PATH, file_i))

@@ -22,7 +22,7 @@ make_sparkline <- function(date,
   
   df_spark <- df %>%
     arrange(date) %>%
-    split(.$name) %>%
+    split(.$region) %>%
     map_df(~{
       l_spark_line <- sparkline(.x$value %>% round(2),
                            type="line",
@@ -44,9 +44,9 @@ make_sparkline <- function(date,
       data.frame(l_spark_line = as.character(htmltools::as.tags(l_spark_line)),
                  l_spark_bar = as.character(htmltools::as.tags(l_spark_bar)),
                  l_spark = as.character(htmltools::as.tags(l_spark)))
-    }, .id = 'name') %>%
-    arrange(name) %>%
-    dplyr::select(name, l_spark)
+    }, .id = 'region') %>%
+    arrange(region) %>%
+    dplyr::select(region, l_spark)
   
   saveRDS(df_spark, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                               paste0("spark_", unit, "_",varname,"_",timeunit,"_date",date,".Rds")))
