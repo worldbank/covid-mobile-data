@@ -1344,10 +1344,7 @@ server = (function(input, output, session) {
               
               data_spark <- readRDS(file.path("data_inputs_for_dashboard",
                                               paste0("spark_", input$select_unit, "_",input$select_variable,"_",input$select_timeunit, "_date",input$date_ward, ".Rds")))
-              
-              print(head(data_spark$name, 10))
-              print(head(map_labels, 10))
-              print(head(map_data, 10))
+            
               
               map_labels <- paste0(map_labels, "<br><br>", data_spark$l_spark)
               
