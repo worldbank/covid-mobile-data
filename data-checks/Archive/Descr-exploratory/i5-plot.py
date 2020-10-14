@@ -23,10 +23,6 @@ OUT_path = DATA_POC + "outputs/"
 i5 = pd.read_csv(DATA_Panel + 'i5_admin2.csv')
 
 
-# org_path = 'C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/Zimbabwe/isaac-results/indicator-5/admin2/'
-# org_data = org_path + '2020_04_origin_destination_connection_matrix_per_day.csv'
-# i5 = pd.read_csv(org_data)
-
 #-----------------------------------------------------------------#
 # Process data
 i5 = i5[['connection_date', 'region_from', 'region_to', 'od_count_p', 'subscriber_count_p', 'total_count_p']]

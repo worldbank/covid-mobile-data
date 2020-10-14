@@ -20,7 +20,7 @@ OUT_panel = DATA_POC + "panel_indicators/"
 
 
 # CHANGE:
-IRESULTS = DATA_path + "Zimbabwe/Isaac-results/"
+IRESULTS = DATA_path + "Isaac-results/"
 
 IFLOW_path = IRESULTS + "flowminder/"
 ICUST_path = IRESULTS + "custom/"

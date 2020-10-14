@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 
-IRESULTS = DATA_path + "Zimbabwe/Isaac-results/"
+IRESULTS = DATA_path + "Isaac-results/"
 
 IFLOW = IRESULTS + "flowminder/"
 ICUST = IRESULTS + "custom/"
