@@ -22,7 +22,7 @@ import glob
 
 base_path = 'C:/Users/wb519128/WBG/Sveta Milusheva - COVID 19 Results/proof-of-concept/'
 
-fb_data = base_path + 'Facebook Zimbabwe Data/'
+fb_data = base_path + 'Facebook Data/'
 cdr_path = base_path + 'panel_indicators/'
 
 doc_path = base_path + 'documentation/'
@@ -32,9 +32,10 @@ OUT_path = base_path + '/outputs/data-checks/'
 data_pop = fb_data + 'Population Administrative Regions/'
 data_mov = fb_data + 'Movement Admin Regions/'
 
-# prefix = 'Zimbabwe Coronavirus Disease Prevention Map Apr 16 2020 Id  Movement between Administrative Regions__'
-prefix_pop = 'Zimbabwe Coronavirus Disease Prevention Map Apr 16 2020 Id  Facebook Population (Administrative Regions)__'
-prefix_mov = 'Zimbabwe Coronavirus Disease Prevention Map Apr 16 2020 Id  Movement between Administrative Regions__'
+# File names need to be updated
+# # prefix = 'Coronavirus Disease Prevention Map Apr 16 2020 Id  Movement between Administrative Regions__'
+# prefix_pop = 'Coronavirus Disease Prevention Map Apr 16 2020 Id  Facebook Population (Administrative Regions)__'
+# prefix_mov = 'Coronavirus Disease Prevention Map Apr 16 2020 Id  Movement between Administrative Regions__'
 
 
 #-----------------------------------------------------------------#

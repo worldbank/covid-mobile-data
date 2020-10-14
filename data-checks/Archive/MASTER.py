@@ -99,7 +99,8 @@ FLOWM_adm3_path = FLOWM_path + "admin3/"
 #-------------------#
 # External indicators
 
-IRESULTS = DATA_path + "Zimbabwe/Isaac-results/"
+# Update file path
+IRESULTS = DATA_path + "Isaac-results/"
 
 IFLOW_path = IRESULTS + "flowminder/"
 ICUST_path = IRESULTS + "custom/"

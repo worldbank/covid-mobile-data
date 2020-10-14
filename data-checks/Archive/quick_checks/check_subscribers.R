@@ -4,8 +4,9 @@ FIG_PATH <- file.path(PROJECT_PATH, "proof-of-concept",
                       "outputs", "data-checks", "figures_indicators", "subscribers_daily")
 
 # Load Data --------------------------------------------------------------------
-ISAAC_DATA_PATH_2 <- file.path(PROJECT_PATH, "Zimbabwe", "Isaac-results", "Isaac_apr_may", "admin2_flowminder")
-ISAAC_DATA_PATH_3 <- file.path(PROJECT_PATH, "Zimbabwe", "Isaac-results", "Isaac_apr_may", "admin3_flowminder")
+# FILE PATHS NEED TO BE UPDATED
+ISAAC_DATA_PATH_2 <- file.path(PROJECT_PATH, "Isaac-results", "Isaac_apr_may", "admin2_flowminder")
+ISAAC_DATA_PATH_3 <- file.path(PROJECT_PATH, "Isaac-results", "Isaac_apr_may", "admin3_flowminder")
 
 #### Raw Data
 df_day_adm2_raw <- read.csv(file.path(ISAAC_DATA_PATH_2,
