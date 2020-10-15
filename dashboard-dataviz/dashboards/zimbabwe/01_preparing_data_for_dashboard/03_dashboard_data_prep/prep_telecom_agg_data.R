@@ -237,7 +237,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      admin_sp)
       
       
-      ### prep_movement_adminname_i
+      ### prep_movement_adminname_i;;;;;;; Gwanda 14
       temp <- lapply(unique(unique(df_movement$name_dest),
                             unique(df_movement$name_origin)),  
                      prep_od_adminname_i, 

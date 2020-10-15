@@ -4,7 +4,7 @@
 options(rsconnect.max.bundle.files = 400000)
 
 CLEAN_SPATIAL_DATA <- F
-CLEAN_TELECOM_DATA <- T
+CLEAN_TELECOM_DATA <- F
 PREP_DATA_FOR_DASH <- T
 
 #### Packages #### =============================================================

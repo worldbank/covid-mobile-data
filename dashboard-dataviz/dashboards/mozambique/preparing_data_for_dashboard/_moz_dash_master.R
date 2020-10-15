@@ -34,7 +34,6 @@ library(lubridate)
 library(data.table)
 library(mapview)
 library(bcrypt)
-library(sparkline)
 
 #### File paths #### ===========================================================
 
