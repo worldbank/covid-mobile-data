@@ -16,7 +16,7 @@
 # Load / Prep Data -------------------------------------------------------------
 
 #### Load all wards
-ward_sp <- read_sf(file.path(GEO_PATH, "zimbabwe_admin3.geojson")) %>% 
+ward_sp <- read_sf(file.path(GEO_PATH, "admin3.geojson")) %>% 
   as("Spatial")
 
 ####  Load tower clusters. Spatially set as centroid cluster
@@ -28,7 +28,7 @@ crs(tower_cluster_df) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +
 
 # Load District Data for Mapping IDs -------------------------------------------
 district_sp <- readOGR(dsn = file.path(GEO_PATH),
-                       layer = "ZWE_adm2")
+                       layer = "adm2")
 district_sp$ID_2 <- district_sp$ID_2 %>% as.character() %>% as.numeric()
 district_sp$NAME_2 <- district_sp$NAME_2 %>% as.character()
 
