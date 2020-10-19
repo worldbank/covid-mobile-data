@@ -1,4 +1,4 @@
-# Zimbabwe Dashboard
+# Dashboard
 
 This dashboard is build using R Shiny.
 
