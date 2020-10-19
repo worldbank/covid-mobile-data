@@ -57,7 +57,7 @@ BASELINE_FILE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_das
 
 DASHBOARD_DATA_ONEDRIVE_PATH <- file.path(PROJECT_PATH, "proof-of-concept", "files_for_dashboard", "files_dashboard")
 
-DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "zimbabwe_dashboard")
+DASHBOARD_PATH          <- file.path(GITHUB_PATH, "dashboard-dataviz", "dashboard")
 DASHBOARD_DATA_GITHUB_PATH     <- file.path(DASHBOARD_PATH, "data_inputs_for_dashboard")
 
 DASHBOARD_CLEAN_SPATIAL_PATH <- file.path(DASHBOARD_PATH, "01_preparing_data_for_dashboard", "01_clean_spatial_data")
