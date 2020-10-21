@@ -21,9 +21,9 @@ user_window = Window\
 
 # COMMAND ----------
 
-# dbutils.fs.ls('/mnt/COVID19Data/Sveta Milusheva - Econet/mar20')
-base_path = '/mnt/COVID19Data/Sveta Milusheva - Econet/mar20/'
-geo_path =  'mnt/COVID19Data/proof-of-concept/support-data/ZW/econet/geo-files/'
+# dbutils.fs.ls('/mnt/COVID19Data/Sveta Milusheva - mar20')
+base_path = '/mnt/COVID19Data/Sveta Milusheva - mar20/'
+geo_path =  'mnt/COVID19Data/proof-of-concept/support-data/geo-files/'
 
 # COMMAND ----------
 
