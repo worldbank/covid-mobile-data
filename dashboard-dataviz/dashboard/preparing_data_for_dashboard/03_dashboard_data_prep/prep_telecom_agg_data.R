@@ -27,9 +27,6 @@ PROCESS_MOVEMENT_DATA      <- T
 REMOVE_PREVIOUS_FILES <- F
 
 ##### Remove Previous Files ##### ----------------------------------------------
-# THIS IS NOT STABLE. Will also ignore district and ward polygon files,
-# and other files not added here. should ignore these other files
-
 if(REMOVE_PREVIOUS_FILES){
   temp <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, 
                      full.names = T, 

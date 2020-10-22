@@ -6,7 +6,7 @@ The following datasets are made.
 
 | Dataset Type | Naming Convention | Description |
 | --- | --- | --- |
-| unit-level | [Unit Name]\_[Indicator Name]\_[Daily/Weekly]\_[Date/Week].Rds | For a given day or week, this dataset contains information for all wards or districts for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into ward from all other units). |
+| unit-level | [Unit Name]\_[Indicator Name]\_[Daily/Weekly]\_[Date/Week].Rds | For a given day or week, this dataset contains information for all wards or districts for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into unit from all other units). |
 | time-level |  [Unit Name]\_[Indicator Name]\_[Daily/Weekly]\_[Unit Name].Rds | For a given admin unit, this dataset contains a time series of values for a specified indicator. |
 | unit-time-level |  [Unit Name]\_[Indicator Name]\_[Daily/Weekly]\_[Unit Name]\_[Date/Week].Rds | These datasets are only used for O-D variables. The show, for a given origin or destination unit, the movement in or out of that unit to all other units for the specified day/week. |
 
