@@ -14,9 +14,9 @@ easily switched in the dashboard
 | variable | format | example | description |
 |---|---|---|---|
 | region | string | ZW123456 | Unique identifier of the spatial unit |
-| name | string | harare | Spatial unit name |
+| name | string | Name| | Spatial unit name |
 | area | numeric | 1234 | Area of the spatial unit in kilometers squared |
-| province | string | Bulawayo | Name of the province |
+| province | string | Name| Name of the province |
 
 ### Order Spatial Data
 Spatial datasets are ordered by region. When cleaning other datasets at the

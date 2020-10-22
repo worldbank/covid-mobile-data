@@ -2,8 +2,6 @@
 
 #### Helper Functions ##### ----------------------------------------------------
 check_inputs <- function(unit, timeunit){
-  #try(if(!(unit %in% c("Districts", "Wards"))) stop("unit must be Districts or Wards"))
-  #try(if(!(timeunit %in% c("Daily", "Weekly"))) stop("unit must be Daily or Weekly"))
 }
 
 ##### Sparkline ##### ----------------------------------------------------------
@@ -72,7 +70,7 @@ prep_nonod_date_i <- function(date_i,
   # INPUTS
   # date_i:   Specific date
   # df:       Dataset
-  # unit:     Districts or Wards (used for naming .Rds file)
+  # unit:     Unit Type (used for naming .Rds file)
   # timeunit: Daily or Weekly (used for naming .Rds file)
   # varname:  Variable name, used for naming .Rds file (Density, Median Distance Traveled)
   # vars_include: Vector of additional variable (names) to include in output
@@ -109,7 +107,7 @@ prep_nonod_admin_i <- function(name_i,
   # INPUTS
   # name_i:   Name of admin unit
   # df:       Dataset
-  # unit:     Districts or Wards (used for naming .Rds file)
+  # unit:     Unit Type (used for naming .Rds file)
   # timeunit: Daily or Weekly (used for naming .Rds file)
   # varname:  Variable name, used for naming .Rds file (Density, Median Distance Traveled)
   # vars_include: Vector of additional variable (names) to include in output
@@ -152,7 +150,7 @@ prep_od_date_i <- function(date_i, df, unit, timeunit, admin_df){
   # INPUTS
   # date_i:   Specific date
   # df:       Dataset
-  # unit:     Districts or Wards (used for naming .Rds file)
+  # unit:     Unit type (used for naming .Rds file)
   # timeunit: Daily or Weekly (used for naming .Rds file)
   # admin_df: Admin unit dataframe, to merge in other variables
   
@@ -210,7 +208,7 @@ prep_od_adminname_i <- function(name_i, df, unit, timeunit){
   # INPUTS
   # name_i:   Admin Unit Name
   # df:       Dataset
-  # unit:     Districts or Wards (used for naming .Rds file)
+  # unit:     Unit type (used for naming .Rds file)
   # timeunit: Daily or Weekly (used for naming .Rds file)
   
   check_inputs(unit, timeunit)
@@ -218,7 +216,7 @@ prep_od_adminname_i <- function(name_i, df, unit, timeunit){
 
   df <- as.data.table(df)
   
-  #### Out of Ward
+  #### Out of Unit
   df_origin <- df[df$name_origin == name_i,]
   
   ## Add day of week
@@ -236,7 +234,7 @@ prep_od_adminname_i <- function(name_i, df, unit, timeunit){
   saveRDS(df_origin, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
                               paste0(unit, "_Movement Out of_",timeunit,"_", name_i, ".Rds")))
   
-  #### Into Ward
+  #### Into Unit
   df_dest <- df[df$name_dest == name_i,]
   
   ## Add day of week
@@ -271,7 +269,7 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
   # name_i:    Admin Unit Name
   # df:        Dataset - ** Should already be subsetted to by origin or destination 
   #            name in order to increase speed of the function.
-  # unit:      Districts or Wards (used for naming .Rds file)
+  # unit:      Unit Type (used for naming .Rds file)
   # timeunit:  Daily or Weekly (used for naming .Rds file)
   # orig_dest: "in" or "out" for movement in/movement out
   # admin_df:  Dataframe from spatial layer
@@ -279,9 +277,8 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
   
   if(orig_dest %in% "out"){
     
-    #### Out of Ward
+    #### Out of Unit
     df_clean <- df %>%
-      #filter(ward_name_origin %in% ward_i) %>%
       filter(date %in% date_i) 
     
     df_clean <- merge(admin_df, df_clean,
@@ -336,9 +333,8 @@ prep_od_adminname_i_date_i <- function(date_i, name_i, df, unit, timetype, orig_
   }
   
   if(orig_dest %in% "in"){
-    #### Into Ward
+    #### Into Unit
     df_clean <- df %>%
-      #filter(ward_name_dest %in% ward_i) %>%
       filter(date %in% date_i) 
     
     df_clean <- merge(admin_df, df_clean,

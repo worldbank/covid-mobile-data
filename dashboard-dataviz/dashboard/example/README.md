@@ -8,7 +8,7 @@ This dashboard is build using R Shiny.
 
 ## Clean Spatial Data
 
-The files in `01_clean_spatial_data` clean spatial polygons for districts and wards to be used in the dashboard and subsequent cleaning steps. The following cleaning steps are conducted:
+The files in `01_clean_spatial_data` clean spatial polygons to be used in the dashboard and subsequent cleaning steps. The following cleaning steps are conducted:
 
 1. Aggregate units when needed (e.g., aggregating wards)
 2. Add additional variables (e.g., area)
@@ -63,7 +63,7 @@ The following datasets are made.
 
 | Dataset Type | Naming Convention | Description |
 | --- | --- | --- |
-| unit-level | [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Date/Week].Rds | For a given day or week, this dataset contains information for all wards or districts for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into ward from all other wards). |
+| unit-level | [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Date/Week].Rds | For a given day or week, this dataset contains information for all units for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into unit from all other units). |
 | time-level |  [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Unit Name].Rds | For a given admin unit, this dataset contains a time series of values for a specified indicator. |
 | unit-time-level |  [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Unit Name]\_[Date/Week].Rds | These datasets are only used for O-D variables. The show, for a given origin or destination unit, the movement in or out of that unit to all other units for the specified day/week. |
 

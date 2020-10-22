@@ -7,15 +7,6 @@
 # functions take a long time and where more effort should be spent making them 
 # faster.
 
-# TODO: (1) Functions designed so that any variable name inputs will work; however,
-#           some (eg, complete) return dataframe always with standardized
-#           var names. Fix so output the origin names entered in to make this
-#           more general.
-#       (2) Where possible, use data.table methods - particularly when use
-#           group_by - to help make faster. 
-#               --complete?
-#               --interpolation and replace zero scripts
-
 tp_standardize_vars <- function(data,
                                 date_var,
                                 region_var,
@@ -174,7 +165,7 @@ tp_fill_regions <- function(data,
   
   # DESCRIPTION
   # Some datasets to not contain all the regions found in the polygon - some
-  # wards or districts, for example, may be missing. This function adds 
+  # units, for example, may be missing. This function adds 
   # missing regions to the dataframe. It only adds for one time period; the
   # "complete" function should then be used after to expand the region across
   # time.

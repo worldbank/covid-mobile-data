@@ -11,16 +11,16 @@ variables:
 
 | variable | format | example | description |
 |---|---|---|---|
-| region | string | ZW123456 | Unique identifier of the spatial unit |
-| name | string | harare | Spatial unit name |
-| date | date or string | 2020-02-01 or Feb 01 - Feb 07 | The day or the week range |
+| region | string | ZONE123456 | Unique identifier of the spatial unit |
+| name | string | Name| Spatial unit name |
+| date | date or string | 2020-02-01| The date |
 | value | numeric | 1000 | Value (e.g., number of subscribers, number of trips, distance traveled) |
 | value_lag | numeric | 1000 | Value from the previous time period |
 | value_base | numeric | 1000 | Baseline value |
 | value_perchange_base | numeric | 50 | Percent change from baseline |
 | value_zscore_base | numeric | 50 | Z-score change since baseline |
-| label_level | string | Harare 6<br>This day's value: 1000<br>...  | Label for when level of variable is shown |
-| label_base| string | Harare 6<br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
+| label_level | string | Name<br>This day's value: 1000<br>...  | Label for when level of variable is shown |
+| label_base| string | Name<br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
 
 ## telecom prep [tp] functions
 
@@ -78,12 +78,12 @@ in leaflet in the dashboard.
 
 The following shows an example of cleaning data. Here we have two datasets:
 
-1. __df_day:__ Which is a daily dataset of the number of subscribers at the ward level and contains three
-relevant variables: `visit_date` (e.g., `2020-02-01T00:00:00.000Z`), `region` (e.g., `ZW123456`) and
+1. __df_day:__ Which is a daily dataset of the number of subscribers at the unit level and contains three
+relevant variables: `visit_date` (e.g., `2020-02-01T00:00:00.000Z`), `region` (e.g., `ZONE123456`) and
 `subscriber_count` (e.g., `1000`).
 
-2. __admin_sp:__ Which is a SpatialPolygonsDataFrame of wards. It contains the variables
-described in `01_clean_spatial_data` (i.e., `name`, `region`, `area` and `province`).
+2. __admin_sp:__ Which is a SpatialPolygonsDataFrame of units. It contains the variables
+described in `01_clean_spatial_data` (i.e., `name`, `region`, `area` and `adm1`).
 
 ```r
 df_day_clean <- df_day %>%
