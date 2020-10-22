@@ -6,6 +6,54 @@ check_inputs <- function(unit, timeunit){
   #try(if(!(timeunit %in% c("Daily", "Weekly"))) stop("unit must be Daily or Weekly"))
 }
 
+##### Sparkline ##### ----------------------------------------------------------
+make_sparkline <- function(date,
+                           df,
+                           unit,
+                           timeunit,
+                           varname,
+                           width = 270,
+                           height = 120){
+  
+  print(date)
+  
+  df$bar <- 0
+  df$bar[df$date %in% date] <- 100
+  
+  df_spark <- df %>%
+    arrange(date) %>%
+    split(.$region) %>%
+    map_df(~{
+      l_spark_line <- sparkline(.x$value %>% round(2),
+                           type="line",
+                           lineColor = 'black',
+                           fillColor = 'orange',
+                           chartRangeMin = 0,
+                           chartRangeMax = 8,
+                           width = width,
+                           height = height)
+      l_spark_bar <- sparkline(.x$bar,
+                                type="bar",
+                                barColor = 'black',
+                                chartRangeMin = 0,
+                                chartRangeMax = 8,
+                                width = width,
+                                height = height)
+      l_spark <- spk_composite(l_spark_line,
+                               l_spark_bar)
+      data.frame(l_spark_line = as.character(htmltools::as.tags(l_spark_line)),
+                 l_spark_bar = as.character(htmltools::as.tags(l_spark_bar)),
+                 l_spark = as.character(htmltools::as.tags(l_spark)))
+    }, .id = 'region') %>%
+    arrange(region) %>%
+    dplyr::select(region, l_spark)
+  
+  saveRDS(df_spark, file.path(DASHBOARD_DATA_ONEDRIVE_PATH,
+                              paste0("spark_", unit, "_",varname,"_",timeunit,"_date",date,".Rds")))
+  
+  return(NULL)
+}
+
 ##### Density ##### ------------------------------------------------------------
 prep_nonod_date_i <- function(date_i, 
                               df, 
