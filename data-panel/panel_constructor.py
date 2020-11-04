@@ -33,12 +33,21 @@ class i_indicator:
                  files_df,
                  time_var = None,
                  region_vars = None,
-                 level = 3):
+                 level = 3,
+                 connection_date_1 = dt.date(2020, 3, 15),
+                 connection_date_2 = dt.date(2020, 4, 1),
+                 connection_date_3 = dt.date(2020, 5, 1),
+                 connection_date_4 = dt.date(2020, 6, 1) ):
         # self.file_name = file_name
         self.num = num
         self.index_cols = index_cols
         self.level = level
         self.files_df = files_df
+        self.connection_date_1 = connection_date_1
+        self.connection_date_2 = connection_date_2
+        self.connection_date_3 = connection_date_3
+        self.connection_date_4 = connection_date_4
+        
         # Set defaults for time and regions
         if time_var is None:
             self.time_var = self.index_cols[0]
@@ -82,12 +91,7 @@ class i_indicator:
     #     return d1.merge(d2, on = on, how = 'outer', suffixes=('', suffix))
     
     # Create panel with other data sets being added as columns. Gambiarra braba !Arrumar!
-    def create_panel(self, 
-                    #  time_var, 
-                     c_date_1 = np.datetime64(dt.date(2020, 3, 15)),
-                     c_date_2 = np.datetime64(dt.date(2020, 4, 1)),
-                     c_date_3 = np.datetime64(dt.date(2020, 5, 1)),
-                     c_date_4 = np.datetime64(dt.date(2020, 6, 1)) ):
+    def create_panel(self):
         # kwargs.setdefault('time_var', self.index_cols[0])
         self.panel = self.data\
             .merge(self.data_e_03,
@@ -107,10 +111,10 @@ class i_indicator:
                    how = 'outer',
                    suffixes=('', '_06'))
         # Create panel column
-        d1_bol = (self.panel[self.time_var].astype('datetime64')  >= c_date_1)
-        d2_bol = (self.panel[self.time_var].astype('datetime64')  >= c_date_2)
-        d3_bol = (self.panel[self.time_var].astype('datetime64')  >= c_date_3)
-        d4_bol = (self.panel[self.time_var].astype('datetime64')  >= c_date_4)
+        d1_bol = (self.panel[self.time_var].astype('datetime64')  >= np.datetime64(self.connection_date_1))
+        d2_bol = (self.panel[self.time_var].astype('datetime64')  >= np.datetime64(self.connection_date_2))
+        d3_bol = (self.panel[self.time_var].astype('datetime64')  >= np.datetime64(self.connection_date_3))
+        d4_bol = (self.panel[self.time_var].astype('datetime64')  >= np.datetime64(self.connection_date_4))
         countvars =  list(set(self.data.columns) - set(self.index_cols))
         for var in countvars:
             varname = var + '_p'
