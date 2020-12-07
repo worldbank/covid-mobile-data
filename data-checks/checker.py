@@ -1,3 +1,4 @@
+
 # ---------------------------------------------------------
 # Data checker class definition
 
@@ -35,9 +36,7 @@ class checker:
                 os.mkdir(self.outputs_path)
         # List files in path
         self.files = os.listdir(self.path)
-        # Indicator default file names
-        if ind_dict is None:
-            self.ind_dict = {
+        self.ind_dict_postfix = {
                  'i1' : 'transactions_per_hour.csv',
                  'i2' : 'unique_subscribers_per_hour.csv',
                  'i3': 'unique_subscribers_per_day.csv',
@@ -49,10 +48,24 @@ class checker:
                  'i9': 'week_home_vs_day_location_per_day.csv',
                  'i10' : 'origin_destination_matrix_time_per_day.csv',
                  'i11': 'unique_subscriber_home_locations_per_month.csv'}
-        # Otherwise specify dict manually
+       
+        
+        # Indicator default file names
+        # Set the self.ind_dict as empty dictonary first
+        self.ind_dict = {}
+        # For each file in path, check if the filename ends with one of vaulues in self.ind_dict_postfix dictionary
+        # if matching, then update the key in self.ind_dict as the key in self.ind_dict_postfix and value as the file name 
+        if ind_dict is None:
+            for file in self.files:
+                for key in self.ind_dict_postfix.keys():
+                    if file.endswith(self.ind_dict_postfix[key]):
+                        # print('Matching')
+                        self.ind_dict[key] = file
+        # Otherwise specify dict manually                
+        
         else:
             self.ind_dict = ind_dict
-        
+                         
         # Check if files exist
         files_bol = all([os.path.isfile(self.path + '/' + self.ind_dict[key]) for key in self.ind_dict.keys()])
         assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
@@ -251,4 +264,5 @@ class checker:
 
 
 
-# plotly.offline.plot(fig, filename = data + '/' + 'filename.html', auto_open=False)
+
+
