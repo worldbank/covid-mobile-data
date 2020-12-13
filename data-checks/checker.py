@@ -124,13 +124,11 @@ class checker:
         # Load indicators
         path = self.path + '/'
         self.i1 = load(path + self.ind_dict['i1'])
-        self.i2 = load(path + self.ind_dict['i2'])
+        #self.i2 = load(path + self.ind_dict['i2'])
         self.i5 = load(path + self.ind_dict['i5'])
-        self.i7 = load(path + self.ind_dict['i7'], 'day')
+        #self.i7 = load(path + self.ind_dict['i7'], 'day')
     
-    # ---------------------------------------------------------
-    # Aggregations    
-    # Aggregated i1 versions
+    
     def run_aggregations(self):
         # Missing region remove function
         def remove_missings(df, regionvar = self.col_names_dict['i1_col_names']['Geography'], missing_values = self.missing_values):
@@ -140,15 +138,16 @@ class checker:
         def time_complete(data, timevar = None, timefreq = 'D'):
             if timevar is None:
                 data.columns[0]
-            data[timevar] = data[timevar].astype('datetime64')
+            data[timevar] = data[timevar].astype('datetime64[D]')
             full_time_range = pd.date_range(data[timevar].min(),  
                                             data[timevar].max(), 
                                             freq = timefreq)
             data = data.set_index(timevar)
             data = data.reindex(full_time_range,  fill_value=0)
             return(data)
-        
-        # Indicator 1
+    
+    
+     # Indicator 1
         self.i1_hour = remove_missings(self.i1)\
             .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
             .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
@@ -156,6 +155,7 @@ class checker:
             .reset_index()\
             .sort_values(['date', self.col_names_dict['i1_col_names']['Time']])\
             .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
+        
         self.i1_date = remove_missings(self.i1)\
             .groupby('date')\
             .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
@@ -163,12 +163,8 @@ class checker:
             .reset_index()\
             .sort_values(['date'])\
             .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
-        # Complete dates
-        self.i1_date = time_complete(self.i1_date, 'date')
-        self.i1_hour = time_complete(self.i1_hour, self.col_names_dict['i1_col_names']['Time'], 'H')
-        
-        
-        # Indicator 5
+    
+    # Indicator 5
         i5_nmissing = remove_missings(remove_missings(self.i5,self.col_names_dict['i5_col_names']['Geography_01']), 
                                       self.col_names_dict['i5_col_names']['Geography_02'])
         self.i5_date = i5_nmissing\
@@ -181,7 +177,8 @@ class checker:
         
         self.i5_date = time_complete(self.i5_date, 'date')
     
-    # ---------------------------------------------------------
+    
+     # ---------------------------------------------------------
     # Plots
     
     def plot_i1_count(self, show = True):
@@ -242,7 +239,8 @@ class checker:
         plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
-    # ---------------------------------------------------------
+    
+        # ---------------------------------------------------------
     # Check pipelines 
     def completeness_checks(self):
         self.plot_region_missings()
@@ -250,8 +248,8 @@ class checker:
         self.plot_i1_n_regions()
         self.plot_i5_count()
         self.plot_i5_region_count()
-        
-    # USAGE OUTILERS: Indicator wards and days with towers down
+    
+     # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
         data = self.i1
         if htrahshold is None:
@@ -261,7 +259,7 @@ class checker:
         hours_per_day = hours_per_day.reset_index() # ger regions to be a column
         hours_per_day.columns = ['region', 'date', 'hcount']
     
-        # Average hours per day per region
+    # Average hours per day per region
         avg_hours = (hours_per_day.groupby(['region'])
             .mean()
             .rename(columns={'hcount' :'avg_hours' }))
@@ -275,6 +273,7 @@ class checker:
         # Create data only with pairs of wards and days potential 
         # towers down
         i1_ag_df_tower_down = i1_ag_df[i1_ag_df['h_diff'] < htrahshold]
+        
         
         #----------------------------------------------------------------------
         # Export
@@ -291,10 +290,4 @@ class checker:
         file = open(self.outputs_path + '/' + "days_wards_with_low_hours_i1.txt", "w") 
         file.write(readme_text) 
         file.close() 
-
-
-
-
-
-
-# plotly.offline.plot(fig, filename = data + '/' + 'filename.html', auto_open=False)
+        
