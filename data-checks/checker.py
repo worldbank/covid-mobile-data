@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 import plotly
 import plotly.graph_objects as go
+import argparse
+
 
 
 
@@ -281,3 +283,31 @@ class checker:
         file.write(readme_text) 
         file.close() 
         
+
+
+# ---------------------------------------------------------
+# Run script from the terminal
+
+if __name__ == "__main__":
+    
+    # Initializ parser
+    parser = argparse.ArgumentParser()
+    
+    # Adding optional argument
+    parser.add_argument("-p", "--Path")
+    parser.add_argument("--Prefix")
+    parser.add_argument("--Output")
+    
+    # Read arguments from command line
+    args = parser.parse_args()
+    
+    # Create checker instance
+    indicators_checker = checker(path = args.Path, prefix = args.Prefix, outputs_path = args.Output)
+
+    #------------------------------------------------------------------------------
+    # Export completeness plots
+    indicators_checker.completeness_checks()
+
+    #------------------------------------------------------------------------------
+    # Export towers down sheet
+    indicators_checker.usage_outliers()
