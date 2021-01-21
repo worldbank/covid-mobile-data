@@ -33,20 +33,12 @@ class i_indicator:
                  files_df,
                  time_var = None,
                  region_vars = None,
-                 level = 3,
-                 connection_date_1 = dt.date(2020, 3, 15),
-                 connection_date_2 = dt.date(2020, 4, 1),
-                 connection_date_3 = dt.date(2020, 5, 1),
-                 connection_date_4 = dt.date(2020, 6, 1) ):
+                 level = 3 ):
         # self.file_name = file_name
         self.num = num
         self.index_cols = index_cols
         self.level = level
         self.files_df = files_df
-        self.connection_date_1 = connection_date_1
-        self.connection_date_2 = connection_date_2
-        self.connection_date_3 = connection_date_3
-        self.connection_date_4 = connection_date_4
         
         # Set defaults for time and regions
         if time_var is None:
@@ -104,120 +96,113 @@ class i_indicator:
 # #-----------------------------------------------------------------#
 # # Constructor class
 
-# # Define panel constructor class
-# class panel_constructor:
-#     """
-#     This class contains loads files for specified indicators and creates
-#     panel data sets combining all the files 
-#     """
-#     def __init__(self, 
-#                  ilevels_dict,
-#                  indicators_df,
-#                  ind_dict = None):
-#         self.ilevels_dict = ilevels_dict
-#         self.indicators_df = indicators_df
-#         # List all indicators loaded flattening dictionary of inficators and levels
-#         i_list = []
-#         for i in self.ilevels_dict.keys():
-#             i_list.append(['i' + str(i) + '_' + str(y) for y in self.ilevels_dict[i]] )
-#         self.i_list = list(chain.from_iterable(i_list))
+# Define panel constructor class
+class panel_constructor:
+    """
+    This class contains loads files for specified indicators and creates
+    panel data sets combining all the files 
+    """
+    def __init__(self, 
+                 ilevels_dict,
+                 indicators_df,
+                 ind_dict = None):
+        self.ilevels_dict = ilevels_dict
+        self.indicators_df = indicators_df
+        # List all indicators loaded flattening dictionary of inficators and levels
+        i_list = []
+        for i in self.ilevels_dict.keys():
+            i_list.append(['i' + str(i) + '_' + str(y) for y in self.ilevels_dict[i]] )
+        self.i_list = list(chain.from_iterable(i_list))
         
-#         # Set default indicators dictionary
-#         if ind_dict is None:
-#             self.ind_dict = {
-#                  1 : 'transactions_per_hour.csv',
-#                  2 : 'unique_subscribers_per_hour.csv',
-#                  3 : 'unique_subscribers_per_day.csv',
-#                  4 : 'percent_of_all_subscribers_active_per_day.csv',
-#                  5 : 'origin_destination_connection_matrix_per_day.csv',
-#                  6 : 'unique_subscriber_home_locations_per_week.csv',
-#                  7 : 'mean_distance_per_day.csv',
-#                  8 : 'mean_distance_per_week.csv',
-#                  9 : 'week_home_vs_day_location_per_day.csv',
-#                  10: 'origin_destination_matrix_time_per_day.csv',
-#                  11: 'unique_subscriber_home_locations_per_month.csv'}
-#         else:
-#             self.ind_dict = ind_dict
-#         #----------------------------------------------------------#
-#         # Load indicators:
-#         # 1. Transactions per hour - Always created since it is needed for usage outliers
-#         self.i1_3 = i_indicator(num = 1,  index_cols = ['hour', 'region'], files_df = self.indicators_df)
+        # Set default indicators dictionary
+        if ind_dict is None:
+            self.ind_dict = {
+                 1 : 'transactions_per_hour.csv',
+                 2 : 'unique_subscribers_per_hour.csv',
+                 3 : 'unique_subscribers_per_day.csv',
+                 4 : 'percent_of_all_subscribers_active_per_day.csv',
+                 5 : 'origin_destination_connection_matrix_per_day.csv',
+                 6 : 'unique_subscriber_home_locations_per_week.csv',
+                 7 : 'mean_distance_per_day.csv',
+                 8 : 'mean_distance_per_week.csv',
+                 9 : 'week_home_vs_day_location_per_day.csv',
+                 10: 'origin_destination_matrix_time_per_day.csv',
+                 11: 'unique_subscriber_home_locations_per_month.csv'}
+        else:
+            self.ind_dict = ind_dict
+        #----------------------------------------------------------#
+        # Load indicators:
+        # 1. Transactions per hour - Always created since it is needed for usage outliers
+        self.i1_3 = i_indicator(num = 1,  index_cols = ['hour', 'region'], files_df = self.indicators_df)
         
-#         # 2. Unique subscribers per hour
-#         if 2 in self.ilevels_dict.keys():
-#             self.i2_3 = i_indicator(num = 2,  index_cols = ['hour', 'region'], files_df = self.indicators_df)
+        # 2. Unique subscribers per hour
+        if 2 in self.ilevels_dict.keys():
+            self.i2_3 = i_indicator(num = 2,  index_cols = ['hour', 'region'], files_df = self.indicators_df)
         
-#         # 3. Unique subscribers per day 
-#         if 3 in self.ilevels_dict.keys(): 
-#             if 3 in self.ilevels_dict[3]:
-#                 self.i3_3 = i_indicator(num = 3,  index_cols = ['day', 'region'], files_df = self.indicators_df)
-#         if 3 in self.ilevels_dict.keys(): 
-#             if 2 in self.ilevels_dict[3]:
-#                 self.i3_2 = i_indicator(num = 3,  index_cols = ['day', 'region'], level = 2, files_df = self.indicators_df)
+        # 3. Unique subscribers per day 
+        if 3 in self.ilevels_dict.keys(): 
+            if 3 in self.ilevels_dict[3]:
+                self.i3_3 = i_indicator(num = 3,  index_cols = ['day', 'region'], files_df = self.indicators_df)
+        if 3 in self.ilevels_dict.keys(): 
+            if 2 in self.ilevels_dict[3]:
+                self.i3_2 = i_indicator(num = 3,  index_cols = ['day', 'region'], level = 2, files_df = self.indicators_df)
         
-#         # 4. Proportion of active subscribers
-#         if 4 in self.ilevels_dict.keys():
-#             self.i4_country = i_indicator(num = 4,  index_cols = ['day'], level = 'country', files_df = self.indicators_df)
+        # 4. Proportion of active subscribers
+        if 4 in self.ilevels_dict.keys():
+            self.i4_country = i_indicator(num = 4,  index_cols = ['day'], level = 'country', files_df = self.indicators_df)
             
-#         # 5 - Connection Matrix
-#         if 5 in self.ilevels_dict.keys():
-#             if 3 in self.ilevels_dict[5]:
-#                 self.i5_3 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], files_df = self.indicators_df)
-#             if 2 in self.ilevels_dict[5]:
-#                 self.i5_2 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 2, files_df = self.indicators_df)
-#             if 'tc_harare' in self.ilevels_dict[5]:
-#                 self.i5_tc_harare = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 'tc_harare', files_df = self.indicators_df)
-#             if 'tc_bulawayo' in self.ilevels_dict[5]:  
-#                 self.i5_tc_bulawayo = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 'tc_bulawayo', files_df = self.indicators_df)
+        # 5 - Connection Matrix
+        if 5 in self.ilevels_dict.keys():
+            if 3 in self.ilevels_dict[5]:
+                self.i5_3 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], files_df = self.indicators_df)
+            if 2 in self.ilevels_dict[5]:
+                self.i5_2 = i_indicator(num = 5,  index_cols = ['connection_date', 'region_from', 'region_to'], level = 2, files_df = self.indicators_df)
         
-#         # 6. Unique subscribers per home location
-#         if 6 in self.ilevels_dict.keys():
-#             self.i6_3 = i_indicator(num = 6,  index_cols = ['week', 'home_region'], files_df = self.indicators_df)
+        # 6. Unique subscribers per home location
+        if 6 in self.ilevels_dict.keys():
+            self.i6_3 = i_indicator(num = 6,  index_cols = ['week', 'home_region'], files_df = self.indicators_df)
         
-#         # 7. Mean and Standard Deviation of distance traveled per day (by home location)
-#         if 7 in self.ilevels_dict.keys():
-#             if 3 in self.ilevels_dict[7]:
-#                 self.i7_3 = i_indicator(num = 7,  index_cols =['day','home_region'], time_var = 'day', region_vars = ['home_region'], level = 3, files_df = self.indicators_df)
-#             if 2 in self.ilevels_dict[7]:
-#                 self.i7_2 = i_indicator(num = 7,  index_cols =['day','home_region'], time_var = 'day', region_vars = ['home_region'], level = 2, files_df = self.indicators_df)
+        # 7. Mean and Standard Deviation of distance traveled per day (by home location)
+        if 7 in self.ilevels_dict.keys():
+            if 3 in self.ilevels_dict[7]:
+                self.i7_3 = i_indicator(num = 7,  index_cols =['day','home_region'], time_var = 'day', region_vars = ['home_region'], level = 3, files_df = self.indicators_df)
+            if 2 in self.ilevels_dict[7]:
+                self.i7_2 = i_indicator(num = 7,  index_cols =['day','home_region'], time_var = 'day', region_vars = ['home_region'], level = 2, files_df = self.indicators_df)
         
-#         # 8. Mean and Standard Deviation of distance traveled per week (by home location)
-#         if 8 in self.ilevels_dict.keys():
-#             if 3 in self.ilevels_dict[8]:
-#                 self.i8_3 = i_indicator(num = 8,  index_cols =['week','home_region'], time_var = 'week', region_vars = ['home_region'], level = 3, files_df = self.indicators_df)
-#             if 2 in self.ilevels_dict[8]:
-#                 self.i8_2 = i_indicator(num = 8,  index_cols =['week','home_region'], time_var = 'week', region_vars = ['home_region'], level = 2, files_df = self.indicators_df)
+        # 8. Mean and Standard Deviation of distance traveled per week (by home location)
+        if 8 in self.ilevels_dict.keys():
+            if 3 in self.ilevels_dict[8]:
+                self.i8_3 = i_indicator(num = 8,  index_cols =['week','home_region'], time_var = 'week', region_vars = ['home_region'], level = 3, files_df = self.indicators_df)
+            if 2 in self.ilevels_dict[8]:
+                self.i8_2 = i_indicator(num = 8,  index_cols =['week','home_region'], time_var = 'week', region_vars = ['home_region'], level = 2, files_df = self.indicators_df)
        
-#         # 9. Daily locations based on Home Region with average stay time and SD of stay time
-#         if 9 in self.ilevels_dict.keys(): 
-#             if 3 in self.ilevels_dict[9]:
-#                 self.i9_3 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 3, files_df = self.indicators_df)
-#             if 2 in self.ilevels_dict[9]:
-#                 self.i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 2, files_df = self.indicators_df)
-#             if 'tc_bulawayo' in self.ilevels_dict[9]:
-#                 self.i9_3 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 'tc_bulawayo', files_df = self.indicators_df)
-#             if 'tc_harare' in self.ilevels_dict[9]:
-#                 self.i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 'tc_harare', files_df = self.indicators_df)
+        # 9. Daily locations based on Home Region with average stay time and SD of stay time
+        if 9 in self.ilevels_dict.keys(): 
+            if 3 in self.ilevels_dict[9]:
+                self.i9_3 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 3, files_df = self.indicators_df)
+            if 2 in self.ilevels_dict[9]:
+                self.i9_2 = i_indicator(num = 9,  index_cols =['day', 'region', 'home_region'], level = 2, files_df = self.indicators_df)
         
-#         # 10. Simple OD matrix with duration of stay
-#         if 10 in self.ilevels_dict.keys():
-#             if 3 in self.ilevels_dict[10]:
-#                 self.i10_3 = i_indicator(num = 10,  index_cols =['day', 'region', 'region_lag'], level = 3, files_df = self.indicators_df)
-#             if 2 in self.ilevels_dict[10]:
-#                 self.i10_2 = i_indicator(num = 10,  index_cols =['day', 'region', 'region_lag'], level = 2, files_df = self.indicators_df)
+        # 10. Simple OD matrix with duration of stay
+        if 10 in self.ilevels_dict.keys():
+            if 3 in self.ilevels_dict[10]:
+                self.i10_3 = i_indicator(num = 10,  index_cols =['day', 'region', 'region_lag'], level = 3, files_df = self.indicators_df)
+            if 2 in self.ilevels_dict[10]:
+                self.i10_2 = i_indicator(num = 10,  index_cols =['day', 'region', 'region_lag'], level = 2, files_df = self.indicators_df)
         
-#         # 11. Monthly unique subscribers per home region
-#         if 11 in self.ilevels_dict.keys():
-#             if 3 in self.ilevels_dict[11]:
-#                 self.i11_3 = i_indicator(num = 11,  index_cols =['month', 'home_region'], level = 3, files_df = self.indicators_df)
-#             if 2 in self.ilevels_dict[11]:
-#                 self.i11_2 = i_indicator(num = 11,  index_cols =['month', 'home_region'], level = 2, files_df = self.indicators_df)
+        # 11. Monthly unique subscribers per home region
+        if 11 in self.ilevels_dict.keys():
+            if 3 in self.ilevels_dict[11]:
+                self.i11_3 = i_indicator(num = 11,  index_cols =['month', 'home_region'], level = 3, files_df = self.indicators_df)
+            if 2 in self.ilevels_dict[11]:
+                self.i11_2 = i_indicator(num = 11,  index_cols =['month', 'home_region'], level = 2, files_df = self.indicators_df)
     
-#     # Create comparisson panel for all loaded indicators
-#     def dirty_panel(self):
-#         for i in self.i_list:
-#             getattr(self, i).create_panel()
-#             print('Created comp. panel ' + i)
+    
+    # Create comparisson panel for all loaded indicators
+    def dirty_panel(self):
+        for i in self.i_list:
+            getattr(self, i).create_panel()
+            print('Created comp. panel ' + i)
     
 #     # Create clean panel for all loaded indicators
 #     def clean_panel(self, outliers_df):
