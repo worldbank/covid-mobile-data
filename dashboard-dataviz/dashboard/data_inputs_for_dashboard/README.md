@@ -1,3 +1,1 @@
-# Zimbabwe Dashboard
-
-All data files should be put in here. 
+# Data Inputs for Dashboard

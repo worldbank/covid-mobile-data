@@ -2,23 +2,22 @@
 
 # Depends on: clean_movement_inout_data.R
 
-
-unit <- "ward"
+unit <- "adm2"
 timeunit <- "daily"
-for(unit in c("district", "ward")){
+for(unit in c("adm2", "adm3")){
   for(timeunit in c("daily", "weekly")){
     
     print(paste(unit, timeunit, "--------------------------------------------"))
     
     # Set parameters -------------------------------------------------------------
-    if(unit %in% "district"){
+    admin_sp <- readRDS(file.path(GEO_PATH, paste0(unit, ".Rds")))
+    
+    if(unit %in% "adm2"){
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM2_PATH
-      admin_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
     }
     
-    if(unit %in% "ward"){
+    if(unit %in% "adm3"){
       CLEAN_DATA_PATH  <- CLEAN_DATA_ADM3_PATH
-      admin_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
     }
     
     # Clean ----------------------------------------------------------------------

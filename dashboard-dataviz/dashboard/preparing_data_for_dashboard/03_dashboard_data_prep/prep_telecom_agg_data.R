@@ -14,10 +14,10 @@ N_CORES <- 1
 
 #### Select which datasets to process
 # Non-OD
-PROCESS_DENSITY_DATA       <- T
-PROCESS_MOVEMENT_NET_DATA  <- T
-PROCESS_DISTANCE_MEAN_DATA <- T
-PROCESS_DISTANCE_STD_DATA  <- T
+PROCESS_DENSITY_DATA       <- F
+PROCESS_MOVEMENT_NET_DATA  <- F
+PROCESS_DISTANCE_MEAN_DATA <- F
+PROCESS_DISTANCE_STD_DATA  <- F
 
 # OD
 PROCESS_MOVEMENT_DATA      <- T
@@ -27,9 +27,6 @@ PROCESS_MOVEMENT_DATA      <- T
 REMOVE_PREVIOUS_FILES <- F
 
 ##### Remove Previous Files ##### ----------------------------------------------
-# THIS IS NOT STABLE. Will also ignore district and ward polygon files,
-# and other files not added here. should ignore these other files
-
 if(REMOVE_PREVIOUS_FILES){
   temp <- list.files(DASHBOARD_DATA_ONEDRIVE_PATH, 
                      full.names = T, 
@@ -41,17 +38,17 @@ if(REMOVE_PREVIOUS_FILES){
 # Need unit level data from shapefiles. Used in ensuring all regions are in
 # telecom agg data.
 
-ward_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))
-ward_sp_regiononly_df <- ward_sp[,c("region")]@data
+adm2_sp <- readRDS(file.path(GEO_PATH, "adm2.Rds"))
+adm2_sp_regiononly_df <- adm2_sp[,c("region")]@data
 
-district_sp <- readRDS(file.path(CLEAN_DATA_ADM2_PATH, "districts.Rds"))
-district_sp_regiononly_df <- district_sp[,c("region")]@data
+adm3_sp <- readRDS(file.path(GEO_PATH, "adm3.Rds"))
+adm3_spp_regiononly_df <- adm3_sp[,c("region")]@data
 
 ##### Prep Telecom Data ##### --------------------------------------------------
 
-unit <- "Wards"
+unit <- "Postos"
 timeunit <- "Daily"
-for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
+for(unit in c("Districts", "Postos")){ # "Wards", "Districts"
   for(timeunit in c("Weekly", "Daily")){
     
     print(paste(unit, timeunit, "--------------------------------------------"))
@@ -59,14 +56,14 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
     # Set Parameters -----------------------------------------------------------
     if(unit %in% "Districts"){
       CLEAN_DATA_PATH <- CLEAN_DATA_ADM2_PATH
-      admin_df <- district_sp_regiononly_df # For prep_movement_adminname_i_date_i 
-      admin_sp <- district_sp # For prep_movement_adminname_i_date_i 
+      admin_df <- adm2_sp_regiononly_df # For prep_movement_adminname_i_date_i 
+      admin_sp <- adm2_sp # For prep_movement_adminname_i_date_i 
     }
     
-    if(unit %in% "Wards"){
+    if(unit %in% "Postos"){
       CLEAN_DATA_PATH <- CLEAN_DATA_ADM3_PATH
-      admin_df <- ward_sp_regiononly_df # For prep_movement_adminname_i_date_i 
-      admin_sp <- ward_sp # For prep_movement_adminname_i_date_i 
+      admin_df <- adm3_spp_regiononly_df # For prep_movement_adminname_i_date_i 
+      admin_sp <- adm3_sp # For prep_movement_adminname_i_date_i 
     }
     
     # Short name for time unit, needed for file paths
@@ -78,24 +75,20 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
     # Process Density Data -----------------------------------------------------
     if(PROCESS_DENSITY_DATA){
       
-      ### Load Data
-      if(timeunit_short %in% "day"){
-        #df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-        #                                paste0("count_unique_subscribers_per_region_per_",
-        #                                       timeunit_short,
-        #                                       "_scaled.Rds")))
-        df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("i3_",
-                                               timeunit_short,
-                                               ".Rds")))
-      } else {
-        df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
-                                        paste0("i3_",
-                                               timeunit_short,
-                                               ".Rds")))
-      }
-
+      df_density <- readRDS(file.path(CLEAN_DATA_PATH, 
+                                      paste0("i3_",
+                                             timeunit_short,
+                                             ".Rds")))
+      df_density$province <- NA
       
+      ### make_sparkline
+      temp <- lapply(unique(df_density$date),
+             make_sparkline,
+             df = df_density,
+             unit = unit,
+             timeunit = timeunit,
+             varname = "Density")
+
       ### prep_density_date_i
       temp <- lapply(unique(df_density$date),
                      prep_nonod_date_i,
@@ -113,7 +106,7 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                      timeunit = timeunit,
                      varname = "Density",
                      vars_include = "density")
-
+      
     }
     
     # Process Mean Distance Data -----------------------------------------------
@@ -123,8 +116,17 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       df_distance_mean <- readRDS(file.path(CLEAN_DATA_PATH, 
                                        paste0("i7_",
                                               timeunit_short,
-                                              "_mean_distance",
+                                              "_avg_dist",
                                               ".Rds")))
+      df_distance_mean$province <- NA
+      
+      ### make_sparkline
+      temp <- lapply(unique(df_distance_mean$date),
+                     make_sparkline,
+                     df = df_distance_mean,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Mean Distance Traveled")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_mean$date),
@@ -150,8 +152,17 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
       df_distance_stdev <- readRDS(file.path(CLEAN_DATA_PATH, 
                                             paste0("i7_",
                                                    timeunit_short,
-                                                   "_stdev_distance",
+                                                   "_stddev",
                                                    ".Rds")))
+      df_distance_stdev$province <- NA
+      
+      ### make_sparkline
+      temp <- lapply(unique(df_distance_stdev$date),
+                     make_sparkline,
+                     df = df_distance_stdev,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Std Dev Distance Traveled")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_distance_stdev$date),
@@ -178,6 +189,16 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                                            paste0("i5_net_",
                                                   timeunit_short,
                                                   ".Rds")))
+      df_movement_net$province <- NA
+      
+      
+      ### make_sparkline
+      temp <- lapply(unique(df_movement_net$date),
+                     make_sparkline,
+                     df = df_movement_net,
+                     unit = unit,
+                     timeunit = timeunit,
+                     varname = "Net Movement")
       
       ### prep_density_date_i
       temp <- lapply(unique(df_movement_net$date),
@@ -207,28 +228,35 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
                                                timeunit_short,
                                                ".Rds")))
       df_movement <- df_movement[!is.na(df_movement$date),]
+      df_movement$province <- NA
       
       ### prep_movement_date_i
+      if(T){
       temp <- lapply(unique(df_movement$date),  
                      prep_od_date_i, 
                      df_movement,  
                      unit,
                      timeunit,
                      admin_sp)
+      }
       
 
       ### prep_movement_adminname_i
+      if(T){
       temp <- lapply(unique(unique(df_movement$name_dest),
                             unique(df_movement$name_origin)),  
                      prep_od_adminname_i, 
                      df_movement,  
                      unit,
                      timeunit)
+      }
+
 
       ### prep_movement_adminname_i_date_i
       # Loop through units and dates; apply function separately for moving in 
       # and out
-
+    
+      if(T){
       i <- 1
       t <- Sys.time()
       for(name_i in unique(unique(df_movement$name_dest),
@@ -262,6 +290,8 @@ for(unit in c("Districts", "Wards")){ # "Wards", "Districts"
         difftime(Sys.time(), t, units="secs") %>% print()
         t <- Sys.time()
       }
+      }
+
       
 
     

@@ -7,8 +7,8 @@ FIG_PATH_OUTLIER <- file.path(PROJECT_PATH, "proof-of-concept",
                               "outputs", "data-checks", "figures_indicators", "subscribers_neighbors_daily_outlier")
 
 # Load Data --------------------------------------------------------------------
-ISAAC_DATA_PATH_2 <- file.path(PROJECT_PATH, "Zimbabwe", "Isaac-results", "Isaac_apr_may", "admin2_flowminder")
-ISAAC_DATA_PATH_3 <- file.path(PROJECT_PATH, "Zimbabwe", "Isaac-results", "Isaac_apr_may", "admin3_flowminder")
+ISAAC_DATA_PATH_2 <- file.path(PROJECT_PATH, "Isaac-results", "Isaac_apr_may", "admin2_flowminder")
+ISAAC_DATA_PATH_3 <- file.path(PROJECT_PATH, "Isaac-results", "Isaac_apr_may", "admin3_flowminder")
 
 #### Wards
 wards_sp <- readRDS(file.path(CLEAN_DATA_ADM3_PATH, "wards_aggregated.Rds"))

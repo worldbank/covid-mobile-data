@@ -7,15 +7,6 @@
 # functions take a long time and where more effort should be spent making them 
 # faster.
 
-# TODO: (1) Functions designed so that any variable name inputs will work; however,
-#           some (eg, complete) return dataframe always with standardized
-#           var names. Fix so output the origin names entered in to make this
-#           more general.
-#       (2) Where possible, use data.table methods - particularly when use
-#           group_by - to help make faster. 
-#               --complete?
-#               --interpolation and replace zero scripts
-
 tp_standardize_vars <- function(data,
                                 date_var,
                                 region_var,
@@ -174,7 +165,7 @@ tp_fill_regions <- function(data,
   
   # DESCRIPTION
   # Some datasets to not contain all the regions found in the polygon - some
-  # wards or districts, for example, may be missing. This function adds 
+  # units, for example, may be missing. This function adds 
   # missing regions to the dataframe. It only adds for one time period; the
   # "complete" function should then be used after to expand the region across
   # time.
@@ -387,7 +378,7 @@ tp_add_label_baseline <- function(data,
                                   name_dest_var = "name_dest",
                                   timeunit,
                                   OD){
-  
+
   #### Name
   if(OD){
     label_name <- paste0(data[[name_origin_var]], 
@@ -397,8 +388,10 @@ tp_add_label_baseline <- function(data,
     label_name <- data[[name_var]]
   }
   
+  label_name <- paste0("<h4>", label_name, "</h4>")
+  
   #### Current Value
-  label_value <- paste0("This ", timeunit, "'s value: ",
+  label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",
                         data[[value_var]] %>% round(2), ".")
   
   label_value <- ifelse(is.na(data[[value_var]]),
@@ -432,13 +425,7 @@ tp_add_label_baseline <- function(data,
                        label_base)
   
   # Construct final label
-  label <- 
-    paste(label_name,
-          label_value,
-          label_base,
-          sep = "<br>") %>%
-    str_replace_all("<br><br>", "<br>")%>%
-    str_replace_all("<br>$", "")
+  label <- paste0(label_name, label_value, "<br>", label_base)
   
   data[[newvar_name]] <- label
   
@@ -482,9 +469,10 @@ tp_add_label_level <- function(data,
   } else{
     label_name <- data$name
   }
+  label_name <- paste0("<h4>", label_name, "</h4>")
   
   #### Value
-  label_value <- paste0("This ", timeunit, "'s value: ",data$value  %>% round(2), ".")
+  label_value <- paste0("<b>This ", timeunit, "'s value:</b> ",data$value  %>% round(2), ".")
   
   label_value <- ifelse(is.na(data$value),
                         "15 or fewer<br>or information not available",
@@ -521,14 +509,8 @@ tp_add_label_level <- function(data,
                          label_change)
   
   # Construct final label
-  label <- 
-    paste(label_name,
-          label_value,
-          label_change,
-          sep = "<br>") %>%
-    str_replace_all("<br><br>", "<br>")%>%
-    str_replace_all("<br>$", "")
-  
+  label <- paste0(label_name, label_value, "<br>", label_change)
+
   data_orig[[newvar_name]] <- label
   
   print("Done: tp_add_label_level")
@@ -707,10 +689,13 @@ tp_add_baseline_comp_stats <- function(data,
                                        date_var = "date",
                                        baseline_date = "2020-03-15",
                                        file_name = NULL,
-                                       type = "daily"){
+                                       type = "daily",
+                                       day_of_week = T){
   
-  # DESCRIPTION
-  # Adds baseline values
+  # Computes baseline values
+  # ARGS:
+  # day_of_week: If TRUE, baseline values come from same day of week. If FALSE,
+  #              baseline values come from weekday/weekends.
   
   # TODO: Assumes baseline comes from same year, could generalize
   
@@ -731,6 +716,12 @@ tp_add_baseline_comp_stats <- function(data,
       mutate(date  = date %>% as.Date(),
              dow   = wday(date),
              month = month(date))
+    
+    ### Day of week VS weekday/weekend
+    if(day_of_week %in% F){
+      # 7 = Saturday; 1 = Sunday
+      data_sub$dow <- as.numeric(data_sub$dow %in% c(7,1))
+    }
     
   } else{
     ### Weekly / Text
@@ -755,14 +746,6 @@ tp_add_baseline_comp_stats <- function(data,
   if(type %in% "weekly"){
     data_sub$dow <- 1 # make dummy week variable
   }
-  
-  #### Create variables of baseline values
-  # Use data.table method for below code
-  #data_sub <- data_sub %>%
-  #  dplyr::group_by(region, dow) %>%
-  #  dplyr::mutate(value_dow_base_mean = mean(value[month %in% baseline_months], na.rm=T),
-  #                value_dow_base_sd   = sd(value[month %in% baseline_months], na.rm=T)) %>%
-  #  dplyr::ungroup() 
   
   mean_NA <- function(x){
     

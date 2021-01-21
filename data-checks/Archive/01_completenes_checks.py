@@ -13,7 +13,7 @@ EXPORT_FIGURES = True
 timevar = 'hour'
 regvar = 'region'
 
-INDICATORS_path = DATA_path + 'Zimbabwe/isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
+INDICATORS_path = DATA_path + 'isaac-results/Archive/e_23_07_2020_converage_23_05_to_30_06/'
 
 #-----------------------------------------------------------------#
 # Load data

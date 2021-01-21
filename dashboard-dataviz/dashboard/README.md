@@ -1,4 +1,4 @@
-# Zimbabwe Dashboard
+# Dashboard
 
 This dashboard is build using R Shiny.
 
@@ -8,7 +8,7 @@ This dashboard is build using R Shiny.
 
 ## Clean Spatial Data
 
-The files in `01_clean_spatial_data` clean spatial polygons for districts and wards to be used in the dashboard and subsequent cleaning steps. The following cleaning steps are conducted:
+The files in `01_clean_spatial_data` clean spatial polygons to be used in the dashboard and subsequent cleaning steps. The following cleaning steps are conducted:
 
 1. Aggregate units when needed (e.g., aggregating wards)
 2. Add additional variables (e.g., area)
@@ -22,10 +22,10 @@ easily switched in the dashboard
 
 | variable | format | example | description |
 |---|---|---|---|
-| region | string | ZW123456 | Unique identifier of the spatial unit |
-| name | string | harare | Spatial unit name |
+| region | string | ZONE123456 | Unique identifier of the spatial unit |
+| name | string | name-here | Spatial unit name |
 | area | numeric | 1234 | Area of the spatial unit in kilometers squared |
-| province | string | Bulawayo | Name of the province |
+| adm1| string | name-here | Name of the province |
 
 #### Order Spatial Data
 Spatial datasets are ordered by region. When cleaning other datasets at the
@@ -44,16 +44,16 @@ variables:
 
 | variable | format | example | description |
 |---|---|---|---|
-| region | string | ZW123456 | Unique identifier of the spatial unit |
-| name | string | harare | Spatial unit name |
-| date | date or string | 2020-02-01 or Feb 01 - Feb 07 | The day or the week range |
+| region | string | ZONE123456 | Unique identifier of the spatial unit |
+| name | string | Name1 | Spatial unit name |
+| date | date or string | 2020-02-01 | The date |
 | value | numeric | 1000 | Value (e.g., number of subscribers, number of trips, distance traveled) |
 | value_lag | numeric | 1000 | Value from the previous time period |
 | value_base | numeric | 1000 | Baseline value |
 | value_perchange_base | numeric | 50 | Percent change from baseline |
 | value_zscore_base | numeric | 50 | Z-score change since baseline |
-| label_level | string | Harare 6<br>This day's value: 1000<br>...  | Label for when level of variable is shown |
-| label_base| string | Harare 6<br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
+| label_level | string | Name1 <br>This day's value: 1000<br>...  | Label for when level of variable is shown |
+| label_base| string | Name1 <br>This day's value: 1000<br>...  | Label for when change since baseline value is shown. |
 
 ## Dashboard Data Prep
 
@@ -63,9 +63,9 @@ The following datasets are made.
 
 | Dataset Type | Naming Convention | Description |
 | --- | --- | --- |
-| ward-level | [Wards/Districts]\_[Indicator Name]\_[Daily/Weekly]\_[Date/Week].Rds | For a given day or week, this dataset contains information for all wards or districts for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into ward from all other wards). |
-| time-level |  [Wards/Districts]\_[Indicator Name]\_[Daily/Weekly]\_[Ward/District Name].Rds | For a given admin unit, this dataset contains a time series of values for a specified indicator. |
-| ward-time-level |  [Ward/Districts]\_[Indicator Name]\_[Daily/Weekly]\_[Ward/District Name]\_[Date/Week].Rds | These datasets are only used for O-D variables. The show, for a given origin or destination unit, the movement in or out of that unit to all other units for the specified day/week. |
+| unit-level | [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Date/Week].Rds | For a given day or week, this dataset contains information for all units for a specified indicator. For O-D level datasets, values are aggregated to the specified origin or destination unit (eg, movement into unit from all other units). |
+| time-level |  [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Unit Name].Rds | For a given admin unit, this dataset contains a time series of values for a specified indicator. |
+| unit-time-level |  [Unit Type (eg, ADM1, ADM2, etc)]\_[Indicator Name]\_[Daily/Weekly]\_[Unit Name]\_[Date/Week].Rds | These datasets are only used for O-D variables. The show, for a given origin or destination unit, the movement in or out of that unit to all other units for the specified day/week. |
 
 
 
