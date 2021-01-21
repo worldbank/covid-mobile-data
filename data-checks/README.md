@@ -22,7 +22,7 @@ $ python checker.py   --Path path/to/indicators
                     [--outputs path/to/outputs]
 ```
 
-## Custom usage usage:
+## Custom usage:
 You can create an instance of the checker class to customize any of the default values.
 
 ```python
@@ -31,13 +31,11 @@ from checker import *
 check = checker(path = 'path/to/indicaotrs',
                 outputs_path = 'path/to/outputs',
                 level = 'subfolder',
-                ind_dict = {
-                 'i1' : 'transactions_per_hour.csv',
-                 'i5':  'origin_destination_connection_matrix_per_day.csv'},
+                ind_dict = {'i1' : 'transactions_per_hour.csv',
+                            'i5':  'origin_destination_connection_matrix_per_day.csv'},
                 prefix = 'your_prefix_',
-                col_names_dict = {
-                    'i1_col_names': {'Time':'hour', 'Geography':'region' 'Count':'count'},
-                    'i5_col_names': {'Time':'connection_date','Geography_01':'region_from',
-                                     'Geography_02':'region_to', 'Subcrib_Count':'subscriber_count',
-                                     'OD_Count':'od_count','Total_Count':'total_count'} })
+                col_names_dict = {'i1_col_names': {'Time':'hour', 'Geography':'region', 'Count':'count'},
+                                  'i5_col_names': {'Time':'connection_date','Geography_01':'region_from',
+                                                   'Geography_02':'region_to', 'Subcrib_Count':'subscriber_count',
+                                                   'OD_Count':'od_count','Total_Count':'total_count'} })
 ```
