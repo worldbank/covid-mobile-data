@@ -45,7 +45,6 @@ class checker:
         htrahshold : Number of hours to qualify as tower down (see usage_outliers() method)
         """
         
-        
         # Set data path
         if level is None:
             self.path = path
@@ -57,18 +56,24 @@ class checker:
                 os.mkdir(self.outputs_path)
         # List files in path
         self.files = os.listdir(self.path)
-        self.ind_dict = {
-                 'i1' : 'transactions_per_hour.csv',
-                #  'i2' : 'unique_subscribers_per_hour.csv',
-                #  'i3': 'unique_subscribers_per_day.csv',
-                #  'i4' : 'percent_of_all_subscribers_active_per_day.csv',
-                 'i5': 'origin_destination_connection_matrix_per_day.csv'}
-                #  'i6' : 'unique_subscriber_home_locations_per_week.csv',
-                #  'i7': 'mean_distance_per_day.csv',
-                #  'i8' : 'mean_distance_per_week.csv',
-                #  'i9': 'week_home_vs_day_location_per_day.csv',
-                #  'i10' : 'origin_destination_matrix_time_per_day.csv',
-                #  'i11': 'unique_subscriber_home_locations_per_month.csv'}
+        
+        # File names
+        if ind_dict is None:
+            self.ind_dict = {
+                    'i1' : 'transactions_per_hour.csv',
+                    #  'i2' : 'unique_subscribers_per_hour.csv',
+                    #  'i3': 'unique_subscribers_per_day.csv',
+                    #  'i4' : 'percent_of_all_subscribers_active_per_day.csv',
+                    'i5': 'origin_destination_connection_matrix_per_day.csv'}
+                    #  'i6' : 'unique_subscriber_home_locations_per_week.csv',
+                    #  'i7': 'mean_distance_per_day.csv',
+                    #  'i8' : 'mean_distance_per_week.csv',
+                    #  'i9': 'week_home_vs_day_location_per_day.csv',
+                    #  'i10' : 'origin_destination_matrix_time_per_day.csv',
+                    #  'i11': 'unique_subscriber_home_locations_per_month.csv'}
+        else:
+            self.ind_dict = ind_dict
+        
         if prefix is None:
             pass
         else:
