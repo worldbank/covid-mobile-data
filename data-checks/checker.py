@@ -1,8 +1,3 @@
-
-# ---------------------------------------------------------
-# Data checker class definition
-
-
 # ---------------------------------------------------------
 # Settings
 import os
@@ -14,19 +9,19 @@ import argparse
 
 
 
-
+# ---------------------------------------------------------
 class checker:
     """
-    This class contains loads aggregated indicators and runs basic
-    checks.
-    
+    This class loads aggregated indicators and runs basic checks.
     
     -------------------------------------------------------------
-    Attributes
+    Public methods
     
+    completeness_checks() : Aggregates indicators on day and country resolutions and produces plots with basic checks.
     
-    -------------------------------------------------------------
-    Methods
+    usage_outliers(htrahshold) : A calculates a proxy for cellphone towers outages and exports a table with occurences.
+        - Calculates the average number of active hours per day for each region over the entire period.
+        - Flags day-region ocurrences below average - htrashold as having a tower down.
     
     
     """
