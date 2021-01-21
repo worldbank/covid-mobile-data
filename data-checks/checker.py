@@ -19,6 +19,16 @@ class checker:
     """
     This class contains loads aggregated indicators and runs basic
     checks.
+    
+    
+    -------------------------------------------------------------
+    Attributes
+    
+    
+    -------------------------------------------------------------
+    Methods
+    
+    
     """
     def __init__(self,
                 path,
@@ -27,8 +37,20 @@ class checker:
                 ind_dict = None,
                 prefix = None,
                 col_names_dict = None,
-                export_plots = True,
                 htrahshold = -3):
+        """
+        Parameters
+        ----------
+        path : Folder containing CDR indicators
+        outputs_path : Folder to save outputs. Defaults to path/out/
+        level : Optional subfolder in case there are multiple geographic resolutions.
+        ind_dict : Dictionary containing indicator file names.
+        prefix : Optional file name prefix (e.g. "[YEAR_MONTH]_"),
+        col_names_dict : Optional dictionary to specify indicaotors column names.
+        htrahshold : Number of hours to qualify as tower down (see usage_outliers() method)
+        """
+        
+        
         # Set data path
         if level is None:
             self.path = path
