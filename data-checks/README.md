@@ -37,22 +37,9 @@ check = checker(path = 'path/to/indicaotrs',
                 prefix = 'your_prefix_',
                 col_names_dict = {
                     'i1_col_names': {'Time':'hour', 'Geography':'region' 'Count':'count'},
-                    'i2_col_names': {'Time':'hour','Geography':'region' 'Count':'count'},
-                    'i3_col_names': {'Time':'day','Geography':'region' 'Count':'count'},
-                    'i4_col_names': ('day','count','percent_active'),
-                    'i5_col_names': {'Time':'connection_date' 'Geography_01':'region_from''Geography_02':'region_to',
-                                    'Subcrib_Count':'subscriber_count',
+                    'i5_col_names': {'Time':'connection_date','Geography_01':'region_from',
+                                     'Geography_02':'region_to', 'Subcrib_Count':'subscriber_count',
                                      'OD_Count':'od_count','Total_Count':'total_count'},
-                    'i6_col_names': ('week','home_region','count'),
-                    'i7_col_names': ('home_region','day','mean_distance','stdev_distance'),
-                    'i8_col_names': ('home_region','week','mean_distance','stdev_distance'),
-                    'i9_col_names': ('day','region','home_region','mean_duration','stdev_duration','count'),
-                    'i10_col_names': ('day','region',
-                    'region_lag','total_duration_destination',
-                                      'avg_duration_destination',
-                                      'count_destination' 'stddev_duration_destination'
-                                     'total_duration_origin','avg_duration_origin' 'count_origin',
-                                      'stddev_duration_origin'),
-                    'i11_col_names': ('month','home_region','count')
-                }))
+
+                })
 ```
