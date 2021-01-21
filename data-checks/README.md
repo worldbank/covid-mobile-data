@@ -39,7 +39,5 @@ check = checker(path = 'path/to/indicaotrs',
                     'i1_col_names': {'Time':'hour', 'Geography':'region' 'Count':'count'},
                     'i5_col_names': {'Time':'connection_date','Geography_01':'region_from',
                                      'Geography_02':'region_to', 'Subcrib_Count':'subscriber_count',
-                                     'OD_Count':'od_count','Total_Count':'total_count'},
-
-                })
+                                     'OD_Count':'od_count','Total_Count':'total_count'} })
 ```
