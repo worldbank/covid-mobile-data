@@ -89,22 +89,10 @@ class checker:
         if col_names_dict is None:
             self.col_names_dict = {
                     'i1_col_names': {'Time':'hour', 'Geography':'region','Count':'count'},
-                    'i2_col_names': {'Time':'hour','Geography':'region','Count':'count'},
                     'i3_col_names': {'Time':'day','Geography':'region','Count':'count'},
-                    'i4_col_names': ('day','count','percent_active'),
                     'i5_col_names': {'Time':'connection_date','Geography_01':'region_from','Geography_02':'region_to',
                                      'Subcrib_Count':'subscriber_count',
-                                     'OD_Count':'od_count','Total_Count':'total_count'},
-                    'i6_col_names': ('week','home_region','count'),
-                    'i7_col_names': ('home_region','day','mean_distance','stdev_distance'),
-                    'i8_col_names': ('home_region','week','mean_distance','stdev_distance'),
-                    'i9_col_names': ('day','region','home_region','mean_duration','stdev_duration','count'),
-                    'i10_col_names': ('day','region','region_lag','total_duration_destination',
-                                      'avg_duration_destination','count_destination','stddev_duration_destination'
-                                      'total_duration_origin','avg_duration_origin','count_origin',
-                                      'stddev_duration_origin'),
-                    'i11_col_names': ('month','home_region','count')
-        }
+                                     'OD_Count':'od_count','Total_Count':'total_count'} }
         # Otherwise specify dict manually
         else:
             self.col_names_dict = col_names_dict
@@ -145,7 +133,7 @@ class checker:
     
     def run_aggregations(self):
         # Missing region remove function
-        def remove_missings(df, regionvar = self.col_names_dict['i1_col_names']['Geography'], missing_values = self.missing_values):
+        def remove_missings(df, regionvar, missing_values = self.missing_values):
             return df[~df[regionvar].isin(missing_values)]
         
         # Create data sets with time indexes and fill blanks with 0s
@@ -162,7 +150,7 @@ class checker:
     
     
      # Indicator 1
-        self.i1_hour = remove_missings(self.i1)\
+        self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
             .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
             .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
                 self.col_names_dict['i1_col_names']['Count'] : np.sum})\
@@ -170,7 +158,7 @@ class checker:
             .sort_values(['date', self.col_names_dict['i1_col_names']['Time']])\
             .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
         
-        self.i1_date = remove_missings(self.i1)\
+        self.i1_date = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
             .groupby('date')\
             .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
                 self.col_names_dict['i1_col_names']['Count'] : np.sum})\
@@ -179,7 +167,7 @@ class checker:
             .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
     
     # Indicator 5
-        i5_nmissing = remove_missings(remove_missings(self.i5,self.col_names_dict['i5_col_names']['Geography_01']), 
+        i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5_col_names']['Geography_01']), 
                                       self.col_names_dict['i5_col_names']['Geography_02'])
         self.i5_date = i5_nmissing\
         .groupby('date')\
