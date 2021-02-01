@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import plotly
 import plotly.graph_objects as go
+import plotly.express as px
 import argparse
 
 
@@ -102,7 +103,9 @@ class checker:
         self.htrahshold = htrahshold
         
         # Run data loading and processing methods
+        print('Loading data...')
         self.load_indicators()
+        print('Processing data...')
         self.run_aggregations()
     
    # ---------------------------------------------------------
@@ -148,7 +151,6 @@ class checker:
             data = data.reindex(full_time_range,  fill_value=0)
             return(data)
     
-    
      # Indicator 1
         self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
             .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
@@ -178,10 +180,26 @@ class checker:
         .sort_values('date')
         
         self.i5_date = time_complete(self.i5_date, 'date')
+        
+        # Remove first day for plots since it doesn't have movements from the day before
+        # so it is biased by definition.
+        self.i5_date = self.i5_date[~(self.i5_date.index == self.i5_date.index.min())]
     
     
      # ---------------------------------------------------------
     # Plots
+    
+    def plot_i1_hist(self, show = True):
+        count = chl.col_names_dict['i1_col_names']['Count']
+        fig = px.histogram(self.i1[count].clip(0, self.i1[count].quantile(0.95)), 
+                           x=count, 
+                           title='Hourly calls distribution.<br>(Censored at 95th percentile.)', 
+                           labels = {count : 'Number of calls per hour.'})
+        file_name = self.outputs_path + '/' + 'i1_hist.html'
+        print('Saving: ' + file_name)
+        # plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if show:
+            fig.show()
     
     def plot_i1_count(self, show = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, 
@@ -292,7 +310,6 @@ class checker:
         file = open(self.outputs_path + '/' + "days_wards_with_low_hours_i1.txt", "w") 
         file.write(readme_text) 
         file.close() 
-        
 
 
 # ---------------------------------------------------------
