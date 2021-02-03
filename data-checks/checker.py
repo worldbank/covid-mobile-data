@@ -128,10 +128,12 @@ class checker:
             return df
         # Load indicators
         path = self.path + '/'
-        self.i1 = load(path + self.ind_dict['i1'])
-        #self.i2 = load(path + self.ind_dict['i2'])
-        self.i5 = load(path + self.ind_dict['i5'])
-        #self.i7 = load(path + self.ind_dict['i7'], 'day')
+        if 'i1' in ind_dict:
+            self.i1 = load(path + self.ind_dict['i1'], timevar = self.col_names_dict['i1_col_names']['Time'])
+        if 'i3' in ind_dict:
+            self.i3 = load(path + self.ind_dict['i3'], timevar = self.col_names_dict['i3_col_names']['Time'])
+        if 'i5' in ind_dict:
+            self.i5 = load(path + self.ind_dict['i5'], timevar = self.col_names_dict['i5_col_names']['Time'])
     
     
     def run_aggregations(self):
@@ -150,41 +152,42 @@ class checker:
             data = data.set_index(timevar)
             data = data.reindex(full_time_range,  fill_value=0)
             return(data)
-    
-     # Indicator 1
-        self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
-            .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
-            .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
-                self.col_names_dict['i1_col_names']['Count'] : np.sum})\
-            .reset_index()\
-            .sort_values(['date', self.col_names_dict['i1_col_names']['Time']])\
-            .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
         
-        self.i1_date = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
+        # Indicator 1
+        if 'i1' in ind_dict:
+            # self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
+            #     .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
+            #     .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
+            #         self.col_names_dict['i1_col_names']['Count'] : np.sum})\
+            #     .reset_index()\
+            #     .sort_values(['date', self.col_names_dict['i1_col_names']['Time']])\
+            #     .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
+            
+            self.i1_date = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
+                .groupby('date')\
+                .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
+                    self.col_names_dict['i1_col_names']['Count'] : np.sum})\
+                .reset_index()\
+                .sort_values(['date'])\
+                .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
+        
+        # Indicator 5
+        if 'i5' in ind_dict:
+            i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5_col_names']['Geography_01']), 
+                                        self.col_names_dict['i5_col_names']['Geography_02'])
+            self.i5_date = i5_nmissing\
             .groupby('date')\
-            .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
-                self.col_names_dict['i1_col_names']['Count'] : np.sum})\
+            .agg({self.col_names_dict['i5_col_names']['Geography_01'] : pd.Series.nunique ,
+                self.col_names_dict['i5_col_names']['Geography_02'] : pd.Series.nunique,
+                self.col_names_dict['i5_col_names']['Total_Count'] : np.sum})\
             .reset_index()\
-            .sort_values(['date'])\
-            .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
-    
-    # Indicator 5
-        i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5_col_names']['Geography_01']), 
-                                      self.col_names_dict['i5_col_names']['Geography_02'])
-        self.i5_date = i5_nmissing\
-        .groupby('date')\
-        .agg({self.col_names_dict['i5_col_names']['Geography_01'] : pd.Series.nunique ,
-              self.col_names_dict['i5_col_names']['Geography_02'] : pd.Series.nunique,
-              self.col_names_dict['i5_col_names']['Total_Count'] : np.sum})\
-        .reset_index()\
-        .sort_values('date')
-        
-        self.i5_date = time_complete(self.i5_date, 'date')
-        
-        # Remove first day for plots since it doesn't have movements from the day before
-        # so it is biased by definition.
-        self.i5_date = self.i5_date[~(self.i5_date.index == self.i5_date.index.min())]
-    
+            .sort_values('date')
+            
+            self.i5_date = time_complete(self.i5_date, 'date')
+            
+            # Remove first day for plots since it doesn't have movements from the day before
+            # so it is biased by definition.
+            self.i5_date = self.i5_date[~(self.i5_date.index == self.i5_date.index.min())]
     
      # ---------------------------------------------------------
     # Plots
@@ -268,11 +271,13 @@ class checker:
         # ---------------------------------------------------------
     # Check pipelines 
     def completeness_checks(self):
-        self.plot_region_missings()
-        self.plot_i1_count()
-        self.plot_i1_n_regions()
-        self.plot_i5_count()
-        self.plot_i5_region_count()
+        if 'i1' in ind_dict:
+            self.plot_region_missings()
+            self.plot_i1_count()
+            self.plot_i1_n_regions()
+        if 'i5' in ind_dict:
+            self.plot_i5_count()
+            self.plot_i5_region_count()
     
      # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
