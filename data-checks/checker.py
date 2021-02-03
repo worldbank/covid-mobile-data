@@ -215,7 +215,7 @@ class checker:
         count = self.col_names_dict['i1']['Count']
         fig = px.histogram(self.i1[count].clip(0, self.i1[count].quantile(0.95)), 
                            x=count, 
-                           title='Indicator 1: Hourly calls distribution.<br>(Censored at 95th percentile.)', 
+                           title='Indicator 1: Hourly calls distribution<br>(Censored at 95th percentile)', 
                            labels = {count : 'Number of calls per hour.'})
         print("Plotting indicator 1 histogram...")
         if export:
@@ -267,9 +267,9 @@ class checker:
     
     def plot_i3_hist(self, show = True, export = True):
         count = self.col_names_dict['i3']['Count']
-        fig = px.histogram(self.i3[count], 
+        fig = px.histogram(self.i3[count].clip(0, self.i3[count].quantile(0.95)), 
                            x=count, 
-                           title='Indicator 3: Active subscribers distribution', 
+                           title='Indicator 3: Active subscribers distribution<br>(Censored at 95th percentile)', 
                            labels = {count : 'Number of active subscribers per day and region.'})
         print("Plotting indicator 3 daily counts...")
         if export:
