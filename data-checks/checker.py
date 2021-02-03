@@ -189,30 +189,32 @@ class checker:
      # ---------------------------------------------------------
     # Plots
     
-    def plot_i1_hist(self, show = True):
+    def plot_i1_hist(self, show = True, export = True):
         count = chl.col_names_dict['i1_col_names']['Count']
         fig = px.histogram(self.i1[count].clip(0, self.i1[count].quantile(0.95)), 
                            x=count, 
                            title='Hourly calls distribution.<br>(Censored at 95th percentile.)', 
                            labels = {count : 'Number of calls per hour.'})
-        file_name = self.outputs_path + '/' + 'i1_hist.html'
-        print('Saving: ' + file_name)
-        # plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if export:
+            file_name = self.outputs_path + '/' + 'i1_hist.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
     
-    def plot_i1_count(self, show = True):
+    def plot_i1_count(self, show = True, export = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, 
                                         y=self.i1_date[self.col_names_dict['i1_col_names']['Count']]))
         fig.update_layout(title_text="Indicator 1: Total number of transactions.")
         
-        file_name = self.outputs_path + '/' + 'i1_count.html'
-        print('Saving: ' + file_name)
-        plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if export:
+            file_name = self.outputs_path + '/' + 'i1_count.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
         
-    def plot_i1_n_regions(self, show = True):
+    def plot_i1_n_regions(self, show = True, export = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['n_regions']))
         fig.update_layout(title_text="Indicator 1: Number of unique regions.")
         
@@ -222,17 +224,18 @@ class checker:
         if show:
             fig.show()
     
-    def plot_i5_count(self, show = True):
+    def plot_i5_count(self, show = True, export = True):
         fig = go.Figure(data=go.Scatter(x=self.i5_date.index, 
                                         y=self.i5_date[self.col_names_dict['i5_col_names']['Total_Count']]))
         fig.update_layout(title_text="Indicator 5: Total number of movements.")
         
-        file_name = self.outputs_path + '/' + 'i5_count.html'
-        print('Saving: ' + file_name)
-        plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if export:
+            file_name = self.outputs_path + '/' + 'i5_count.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
-    def plot_i5_region_count(self, show = True):
+    def plot_i5_region_count(self, show = True, export = True):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=self.i5_date.index, 
                                  y=self.i5_date[self.col_names_dict['i5_col_names']['Geography_02']], marker=dict(color="blue"), name = 'Destination regions'))
@@ -240,13 +243,14 @@ class checker:
                                  y=self.i5_date[self.col_names_dict['i5_col_names']['Geography_01']], marker=dict(color="red"), name = 'Origin regions'))
         fig.update_layout(title_text="Indicator 5: Number of unique regions.")
         
-        file_name = self.outputs_path + '/' + 'i5_region_count.html'
-        print('Saving: ' + file_name)
-        plotly.offline.plot(fig, filename= file_name , auto_open=False)
+        if export:
+            file_name = self.outputs_path + '/' + 'i5_region_count.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename= file_name , auto_open=False)
         if show:
             fig.show()
     
-    def plot_region_missings(self, show = True):
+    def plot_region_missings(self, show = True, export = True):
         n_missing = self.i1[self.col_names_dict['i1_col_names']['Geography']].isin(self.missing_values).sum() 
         labels = ['Missing region','Non-missing region']
         values = [n_missing, len(self.i1) - n_missing]
@@ -254,9 +258,10 @@ class checker:
         fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
         fig.update_layout(title_text="Indicator 1: Number of transactions not mapped to region.")
         
-        file_name = self.outputs_path + '/' + 'region_missings.html'
-        print('Saving: ' + file_name)
-        plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if export:
+            file_name = self.outputs_path + '/' + 'region_missings.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
     
