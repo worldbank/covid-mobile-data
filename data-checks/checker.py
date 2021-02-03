@@ -40,7 +40,7 @@ class checker:
         path : Folder containing CDR indicators
         outputs_path : Folder to save outputs. Defaults to path/out/
         level : Optional subfolder in case there are multiple geographic resolutions.
-        ind_dict : Dictionary containing indicator file names.
+        self.ind_dict : Dictionary containing indicator file names.
         prefix : Optional file name prefix (e.g. "[YEAR_MONTH]_"),
         col_names_dict : Optional dictionary to specify indicaotors column names.
         htrahshold : Number of hours to qualify as tower down (see usage_outliers() method)
@@ -63,7 +63,7 @@ class checker:
             self.ind_dict = {
                     'i1' : 'transactions_per_hour.csv',
                     #  'i2' : 'unique_subscribers_per_hour.csv',
-                    #  'i3': 'unique_subscribers_per_day.csv',
+                    'i3': 'unique_subscribers_per_day.csv',
                     #  'i4' : 'percent_of_all_subscribers_active_per_day.csv',
                     'i5': 'origin_destination_connection_matrix_per_day.csv'}
                     #  'i6' : 'unique_subscriber_home_locations_per_week.csv',
@@ -82,7 +82,7 @@ class checker:
         
         # Check if files exist
         files_bol = all([os.path.isfile(self.path + '/' + self.ind_dict[key]) for key in self.ind_dict.keys()])
-        assert files_bol,"Some indicators don't exist. Check defaults or set ind_dict"
+        assert files_bol,"Some indicators don't exist. Check defaults or set self.ind_dict"
         
         # Indicator default column names
         # Construct column names of each indicator as key-value pairs 
@@ -128,11 +128,11 @@ class checker:
             return df
         # Load indicators
         path = self.path + '/'
-        if 'i1' in ind_dict:
+        if 'i1' in self.ind_dict:
             self.i1 = load(path + self.ind_dict['i1'], timevar = self.col_names_dict['i1_col_names']['Time'])
-        if 'i3' in ind_dict:
+        if 'i3' in self.ind_dict:
             self.i3 = load(path + self.ind_dict['i3'], timevar = self.col_names_dict['i3_col_names']['Time'])
-        if 'i5' in ind_dict:
+        if 'i5' in self.ind_dict:
             self.i5 = load(path + self.ind_dict['i5'], timevar = self.col_names_dict['i5_col_names']['Time'])
     
     
@@ -154,7 +154,7 @@ class checker:
             return(data)
         
         # Indicator 1
-        if 'i1' in ind_dict:
+        if 'i1' in self.ind_dict:
             # self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
             #     .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
             #     .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
@@ -170,9 +170,11 @@ class checker:
                 .reset_index()\
                 .sort_values(['date'])\
                 .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
-        
+            
+            self.i1_date = time_complete(self.i1_date, 'date')
+            
         # Indicator 5
-        if 'i5' in ind_dict:
+        if 'i5' in self.ind_dict:
             i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5_col_names']['Geography_01']), 
                                         self.col_names_dict['i5_col_names']['Geography_02'])
             self.i5_date = i5_nmissing\
@@ -193,7 +195,7 @@ class checker:
     # Plots
     
     def plot_i1_hist(self, show = True, export = True):
-        count = chl.col_names_dict['i1_col_names']['Count']
+        count = self.col_names_dict['i1_col_names']['Count']
         fig = px.histogram(self.i1[count].clip(0, self.i1[count].quantile(0.95)), 
                            x=count, 
                            title='Hourly calls distribution.<br>(Censored at 95th percentile.)', 
@@ -271,11 +273,11 @@ class checker:
         # ---------------------------------------------------------
     # Check pipelines 
     def completeness_checks(self):
-        if 'i1' in ind_dict:
+        if 'i1' in self.ind_dict:
             self.plot_region_missings()
             self.plot_i1_count()
             self.plot_i1_n_regions()
-        if 'i5' in ind_dict:
+        if 'i5' in self.ind_dict:
             self.plot_i5_count()
             self.plot_i5_region_count()
     
