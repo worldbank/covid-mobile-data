@@ -89,11 +89,16 @@ class checker:
         # Column names of some indicators do not have keys yet. Will continue working on it.
         if col_names_dict is None:
             self.col_names_dict = {
-                    'i1_col_names': {'Time':'hour', 'Geography':'region','Count':'count'},
-                    'i3_col_names': {'Time':'day','Geography':'region','Count':'count'},
-                    'i5_col_names': {'Time':'connection_date','Geography_01':'region_from','Geography_02':'region_to',
-                                     'Subcrib_Count':'subscriber_count',
-                                     'OD_Count':'od_count','Total_Count':'total_count'} }
+                    'i1': {'Time':'hour', 
+                           'Geography':'region',
+                           'Count':'count'},
+                    'i3': {'Time':'day',
+                           'Geography':'region',
+                           'Count':'count'},
+                    'i5': {'Time':'connection_date',
+                           'Geography_from':'region_from',
+                           'Geography_to':'region_to',
+                           'Count':'total_count'} }
         # Otherwise specify dict manually
         else:
             self.col_names_dict = col_names_dict
@@ -129,11 +134,11 @@ class checker:
         # Load indicators
         path = self.path + '/'
         if 'i1' in self.ind_dict:
-            self.i1 = load(path + self.ind_dict['i1'], timevar = self.col_names_dict['i1_col_names']['Time'])
+            self.i1 = load(path + self.ind_dict['i1'], timevar = self.col_names_dict['i1']['Time'])
         if 'i3' in self.ind_dict:
-            self.i3 = load(path + self.ind_dict['i3'], timevar = self.col_names_dict['i3_col_names']['Time'])
+            self.i3 = load(path + self.ind_dict['i3'], timevar = self.col_names_dict['i3']['Time'])
         if 'i5' in self.ind_dict:
-            self.i5 = load(path + self.ind_dict['i5'], timevar = self.col_names_dict['i5_col_names']['Time'])
+            self.i5 = load(path + self.ind_dict['i5'], timevar = self.col_names_dict['i5']['Time'])
     
     
     def run_aggregations(self):
@@ -155,33 +160,33 @@ class checker:
         
         # Indicator 1
         if 'i1' in self.ind_dict:
-            # self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
-            #     .groupby(['date', self.col_names_dict['i1_col_names']['Time']])\
-            #     .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
-            #         self.col_names_dict['i1_col_names']['Count'] : np.sum})\
+            # self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1']['Geography'])\
+            #     .groupby(['date', self.col_names_dict['i1']['Time']])\
+            #     .agg({self.col_names_dict['i1']['Geography'] : pd.Series.nunique ,
+            #         self.col_names_dict['i1']['Count'] : np.sum})\
             #     .reset_index()\
-            #     .sort_values(['date', self.col_names_dict['i1_col_names']['Time']])\
-            #     .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
+            #     .sort_values(['date', self.col_names_dict['i1']['Time']])\
+            #     .rename(columns = {self.col_names_dict['i1']['Geography'] : 'n_regions'})
             
-            self.i1_date = remove_missings(self.i1, regionvar = self.col_names_dict['i1_col_names']['Geography'])\
+            self.i1_date = remove_missings(self.i1, regionvar = self.col_names_dict['i1']['Geography'])\
                 .groupby('date')\
-                .agg({self.col_names_dict['i1_col_names']['Geography'] : pd.Series.nunique ,
-                    self.col_names_dict['i1_col_names']['Count'] : np.sum})\
+                .agg({self.col_names_dict['i1']['Geography'] : pd.Series.nunique ,
+                    self.col_names_dict['i1']['Count'] : np.sum})\
                 .reset_index()\
                 .sort_values(['date'])\
-                .rename(columns = {self.col_names_dict['i1_col_names']['Geography'] : 'n_regions'})
+                .rename(columns = {self.col_names_dict['i1']['Geography'] : 'n_regions'})
             
             self.i1_date = time_complete(self.i1_date, 'date')
             
         # Indicator 5
         if 'i5' in self.ind_dict:
-            i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5_col_names']['Geography_01']), 
-                                        self.col_names_dict['i5_col_names']['Geography_02'])
+            i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5']['Geography_from']), 
+                                        self.col_names_dict['i5']['Geography_to'])
             self.i5_date = i5_nmissing\
             .groupby('date')\
-            .agg({self.col_names_dict['i5_col_names']['Geography_01'] : pd.Series.nunique ,
-                self.col_names_dict['i5_col_names']['Geography_02'] : pd.Series.nunique,
-                self.col_names_dict['i5_col_names']['Total_Count'] : np.sum})\
+            .agg({self.col_names_dict['i5']['Geography_from'] : pd.Series.nunique ,
+                self.col_names_dict['i5']['Geography_to'] : pd.Series.nunique,
+                self.col_names_dict['i5']['Count'] : np.sum})\
             .reset_index()\
             .sort_values('date')
             
@@ -195,7 +200,7 @@ class checker:
     # Plots
     
     def plot_i1_hist(self, show = True, export = True):
-        count = self.col_names_dict['i1_col_names']['Count']
+        count = self.col_names_dict['i1']['Count']
         fig = px.histogram(self.i1[count].clip(0, self.i1[count].quantile(0.95)), 
                            x=count, 
                            title='Hourly calls distribution.<br>(Censored at 95th percentile.)', 
@@ -209,7 +214,7 @@ class checker:
     
     def plot_i1_count(self, show = True, export = True):
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, 
-                                        y=self.i1_date[self.col_names_dict['i1_col_names']['Count']]))
+                                        y=self.i1_date[self.col_names_dict['i1']['Count']]))
         fig.update_layout(title_text="Indicator 1: Total number of transactions.")
         
         if export:
@@ -231,7 +236,7 @@ class checker:
     
     def plot_i5_count(self, show = True, export = True):
         fig = go.Figure(data=go.Scatter(x=self.i5_date.index, 
-                                        y=self.i5_date[self.col_names_dict['i5_col_names']['Total_Count']]))
+                                        y=self.i5_date[self.col_names_dict['i5']['Count']]))
         fig.update_layout(title_text="Indicator 5: Total number of movements.")
         
         if export:
@@ -243,9 +248,9 @@ class checker:
     def plot_i5_region_count(self, show = True, export = True):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=self.i5_date.index, 
-                                 y=self.i5_date[self.col_names_dict['i5_col_names']['Geography_02']], marker=dict(color="blue"), name = 'Destination regions'))
+                                 y=self.i5_date[self.col_names_dict['i5']['Geography_to']], marker=dict(color="blue"), name = 'Destination regions'))
         fig.add_trace(go.Scatter(x=self.i5_date.index, 
-                                 y=self.i5_date[self.col_names_dict['i5_col_names']['Geography_01']], marker=dict(color="red"), name = 'Origin regions'))
+                                 y=self.i5_date[self.col_names_dict['i5']['Geography_from']], marker=dict(color="red"), name = 'Origin regions'))
         fig.update_layout(title_text="Indicator 5: Number of unique regions.")
         
         if export:
@@ -256,7 +261,7 @@ class checker:
             fig.show()
     
     def plot_region_missings(self, show = True, export = True):
-        n_missing = self.i1[self.col_names_dict['i1_col_names']['Geography']].isin(self.missing_values).sum() 
+        n_missing = self.i1[self.col_names_dict['i1']['Geography']].isin(self.missing_values).sum() 
         labels = ['Missing region','Non-missing region']
         values = [n_missing, len(self.i1) - n_missing]
         
@@ -287,7 +292,7 @@ class checker:
         if htrahshold is None:
              htrahshold = self.htrahshold
         # Number of hours with transactions per region day
-        hours_per_day = data.groupby([self.col_names_dict['i1_col_names']['Geography'], 'date']).size()
+        hours_per_day = data.groupby([self.col_names_dict['i1']['Geography'], 'date']).size()
         hours_per_day = hours_per_day.reset_index() # ger regions to be a column
         hours_per_day.columns = ['region', 'date', 'hcount']
     
