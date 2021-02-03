@@ -177,7 +177,19 @@ class checker:
                 .rename(columns = {self.col_names_dict['i1']['Geography'] : 'n_regions'})
             
             self.i1_date = time_complete(self.i1_date, 'date')
+        
+        # Indicator 3
+        if 'i3' in self.ind_dict:
+            self.i3_date = remove_missings(self.i3, regionvar = self.col_names_dict['i3']['Geography'])\
+                .groupby('date')\
+                .agg({self.col_names_dict['i3']['Geography'] : pd.Series.nunique ,
+                    self.col_names_dict['i3']['Count'] : np.sum})\
+                .reset_index()\
+                .sort_values(['date'])\
+                .rename(columns = {self.col_names_dict['i3']['Geography'] : 'n_regions'})
             
+            self.i3_date = time_complete(self.i3_date, 'date')
+        
         # Indicator 5
         if 'i5' in self.ind_dict:
             i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5']['Geography_from']), 
@@ -203,8 +215,9 @@ class checker:
         count = self.col_names_dict['i1']['Count']
         fig = px.histogram(self.i1[count].clip(0, self.i1[count].quantile(0.95)), 
                            x=count, 
-                           title='Hourly calls distribution.<br>(Censored at 95th percentile.)', 
+                           title='Indicator 1: Hourly calls distribution.<br>(Censored at 95th percentile.)', 
                            labels = {count : 'Number of calls per hour.'})
+        print("Plotting indicator 1 histogram...")
         if export:
             file_name = self.outputs_path + '/' + 'i1_hist.html'
             print('Saving: ' + file_name)
@@ -217,6 +230,8 @@ class checker:
                                         y=self.i1_date[self.col_names_dict['i1']['Count']]))
         fig.update_layout(title_text="Indicator 1: Total number of transactions.")
         
+        print("Plotting indicator 1 daily count series...")
+
         if export:
             file_name = self.outputs_path + '/' + 'i1_count.html'
             print('Saving: ' + file_name)
@@ -228,9 +243,39 @@ class checker:
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, y=self.i1_date['n_regions']))
         fig.update_layout(title_text="Indicator 1: Number of unique regions.")
         
-        file_name = self.outputs_path + '/' + 'i1_n_region.html'
-        print('Saving: ' + file_name)
-        plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        print("Plotting indicator 1 daily region count...")
+        
+        if export:
+            file_name = self.outputs_path + '/' + 'i1_n_region.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if show:
+            fig.show()
+    
+    def plot_i3_count(self, show = True, export = True):
+        fig = go.Figure(data=go.Scatter(x=self.i3_date.index, 
+                                        y=self.i3_date[self.col_names_dict['i3']['Count']]))
+        fig.update_layout(title_text="Indicator 3: Total number of daily active subscribers.")
+        
+        print("Plotting indicator 3 histogram...")
+        if export:
+            file_name = self.outputs_path + '/' + 'i3_count.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if show:
+            fig.show()
+    
+    def plot_i3_hist(self, show = True, export = True):
+        count = self.col_names_dict['i3']['Count']
+        fig = px.histogram(self.i3[count], 
+                           x=count, 
+                           title='Indicator 3: Active subscribers distribution', 
+                           labels = {count : 'Number of active subscribers per day and region.'})
+        print("Plotting indicator 3 daily counts...")
+        if export:
+            file_name = self.outputs_path + '/' + 'i3_hist.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
     
@@ -238,7 +283,7 @@ class checker:
         fig = go.Figure(data=go.Scatter(x=self.i5_date.index, 
                                         y=self.i5_date[self.col_names_dict['i5']['Count']]))
         fig.update_layout(title_text="Indicator 5: Total number of movements.")
-        
+        print("Plotting indicator 5 daily movement counts...")
         if export:
             file_name = self.outputs_path + '/' + 'i5_count.html'
             print('Saving: ' + file_name)
@@ -277,14 +322,18 @@ class checker:
     
         # ---------------------------------------------------------
     # Check pipelines 
-    def completeness_checks(self):
+    def completeness_checks(self, export = True):
         if 'i1' in self.ind_dict:
-            self.plot_region_missings()
-            self.plot_i1_count()
-            self.plot_i1_n_regions()
+            self.plot_i1_hist(export = export)
+            self.plot_region_missings(export = export)
+            self.plot_i1_count(export = export)
+            self.plot_i1_n_regions(export = export)
+        if 'i3' in self.ind_dict:
+            self.plot_i3_hist(export = export)
+            self.plot_i3_count(export = export)
         if 'i5' in self.ind_dict:
-            self.plot_i5_count()
-            self.plot_i5_region_count()
+            self.plot_i5_count(export = export)
+            # self.plot_i5_region_count(export = export)
     
      # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
