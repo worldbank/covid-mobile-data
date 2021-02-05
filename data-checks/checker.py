@@ -1,7 +1,10 @@
 # ---------------------------------------------------------
 # Settings
 import os
+
 import pandas as pd
+pd.options.plotting.backend = "plotly"
+
 import numpy as np
 import plotly
 import plotly.graph_objects as go
@@ -208,7 +211,7 @@ class checker:
             # so it is biased by definition.
             self.i5_date = self.i5_date[~(self.i5_date.index == self.i5_date.index.min())]
     
-     # ---------------------------------------------------------
+    # ---------------------------------------------------------
     # Plots
     
     def plot_i1_hist(self, show = True, export = True):
@@ -231,7 +234,7 @@ class checker:
         fig.update_layout(title_text="Indicator 1: Total number of transactions.")
         
         print("Plotting indicator 1 daily count series...")
-
+        
         if export:
             file_name = self.outputs_path + '/' + 'i1_count.html'
             print('Saving: ' + file_name)
@@ -320,7 +323,39 @@ class checker:
         if show:
             fig.show()
     
-        # ---------------------------------------------------------
+    # Subscribers vs transactions scatter
+    def plot_subs_v_trans(self,  show = True, export = True):
+        i1_indexes = [self.col_names_dict['i1']['Time'],
+                    self.col_names_dict['i1']['Geography']]
+        
+        i3_indexes = [self.col_names_dict['i3']['Time'],
+                    self.col_names_dict['i3']['Geography']]
+        
+        i1_i3 = self.i1\
+            .groupby(i1_indexes)\
+            .agg({self.col_names_dict['i1']['Count'] : np.sum})\
+            .reset_index()\
+            .merge(self.i3, left_on = i1_indexes, right_on= i3_indexes, how = 'outer')\
+            .rename(columns = {'value_x': 'Transactions',
+                            'value_y': 'Subscribers',
+                            i1_indexes[0] : 'Date',
+                            i1_indexes[1] : 'Region'})\
+            .fillna(0)
+        fig = i1_i3.plot.scatter(x="Subscribers", 
+                                 y="Transactions", 
+                                 hover_data=['Date', 'Region'],
+                                 title = 'Number of subscrivers vs number of transactions.')
+        
+         print("Plotting indicators 1 and 3 scatter...")
+        if export:
+            file_name = self.outputs_path + '/' + 'i3_vs_i1.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if show:
+            fig.show()
+    
+    
+    # ---------------------------------------------------------
     # Check pipelines 
     def completeness_checks(self, export = True):
         if 'i1' in self.ind_dict:
@@ -334,6 +369,8 @@ class checker:
         if 'i5' in self.ind_dict:
             self.plot_i5_count(export = export)
             # self.plot_i5_region_count(export = export)
+        if ('i1' in self.ind_dict) & ('i3' in self.ind_dict):
+            self.plot_subs_v_trans(export = export)
     
      # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
@@ -381,26 +418,26 @@ class checker:
 # ---------------------------------------------------------
 # Run script from the terminal
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    # Initializ parser
-    parser = argparse.ArgumentParser()
+#     # Initializ parser
+#     parser = argparse.ArgumentParser()
     
-    # Adding optional argument
-    parser.add_argument("-p", "--Path")
-    parser.add_argument("--Prefix")
-    parser.add_argument("--Output")
+#     # Adding optional argument
+#     parser.add_argument("-p", "--Path")
+#     parser.add_argument("--Prefix")
+#     parser.add_argument("--Output")
     
-    # Read arguments from command line
-    args = parser.parse_args()
+#     # Read arguments from command line
+#     args = parser.parse_args()
     
-    # Create checker instance
-    indicators_checker = checker(path = args.Path, prefix = args.Prefix, outputs_path = args.Output)
+#     # Create checker instance
+#     indicators_checker = checker(path = args.Path, prefix = args.Prefix, outputs_path = args.Output)
 
-    #------------------------------------------------------------------------------
-    # Export completeness plots
-    indicators_checker.completeness_checks()
+#     #------------------------------------------------------------------------------
+#     # Export completeness plots
+#     indicators_checker.completeness_checks()
 
-    #------------------------------------------------------------------------------
-    # Export towers down sheet
-    indicators_checker.usage_outliers()
+#     #------------------------------------------------------------------------------
+#     # Export towers down sheet
+#     indicators_checker.usage_outliers()
