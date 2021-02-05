@@ -161,8 +161,13 @@ class checker:
             data = data.reindex(full_time_range,  fill_value=0)
             return(data)
         
+        # Bolleans
+        i1bol = 'i1' in self.ind_dict
+        i3bol = 'i3' in self.ind_dict
+        i5bol = 'i5' in self.ind_dict
+        
         # Indicator 1
-        if 'i1' in self.ind_dict:
+        if i1bol:
             # self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1']['Geography'])\
             #     .groupby(['date', self.col_names_dict['i1']['Time']])\
             #     .agg({self.col_names_dict['i1']['Geography'] : pd.Series.nunique ,
@@ -182,7 +187,7 @@ class checker:
             self.i1_date = time_complete(self.i1_date, 'date')
         
         # Indicator 3
-        if 'i3' in self.ind_dict:
+        if i3bol:
             self.i3_date = remove_missings(self.i3, regionvar = self.col_names_dict['i3']['Geography'])\
                 .groupby('date')\
                 .agg({self.col_names_dict['i3']['Geography'] : pd.Series.nunique ,
@@ -194,7 +199,7 @@ class checker:
             self.i3_date = time_complete(self.i3_date, 'date')
         
         # Indicator 5
-        if 'i5' in self.ind_dict:
+        if i5bol:
             i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5']['Geography_from']), 
                                         self.col_names_dict['i5']['Geography_to'])
             self.i5_date = i5_nmissing\
@@ -210,6 +215,47 @@ class checker:
             # Remove first day for plots since it doesn't have movements from the day before
             # so it is biased by definition.
             self.i5_date = self.i5_date[~(self.i5_date.index == self.i5_date.index.min())]
+        
+        # Create a merged dataset making sure all indicators are in the same resolution
+        if (i1bol & i3bol):
+            index = [self.col_names_dict['i1']['Time'], self.col_names_dict['i1']['Geography']]
+            
+            i3 = self.i3.rename(columns = {self.col_names_dict['i3']['Count'] : 'subs'})
+            self.merged = self.i1\
+                .groupby(index)\
+                .agg({self.col_names_dict['i1']['Count'] : np.sum})\
+                .reset_index()\
+                .merge(i3, on = index, how = 'outer')\
+                .fillna(0)\
+                .rename(columns = {self.col_names_dict['i1']['Count'] : 'trans'})
+            
+            if i5bol:
+                # Just movements out of region
+                i5_org = self.i5[[self.col_names_dict['i5']['Time'], 
+                            self.col_names_dict['i5']['Geography_from'],
+                            self.col_names_dict['i5']['Count']]]\
+                    .rename(columns = {self.col_names_dict['i5']['Count'] : 'mov_out', 
+                                    self.col_names_dict['i5']['Time'] : index[0],
+                                    self.col_names_dict['i5']['Geography_from'] : index[1]})\
+                    .groupby(index)\
+                    .agg({'mov_out' : np.sum})\
+                    .reset_index()
+                
+                # Just movements into a region
+                i5_dest = self.i5[[self.col_names_dict['i5']['Time'], 
+                            self.col_names_dict['i5']['Geography_to'],
+                            self.col_names_dict['i5']['Count']]]\
+                    .rename(columns = {self.col_names_dict['i5']['Count'] : 'mov_in',
+                                    self.col_names_dict['i5']['Time'] : index[0],
+                                    self.col_names_dict['i5']['Geography_to'] : index[1]})\
+                    .groupby(index)\
+                    .agg({'mov_in' : np.sum})\
+                    .reset_index()
+                
+                self.merged = self.merged\
+                    .merge(i5_org, on = index, how = 'outer')\
+                    .merge(i5_dest, on = index, how = 'outer')\
+                    .fillna(0)
     
     # ---------------------------------------------------------
     # Plots
@@ -293,6 +339,7 @@ class checker:
             plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
+    
     def plot_i5_region_count(self, show = True, export = True):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=self.i5_date.index, 
@@ -325,28 +372,15 @@ class checker:
     
     # Subscribers vs transactions scatter
     def plot_subs_v_trans(self,  show = True, export = True):
-        i1_indexes = [self.col_names_dict['i1']['Time'],
-                    self.col_names_dict['i1']['Geography']]
-        
-        i3_indexes = [self.col_names_dict['i3']['Time'],
-                    self.col_names_dict['i3']['Geography']]
-        
-        i1_i3 = self.i1\
-            .groupby(i1_indexes)\
-            .agg({self.col_names_dict['i1']['Count'] : np.sum})\
-            .reset_index()\
-            .merge(self.i3, left_on = i1_indexes, right_on= i3_indexes, how = 'outer')\
-            .rename(columns = {'value_x': 'Transactions',
-                            'value_y': 'Subscribers',
-                            i1_indexes[0] : 'Date',
-                            i1_indexes[1] : 'Region'})\
-            .fillna(0)
-        fig = i1_i3.plot.scatter(x="Subscribers", 
-                                 y="Transactions", 
+        i1_i3 = self.merged\
+            .rename(columns = {self.col_names_dict['i1']['Time'] : 'Date',
+                               self.col_names_dict['i1']['Geography'] : 'Region'})
+        fig = i1_i3.plot.scatter(x="subs", 
+                                 y="trans", 
                                  hover_data=['Date', 'Region'],
                                  title = 'Number of subscrivers vs number of transactions.')
         
-         print("Plotting indicators 1 and 3 scatter...")
+        print("Plotting indicators 1 and 3 scatter...")
         if export:
             file_name = self.outputs_path + '/' + 'i3_vs_i1.html'
             print('Saving: ' + file_name)
