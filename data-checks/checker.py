@@ -58,6 +58,8 @@ class checker:
             self.outputs_path = self.path + '/' + 'out'
             if not os.path.exists(self.outputs_path):
                 os.mkdir(self.outputs_path)
+        else:
+            self.outputs_path = outputs_path
         # List files in path
         self.files = os.listdir(self.path)
         
@@ -372,13 +374,22 @@ class checker:
     
     # Subscribers vs transactions scatter
     def plot_subs_v_trans(self,  show = True, export = True):
-        i1_i3 = self.merged\
+        df = self.merged
+        # Variable to mark red obs with zeros
+        df['color'] = np.where((df['trans']== 0) | (df['subs']== 0),
+                               'zeros', 
+                               'normal')
+        i1_i3 = df\
             .rename(columns = {self.col_names_dict['i1']['Time'] : 'Date',
-                               self.col_names_dict['i1']['Geography'] : 'Region'})
-        fig = i1_i3.plot.scatter(x="subs", 
-                                 y="trans", 
+                               self.col_names_dict['i1']['Geography'] : 'Region',
+                               'subs' : 'Number of subscribers',
+                               'trans': 'Number of transactions'})
+        fig = i1_i3.plot.scatter(x="Number of subscribers", 
+                                 y="Number of transactions", 
+                                 color = 'color',
                                  hover_data=['Date', 'Region'],
                                  title = 'Number of subscrivers vs number of transactions.')
+        fig.update_layout(showlegend=False)
         
         print("Plotting indicators 1 and 3 scatter...")
         if export:
@@ -391,20 +402,20 @@ class checker:
     
     # ---------------------------------------------------------
     # Check pipelines 
-    def completeness_checks(self, export = True):
+    def completeness_checks(self, export = True, show = True):
         if 'i1' in self.ind_dict:
-            self.plot_i1_hist(export = export)
-            self.plot_region_missings(export = export)
-            self.plot_i1_count(export = export)
-            self.plot_i1_n_regions(export = export)
+            self.plot_i1_hist(export = export, show = show)
+            self.plot_region_missings(export = export, show = show)
+            self.plot_i1_count(export = export, show = show)
+            self.plot_i1_n_regions(export = export, show = show)
         if 'i3' in self.ind_dict:
-            self.plot_i3_hist(export = export)
-            self.plot_i3_count(export = export)
+            self.plot_i3_hist(export = export, show = show)
+            self.plot_i3_count(export = export, show = show)
         if 'i5' in self.ind_dict:
-            self.plot_i5_count(export = export)
+            self.plot_i5_count(export = export, show = show)
             # self.plot_i5_region_count(export = export)
         if ('i1' in self.ind_dict) & ('i3' in self.ind_dict):
-            self.plot_subs_v_trans(export = export)
+            self.plot_subs_v_trans(export = export, show = show)
     
      # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
