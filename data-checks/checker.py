@@ -1,7 +1,10 @@
 # ---------------------------------------------------------
 # Settings
 import os
+
 import pandas as pd
+pd.options.plotting.backend = "plotly"
+
 import numpy as np
 import plotly
 import plotly.graph_objects as go
@@ -55,6 +58,8 @@ class checker:
             self.outputs_path = self.path + '/' + 'out'
             if not os.path.exists(self.outputs_path):
                 os.mkdir(self.outputs_path)
+        else:
+            self.outputs_path = outputs_path
         # List files in path
         self.files = os.listdir(self.path)
         
@@ -158,8 +163,13 @@ class checker:
             data = data.reindex(full_time_range,  fill_value=0)
             return(data)
         
+        # Bolleans
+        i1bol = 'i1' in self.ind_dict
+        i3bol = 'i3' in self.ind_dict
+        i5bol = 'i5' in self.ind_dict
+        
         # Indicator 1
-        if 'i1' in self.ind_dict:
+        if i1bol:
             # self.i1_hour = remove_missings(self.i1, regionvar = self.col_names_dict['i1']['Geography'])\
             #     .groupby(['date', self.col_names_dict['i1']['Time']])\
             #     .agg({self.col_names_dict['i1']['Geography'] : pd.Series.nunique ,
@@ -179,7 +189,7 @@ class checker:
             self.i1_date = time_complete(self.i1_date, 'date')
         
         # Indicator 3
-        if 'i3' in self.ind_dict:
+        if i3bol:
             self.i3_date = remove_missings(self.i3, regionvar = self.col_names_dict['i3']['Geography'])\
                 .groupby('date')\
                 .agg({self.col_names_dict['i3']['Geography'] : pd.Series.nunique ,
@@ -191,7 +201,7 @@ class checker:
             self.i3_date = time_complete(self.i3_date, 'date')
         
         # Indicator 5
-        if 'i5' in self.ind_dict:
+        if i5bol:
             i5_nmissing = remove_missings(remove_missings(self.i5, self.col_names_dict['i5']['Geography_from']), 
                                         self.col_names_dict['i5']['Geography_to'])
             self.i5_date = i5_nmissing\
@@ -207,8 +217,49 @@ class checker:
             # Remove first day for plots since it doesn't have movements from the day before
             # so it is biased by definition.
             self.i5_date = self.i5_date[~(self.i5_date.index == self.i5_date.index.min())]
+        
+        # Create a merged dataset making sure all indicators are in the same resolution
+        if (i1bol & i3bol):
+            index = [self.col_names_dict['i1']['Time'], self.col_names_dict['i1']['Geography']]
+            
+            i3 = self.i3.rename(columns = {self.col_names_dict['i3']['Count'] : 'subs'})
+            self.merged = self.i1\
+                .groupby(index)\
+                .agg({self.col_names_dict['i1']['Count'] : np.sum})\
+                .reset_index()\
+                .merge(i3, on = index, how = 'outer')\
+                .fillna(0)\
+                .rename(columns = {self.col_names_dict['i1']['Count'] : 'trans'})
+            
+            if i5bol:
+                # Just movements out of region
+                i5_org = self.i5[[self.col_names_dict['i5']['Time'], 
+                            self.col_names_dict['i5']['Geography_from'],
+                            self.col_names_dict['i5']['Count']]]\
+                    .rename(columns = {self.col_names_dict['i5']['Count'] : 'mov_out', 
+                                    self.col_names_dict['i5']['Time'] : index[0],
+                                    self.col_names_dict['i5']['Geography_from'] : index[1]})\
+                    .groupby(index)\
+                    .agg({'mov_out' : np.sum})\
+                    .reset_index()
+                
+                # Just movements into a region
+                i5_dest = self.i5[[self.col_names_dict['i5']['Time'], 
+                            self.col_names_dict['i5']['Geography_to'],
+                            self.col_names_dict['i5']['Count']]]\
+                    .rename(columns = {self.col_names_dict['i5']['Count'] : 'mov_in',
+                                    self.col_names_dict['i5']['Time'] : index[0],
+                                    self.col_names_dict['i5']['Geography_to'] : index[1]})\
+                    .groupby(index)\
+                    .agg({'mov_in' : np.sum})\
+                    .reset_index()
+                
+                self.merged = self.merged\
+                    .merge(i5_org, on = index, how = 'outer')\
+                    .merge(i5_dest, on = index, how = 'outer')\
+                    .fillna(0)
     
-     # ---------------------------------------------------------
+    # ---------------------------------------------------------
     # Plots
     
     def plot_i1_hist(self, show = True, export = True):
@@ -231,7 +282,7 @@ class checker:
         fig.update_layout(title_text="Indicator 1: Total number of transactions.")
         
         print("Plotting indicator 1 daily count series...")
-
+        
         if export:
             file_name = self.outputs_path + '/' + 'i1_count.html'
             print('Saving: ' + file_name)
@@ -290,6 +341,7 @@ class checker:
             plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
+    
     def plot_i5_region_count(self, show = True, export = True):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=self.i5_date.index, 
@@ -320,20 +372,50 @@ class checker:
         if show:
             fig.show()
     
-        # ---------------------------------------------------------
+    # Subscribers vs transactions scatter
+    def plot_subs_v_trans(self,  show = True, export = True):
+        df = self.merged
+        # Variable to mark red obs with zeros
+        df['color'] = np.where((df['trans']== 0) | (df['subs']== 0),
+                               'zeros', 
+                               'normal')
+        i1_i3 = df\
+            .rename(columns = {self.col_names_dict['i1']['Time'] : 'Date',
+                               self.col_names_dict['i1']['Geography'] : 'Region',
+                               'subs' : 'Number of subscribers',
+                               'trans': 'Number of transactions'})
+        fig = i1_i3.plot.scatter(x="Number of subscribers", 
+                                 y="Number of transactions", 
+                                 color = 'color',
+                                 hover_data=['Date', 'Region'],
+                                 title = 'Number of subscrivers vs number of transactions.')
+        fig.update_layout(showlegend=False)
+        
+        print("Plotting indicators 1 and 3 scatter...")
+        if export:
+            file_name = self.outputs_path + '/' + 'i3_vs_i1.html'
+            print('Saving: ' + file_name)
+            plotly.offline.plot(fig, filename = file_name, auto_open=False)
+        if show:
+            fig.show()
+    
+    
+    # ---------------------------------------------------------
     # Check pipelines 
-    def completeness_checks(self, export = True):
+    def completeness_checks(self, export = True, show = True):
         if 'i1' in self.ind_dict:
-            self.plot_i1_hist(export = export)
-            self.plot_region_missings(export = export)
-            self.plot_i1_count(export = export)
-            self.plot_i1_n_regions(export = export)
+            self.plot_i1_hist(export = export, show = show)
+            self.plot_region_missings(export = export, show = show)
+            self.plot_i1_count(export = export, show = show)
+            self.plot_i1_n_regions(export = export, show = show)
         if 'i3' in self.ind_dict:
-            self.plot_i3_hist(export = export)
-            self.plot_i3_count(export = export)
+            self.plot_i3_hist(export = export, show = show)
+            self.plot_i3_count(export = export, show = show)
         if 'i5' in self.ind_dict:
-            self.plot_i5_count(export = export)
+            self.plot_i5_count(export = export, show = show)
             # self.plot_i5_region_count(export = export)
+        if ('i1' in self.ind_dict) & ('i3' in self.ind_dict):
+            self.plot_subs_v_trans(export = export, show = show)
     
      # USAGE OUTILERS: Indicator wards and days with towers down
     def usage_outliers(self, htrahshold = None):
@@ -381,26 +463,26 @@ class checker:
 # ---------------------------------------------------------
 # Run script from the terminal
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    # Initializ parser
-    parser = argparse.ArgumentParser()
+#     # Initializ parser
+#     parser = argparse.ArgumentParser()
     
-    # Adding optional argument
-    parser.add_argument("-p", "--Path")
-    parser.add_argument("--Prefix")
-    parser.add_argument("--Output")
+#     # Adding optional argument
+#     parser.add_argument("-p", "--Path")
+#     parser.add_argument("--Prefix")
+#     parser.add_argument("--Output")
     
-    # Read arguments from command line
-    args = parser.parse_args()
+#     # Read arguments from command line
+#     args = parser.parse_args()
     
-    # Create checker instance
-    indicators_checker = checker(path = args.Path, prefix = args.Prefix, outputs_path = args.Output)
+#     # Create checker instance
+#     indicators_checker = checker(path = args.Path, prefix = args.Prefix, outputs_path = args.Output)
 
-    #------------------------------------------------------------------------------
-    # Export completeness plots
-    indicators_checker.completeness_checks()
+#     #------------------------------------------------------------------------------
+#     # Export completeness plots
+#     indicators_checker.completeness_checks()
 
-    #------------------------------------------------------------------------------
-    # Export towers down sheet
-    indicators_checker.usage_outliers()
+#     #------------------------------------------------------------------------------
+#     # Export towers down sheet
+#     indicators_checker.usage_outliers()
