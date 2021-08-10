@@ -235,6 +235,7 @@ class checker:
         fig = go.Figure(data=go.Scatter(x=self.i1_date.index, 
                                         y=self.i1_date[self.col_names_dict['i1']['Count']]))
         fig.update_layout(title_text="Indicator 1: Total number of transactions.")
+        fig.update_yaxes(rangemode="tozero")
         
         print("Plotting indicator 1 daily count series...")
 
@@ -262,6 +263,7 @@ class checker:
         fig = go.Figure(data=go.Scatter(x=self.i3_date.index, 
                                         y=self.i3_date[self.col_names_dict['i3']['Count']]))
         fig.update_layout(title_text="Indicator 3: Total number of daily active subscribers.")
+        fig.update_yaxes(rangemode="tozero")
         
         print("Plotting indicator 3 histogram...")
         if export:
@@ -289,6 +291,8 @@ class checker:
         fig = go.Figure(data=go.Scatter(x=self.i5_date.index, 
                                         y=self.i5_date[self.col_names_dict['i5']['Count']]))
         fig.update_layout(title_text="Indicator 5: Total number of movements.")
+        fig.update_yaxes(rangemode="tozero")
+        
         print("Plotting indicator 5 daily movement counts...")
         if export:
             file_name = self.outputs_path + '/' + 'i5_count.html'
@@ -335,6 +339,7 @@ class checker:
                                         y=y))
         
         fig.update_layout(title_text="Indicator 1/ Indicator 3: Total number of transactions per subscriber.")
+        fig.update_yaxes(rangemode="tozero")
         
         print("Plotting Total number of transactions per subscriber...")
 
@@ -354,6 +359,7 @@ class checker:
                                         y=y))
         
         fig.update_layout(title_text="Indicator 5/ Indicator 3: Total number of movements per subscriber.")
+        fig.update_yaxes(rangemode="tozero")
         
         print("Plotting Total number of movements per subscriber...")
 
@@ -363,10 +369,11 @@ class checker:
             plotly.offline.plot(fig, filename = file_name, auto_open=False)
         if show:
             fig.show()
+    
+    
         
         
-        
-        
+  
         
         
         
@@ -390,6 +397,46 @@ class checker:
         
         if ('i5' in self.ind_dict) & ('i3' in self.ind_dict): 
             self.plot_i5_i3_count(export = export)
+        
+        if ('i5' in self.ind_dict) & ('i3' in self.ind_dict) & ('i1' in self.ind_dict):
+
+            html_string = '''
+            <html> 
+            <head> 
+                 <style type="text/css">
+                 iframe[seamless] {border: none;}
+                 </style>
+            </head> 
+
+            <body> 
+                <!-- <div id="includedContent"></div> -->
+                <iframe height="600" width="900" src="i1_count.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i1_hist.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i1_n_region.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i3_count.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i3_hist.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i5_count.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="region_missings.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i1_per_i3_count.html" seamless></iframe>
+     
+                <iframe height="600" width="900" src="i5_per_i3_count.html" seamless></iframe>
+     
+     
+            </body> 
+            </html> '''
+     
+            file_name = self.outputs_path + '/' + 'data_check_report.html'
+            f = open(file_name,'w')
+            f.write(html_string)
+            f.close()
+        
        
     
      # USAGE OUTILERS: Indicator wards and days with towers down
